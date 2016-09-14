@@ -1,0 +1,162 @@
+/** @mainpage ChainAMPS manual
+ * Libraries and driver routines for Matrix product state (MPS) algorithms with large local (physical) dimension. Intended to be used for studying models of (infinitely) many coupled chains.
+ *
+ * @tableofcontents
+ * @section sIntro Introduction
+ * Most physically interesting many-body states have limited (in some sense) entanglement.
+ * Matrix product states constitute a variational basis with entanglement restricted by the matrix or *bond* dimension.
+ * Key to their usefulness is that (at least in 1D) they can searched through in a numerically efficient manner, so that it is possible to design powerful MPS algorithms that can accurately study many-body problems.
+ * @section sBasic Basic Elements
+ *
+ * We first describe some of the fundamental objects used in code. Almost everything (barring some of the low lying sparse and dense matrix operations) is defined within the namespace 'ajaj'.
+ * @subsection sVertex The Vertex Class
+ * A matrix product state is formed, unsurprisingly, from products of matrices, \f$ A^{\sigma_{i+1}}_{a_i,a_{i+1}}\f$, where the \f$a\f$'s are matrix indices and \f$ \sigma\f$ is a label for a state in some local (usually called *physical*) Hilbert space. For a system of \f$N\f$ objects, each with a local Hilbert space labelled by \f$ \sigma_i\f$, we have:
+ *
+ * \f$ \left\vert \psi_{\text MPS}\right\rangle = \sum_{\{\sigma\}} \text{Tr}\, A^{\sigma_1} A^{\sigma_2} \cdots A^{\sigma_N} \left\vert \sigma_1 \right\rangle\cdots\left\vert \sigma_N \right\rangle. \f$
+ *
+ * In normal MPS usage each local object is a single site in some lattice.
+ * Instead we refer to the local object as a *vertex*. This is because the local object could itself be a chain (either a lattice or continuum version).
+ * The vertex Hilbert space, and the matrix elements for any necessary operators are set by the builtin models in the vertex_generators subdirectory, or by a user defined set of files.
+ * 
+ * The Vertex class (vertex.hpp) is then essentially some parameters (for the local Hamiltonian), a spectrum (a list of eignestates of the local Hamiltonian) and a list of matrices (the local operators).
+ * In order to create an instance of Vertex, one needs to provide some parameters and then call a Vertex constructor.
+ * Currently the builtin examples provide an easy way to do this.
+ * @subsection sState The State Class
+ * In general the code uses good quantum numbers to increase numerical efficiency. These need to be good local quantum numbers (i.e. states in the local/physical spectrum cannot mix them).
+ *
+ * The quantum numbers are conserved charges for various \f$\mathbb{Z}_n\f$ symmetries, including th 'infinite' case \f$\mathbb{Z}\f$.
+ * A State object (states.hpp) holds a list of 'charge rules' which give the values of \f$n\f$ for each quantum number. If \f$n\le 0\f$ then \f$ \mathbb{Z} \f$ is assumed.
+ * The State also holds a list of the actual values of its particular charges, which are in the range \f$ 0,\cdots,n-1\f$, excepting the \f$ \mathbb{Z} \f$ case for which negative values are allowed.
+ *
+ * These State objects can be added in order to calculate the charges of their tensor product. Modulo arithmetic is taken care of internally so that resulting charges are in the range \f$ 0,\cdots,n-1\f$.
+ * They can also be subtracted, which is useful for directed matrix indices, or when a quotient of some sort is needed.
+ * An EigenState object is a State of the vertex Hamiltonian, with an attached value of its energy under the action of the aforementioned operator. 
+ * Because charges are expected to be relatively small they are stored as 'QuantumNumberInt' type, which is a typedef for 'short int'.
+ 
+ * It is often useful to have an 'Identity' State which doesn't change another State when added to or subtracted from it (basically all charges=0).
+ * This can be constructed via
+ * @code ajaj::State(myvertex.ChargeRules) @endcode
+ * because any State constructed from charge rules alone has zero for all charge values by default.
+ * To construct a more elaborate State (e.g. as a target sector for DMRG):
+ * @code
+ * ajaj::QNVector somecharges; //create a vector of type QNVector (holds several QuantumNumberInt's)
+ * somecharges.push_back(0); //Sets Sz=0 for xxx, sets momentum=0 for Ising etc.
+ * somecharges.push_back(0); //Sets crystal momentum=0 for xxx, sets sector for Ising
+ * ajaj::State TargetState(myvertex.ChargeRules,somecharges); //create State called 'TargetState', assuming myvertex has already been provided
+ * @endcode
+ * @subsection sMPX_matrix The MPX_matrix (and MPO_matrix, MPS_matrix) Class
+ * This class implements the underlying tensor. MPO_matrix and MPS_matrix are inherited types that check for the correct number and type of indices after construction.
+ * The class holds a sparse matrix to store the actual data, and a list of tensor indices. It also contains member functions for various operations, such as eigenvalue decompositions and singular value decompositions.
+ *
+ * Currently all tensors need a reference to the physical spectrum, even if none of their indices are physical. This is quite likely an unnecessary design limitation.
+ *
+ * The tensor indices are of type 'MPXIndex' which is essentially a list of State objects and a *direction*, ingoing or outgoing, for charge conservation purposes. Each MPXIndex also has a flag which indicates whether it is a 'physical' or 'matrix' index.
+ *
+ * As the underlying data is stored as a matrix the tensor indices have to be collected together to form row and column indices. The first m_NumRowIndices in the list are collected together to form a matrix row index, while the remainder form the column index.
+ *
+ * MPX_matrix types can be transformed by transpose, conjugation using member functions, and can be contracted to form another MPX_matrix, or just to a SparseMatrix object.
+ * See MPX.hpp for more details.
+ * @section sDrivers The Driver Routines
+ * The basic first step in all drivers is the creation of a vertex, then the creation of a Hamiltonian MPO_matrix (using a function defined in the same file):
+ * The drivers then fall into two classes: eigenstate solvers and time evolution algorithms, which are further subdivided into versions for infinite and finite numbers of vertices.
+ * @subsection ssiDMRGguide The iDMRG driver
+ * iDMRG is implemented via the driver iDMRG_DRV.cpp.
+ * After creating a vertex object and Hamiltonian MPO, a target state is declared. This defines the sector in which we look for a lowest energy state, by the values of its charges. 
+ * We also need an output file object, using the methods in data.hpp:
+ * @code
+ * ajaj::DataOutput results("Energies.dat"); //create a handler for a data file.
+ * @endcode
+ * In the case of iDMRG, we store both the energies of a finite size system in 'Energies.dat' and later the energies of the orthogonal unit cell as 'iDMRGEnergies.dat'.
+ *
+ * The iDMRG algorithm works by repeatedly 'inserting' two vertices at the centre of the system: essentially using an eigensolver with a good initial guess to find the correct matrices to represent these two new vertices.
+ * Initially we just do this for a few steps (without explicitly forming an orthogonal/canonical unit cell to represent an infinite system).
+ * Optionally we can specify a non zero convergence_test, which will stop the algorithm when the answer and prediction vector are close enough.
+ * @code
+ * ajaj::iDMRG infvol(std::string("GroundState"),H,TargetState,results); //create infinite algorithm DMRG object, save all blocks and matrices with name 'GroundState'.
+ * infvol.run(steps,convergence_test,CHI,minS); //Add two new vertices at the centre, 'steps' times. 
+ * @endcode
+ * After the initial steps, which grow the system to 2*steps vertices, we continue to run the algorithm, but now after each step we use the new central vertices to form an orthogonal unit cell representative of the (translationally invariant) infinite limit.
+ * In order to obtain the infinite system energy, we imagine breaking up the full hamiltonian into a sum of single vertex terms, \f$ h_i\f$ and bonds \f$ B_{i,i+1}\f$. We then measure the bond energy for our unit cell, and add to it half the energy of the two on-vertex energies. This gives us the energy per vertex, ajaj::SimpleEnergy().
+ * \f$ H=\sum_i {h_i+h_{i+1}}{2} + B_{i,i+1}\f$
+ * Currently the single vertex measurement itself is somewhat inefficient, because the individual matrices in the unit cell are not canonical.
+ * Results are pushed to the file iDMRGEnergies.dat. See the code snippet below.
+ * @code
+ * const ajaj::MPXIndex dummy(1,ajaj::StateArray(1,myvertex.Spectrum[0].getChargeRules())); //create a dummy index
+ * const ajaj::MPO_matrix H1(myvertex.Spectrum,dummy,myvertex.Spectrum.Energies()); //form the on-vertex part of a Hamiltonian
+ * const ajaj::MPO_matrix I(ajaj::IdentityMPO_matrix(myvertex.Spectrum)); //form an identity MPO. Useful for some measurements
+ * const ajaj::MPO_matrix LeftH(LeftOpenBCHamiltonian(H)); //form the left end of the bond MPO
+ * const ajaj::MPO_matrix RightH(RightOpenBCHamiltonian(H)); //form the right end of the bond MPO
+ * std::vector<double> iDMRGEnergies;
+ * ajaj::DataOutput infvolresults("iDMRGEnergies.dat");
+ * for (ajaj::uMPXInt r=0;r<orthogonalisation_steps;++r){
+ *   infvol.run(1,-0.0,CHI,minS);
+ *   ajaj::UnitCell Ortho(OrthogonaliseInversionSymmetric(infvol.getCentralDecomposition(),infvol.getPreviousLambda()));
+ *   iDMRGEnergies.push_back(real(ajaj::SimpleEnergy(LeftH,RightH,H1,I,Ortho)));
+ *   std::cout << "iDMRG energy per vertex " << iDMRGEnergies.back() << std::endl;
+ *   ajaj::Data inf_data(iDMRGEnergies.back());
+ *   infvolresults.push(inf_data);
+ * }
+ * @endcode
+ * @subsubsection sssiDMRG The iDMRG class
+ * The actual objects and routines that implement DMRG are declared in DMRG_routines.hpp.
+ * The ajaj::iDMRG object inherits from the ajaj::SuperBlock object, which itself inherits from the ajaj::BlocksStructure object. The latter is basically storage for left and right blocks. Only the current left and right blocks are kept in memory, earlier blocks are saved to disk, but can be retrieved using the BlockStructure interface.
+ * A SuperBlock has all the features of a BlocksStructure but also contains the current central decomposition (two MPS matrices and a list of singular values, ajaj::CentralDecomposition) as well as the singular values from the previous growth step.
+ * Finally the iDMRG object has the properties of a SuperBlock with an added member function that initialises it, and performs the growth steps and outputs data (the fidelity and the entanglement), ajaj::iDMRG.run().
+ *
+ * Schematically the infinite volume algorithm proceeds in the following way:
+ * -# For the initial step
+ *    -# Using the information in the hamiltonian MPO matrix, form left and right boundary condition hamiltonians, and from these form a two vertex hamiltonian.
+ *    -# Solve the hamiltonian using ARPACK, targeting a particular set of quantum numbers, to find \f$\Psi_{\sigma_1 \sigma_2}\f$ and the energy.
+ *    -# Perform an SVD on the answer to get \f$ A^{\sigma_1} \Lambda B^{\sigma_2}\f$, with possible truncation. Calculate entanglement and output (with energy) to data file.
+ *    -# Using the hamiltonians for the left and right ends form the initial left and right blocks, e.g. \f$ A^{\sigma_1 \dagger} H_{\text{Left}} A^{\sigma_1} = L_{a'_1 b_1 a_1}\f$.
+      -# Store MPS matrices and blocks.
+ * -# For a normal step
+ *    -# Unless already provided by the initialisation, form new left and right blocks.
+ *    -# Feed an initial guess tensor, if possible, (wavefunction prediction, requires singular values from previous two steps, see ajaj::MakePrediction()) to ARPACK to find the lowest eigenvalue and eigenvector, in the correct subspace, by iteratively contracting with the left and right blocks and two copies (two vertex DMRG) of the hamiltoniain MPO matrix.
+ *    -# Perform SVD with possible truncation, and output entanglement and energy.
+ *    -# Store new MPS A and B matrices and record singular values (and previous singular values).
+ *    -# If orthogonalisation (translationally invariant unit cell) is required then additionally, orthogonalise the two matrix combination, measure observables (see measurement.hpp) and output (with possibly new entanglement).
+ *    -# Repeat.
+ * @subsubsection sssiDMRGOutput iDMRG Output
+ * The infinite volume algorithm data is output in the file Energies.dat.
+ *
+ * The columns are: DMRG step, energy/number of vertices (chains), entanglement entropy, truncation error (can be inaccurate (negative) when tiny or when no truncation occurs), fidelity between previous centre and current guess.
+ *
+ * The orthogonalisation and formation of a translationally invariant unit cell only occurs for later steps (exactly when is controlled by params.hpp). Once this happens the data for the orthogonalised translationally invariant unit cell is output in iDMRGEnergies.dat.
+ *
+ * The columns are: orthogonalisation step, energy per vertex.
+ *
+ * The one vertex (chain) density matrix is output in the file GroundState_One_Vertex_Densities.dat.
+ *
+ * The first row lists the single vertex energies in order (i.e. the energies in the vertex spectrum)
+ * The next rows list the diagonal of the one vertex density matrix in the same order, for each DMRG step.
+ *
+ * Currently no other operators are measured, but this won't be difficult to implement and can be done at the end once a well converged state is obtained.
+ * @subsection ssfDMRGguide The Finite DMRG driver
+ * DMRG for a finite number of vertcies is implemented via the driver fDMRG_DRV.cpp.
+ * @subsubsection sssfDMRGOutput fDMRG Output
+ * @subsection ssiTEBDguide The iTEBD driver
+ * iTEBD is implemented via the driver iTEBD_DRV.cpp.
+ * @subsubsection sssiTEBDOutput iTEBD Output
+ * Output is in the file Evoliution.dat.
+ *
+ * The columns are: measurement step, time, truncation, entropy, abs(overlap), real(overlap), imag(overlap), real(measured op 1), imag(measured op 1), etc.
+ *
+ * The measured operators are currently defined in the iTEBD_DRV.cpp file, by creating a vector of MPO's using info from the vertex definition. A better interface is needed.
+ *
+ * The one vertex density matrix diagonal for each step is recorded in the same way as for iDMRG, (i.e. first row lists energies of one vertex Hamiltonian) in the file iTEBD_One_Vertex_Densities.dat.
+ * @subsection ssTEBDguide The TEBD driver
+ * TEBD (strictly speaking tMPS with SVD compression) for a finite number of vertices is implemented via the driver TEBD_DRV.cpp.
+ * @subsubsection sssTEBDOutput TEBD Output	      
+ * @section sTechnical Technical Details
+ * Some parts of the code have their own namespace because they are interfaces to other libraries. These are described below.
+ * Unsigned 64bit integers would be preferred throughout, but the underlying sparse library uses signed integers, when it doesn't always need to, for example for array indices.
+ *
+ * Low level dense matrix operations are performed using lapack and blas routines. The dense storage interface is declared in dense_interface.hpp, while the blas/lapack routines are accessed via the interface in dense_matrix_functions.hpp.
+ *
+ * Basic sparse operations are provided by linking to the cxsparse library from the SuiteSparse collection by Tim Davis.
+ * The wrapper interface is in sparse_interface.hpp.
+ *
+ * In general any complete eigenvalue or singular value decompositions on sparse objects are performed by using good quantum numbers to first form smaller dense block matrices, then using dense routines from lapack and blas. This removes the need to permanently store dense blocks.
+ * However when only a few eigenvalues of a large sparse are needed (as in the DMRG eigensolver step or orthogonalisation of a unit cell) ARPACK is used. The interface to ARPACK is in arpack_interface.hpp. **ARPACK remains temperamental, depending on the version, and can sometimes return poorly converged or incorrectly ordered eigenvalues.**
+ */

@@ -4,7 +4,7 @@ README
 *Version 1.0.0*
 
 ChainAMPS is a set of libraries and driver routines, designed to implement MPS algorithms for large systems of coupled chains (i.e. large local or *physical* dimension).
-However it also works perfectly well for canonical 1D MPS algorithms.
+However it also works perfectly well for canonical 1D MPS algorithms, though it is not optimised for this task.
 
 Currently there are distinct drivers for DMRG; both infinite (iDMRG) and finite (fDMRG); and for TEBD, including the infinite case (iTEBD).
 The driver naming convention for algorithm X is X_DRV.bin.
