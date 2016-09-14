@@ -1,0 +1,54 @@
+Details of this software will appear in:
+
+"New developments in the theoretical treatment of low dimensional strongly correlated systems"
+A. J. A. James, R. M. Konik, P. Lecheminant, N. J. Robinson, and A. M. Tsvelik
+Reports on Progress in Physics (expected late 2016/early 2017)
+
+Very early versions of this software were used in the following:
+
+@article{james2013understanding,
+  title={Understanding the entanglement entropy and spectra of 2D quantum systems through arrays of coupled 1D chains},
+  author={James, AJA and Konik, RM},
+  journal={Physical Review B (Rapid Communications)},
+  volume={87},
+  number={24},
+  pages={241103--R},
+  year={2013},
+  publisher={APS}
+}
+
+@article{james2015quantum,
+  title={Quantum quenches in two spatial dimensions using chain array matrix product states},
+  author={James, AJA and Konik, RM},
+  journal={Physical Review B (Rapid Communications)},
+  volume={92},
+  number={16},
+  pages={161111--R},
+  year={2015},
+  publisher={APS}
+}
+
+The software is based on ideas originally reported in:
+
+@article{konik2009renormalization,
+  title={Renormalization Group for Treating 2D Coupled Arrays of Continuum 1D Systems},
+  author={Konik, Robert M and Adamov, Yury},
+  journal={Physical review letters},
+  volume={102},
+  number={9},
+  pages={097203},
+  year={2009},
+  publisher={APS}
+}
+
+Many of the low level sparse matrix operations are implemented by linking to Tim Davis's elegantly simple csparse (cxsparse for complex numbers) library:
+
+@book{davis2006direct,
+  title={Direct Methods for Sparse Linear Systems},
+  author={Davis, T.A.},
+  isbn={9780898718881},
+  series={Fundamentals of Algorithms},
+  url={https://books.google.co.uk/books?id=aTLYrafw3vUC},
+  year={2006},
+  publisher={Society for Industrial and Applied Mathematics (SIAM, 3600 Market Street, Floor 6, Philadelphia, PA 19104)}
+}

@@ -1,0 +1,3 @@
+USER DEFINED
+examples/vertex_basis.in examples/vertex_hamiltonian.in examples/vertex_operators.in
+Jx,(Sx,Sx):0.5 Jy,(Sy,Sy):0.5
