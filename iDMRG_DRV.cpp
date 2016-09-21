@@ -23,7 +23,6 @@ int main(int argc, char** argv){
   if (RuntimeArgs.is_valid()){
     static double convergence_test=-0.0;
     const ajaj::Model myModel(ajaj::MakeModelFromArgs(RuntimeArgs));
-    myModel.basis().print();
 
     ajaj::State TargetState(myModel.basis().getChargeRules());
     ajaj::DataOutput results("Energies.dat");
@@ -43,14 +42,22 @@ int main(int argc, char** argv){
     const ajaj::MPO_matrix I(ajaj::IdentityMPO_matrix(myModel.basis())); //form an identity MPO. Useful for some measurements
     const ajaj::MPO_matrix LeftH(LeftOpenBCHamiltonian(myModel.H_MPO));
     const ajaj::MPO_matrix RightH(RightOpenBCHamiltonian(myModel.H_MPO));
+
+    const ajaj::MPO_matrix ColX(myModel.H_MPO.ExtractMPOBlock(std::pair<ajaj::MPXInt,ajaj::MPXInt>(1,myModel.H_MPO.Index(1).size()-2),std::pair<ajaj::MPXInt,ajaj::MPXInt>(0,0)));
+    const ajaj::MPO_matrix RowX(myModel.H_MPO.ExtractMPOBlock(std::pair<ajaj::MPXInt,ajaj::MPXInt>(myModel.H_MPO.Index(1).size()-1,myModel.H_MPO.Index(1).size()-1),std::pair<ajaj::MPXInt,ajaj::MPXInt>(1,myModel.H_MPO.Index(3).size()-2)));
+
     std::vector<double> iDMRGEnergies;
+    std::vector<double> iDMRGEnergies_2;
+
     ajaj::DataOutput infvolresults("iDMRGEnergies.dat");
     for (ajaj::uMPXInt r=0;r< (steps>2 ? steps-2 : 0) ;++r){
       infvol.run(1,-0.0,CHI,minS);
       ajaj::UnitCell Ortho(OrthogonaliseInversionSymmetric(infvol.getCentralDecomposition(),infvol.getPreviousLambda()));
       //at the moment measuring the energy is done in an inelegant way
       iDMRGEnergies.push_back(real(ajaj::SimpleEnergy(LeftH,RightH,H1,I,Ortho)));
-      std::cout << "iDMRG energy per vertex " << iDMRGEnergies.back() << std::endl;
+      iDMRGEnergies_2.push_back(real(ajaj::SophisticatedEnergy(ColX,RowX,H1,Ortho)));
+
+      std::cout << "iDMRG energy per vertex " << iDMRGEnergies.back() << " " << iDMRGEnergies_2.back()  << std::endl;
       ajaj::Data inf_data(std::vector<double>({{iDMRGEnergies.back(),ajaj::entropy(*(Ortho.Lambdas.begin()))}}));
       infvolresults.push(inf_data);
       {
@@ -65,11 +72,14 @@ int main(int argc, char** argv){
     auto t2 = std::chrono::high_resolution_clock::now();
 
     std::cout << "SUMMARY" << std::endl;
-
+    std::cout << std::setprecision(16);
     for (std::vector<double>::const_iterator cit=iDMRGEnergies.begin();cit!=iDMRGEnergies.end();++cit){
       std::cout << "iDMRG thermodynamic limit energy per vertex: " << *cit << std::endl;
     }
     std::cout << "Run took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() << " milliseconds" << std::endl;
+    for (std::vector<double>::const_iterator cit=iDMRGEnergies_2.begin();cit!=iDMRGEnergies_2.end();++cit){
+      std::cout << "iDMRG thermodynamic limit energy 2 per vertex: " << *cit << std::endl;
+    }
     return 0;
   }
   return 1;

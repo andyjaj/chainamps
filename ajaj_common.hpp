@@ -31,6 +31,7 @@ namespace ajaj {
   static const std::vector<MPXPair> contract11(1,MPXPair(1,1));
   static const std::vector<MPXPair> contract12(1,MPXPair(1,2));
   static const std::vector<MPXPair> contract13(1,MPXPair(1,3));
+  static const std::vector<MPXPair> contract31(1,MPXPair(3,1));
   static const std::vector<MPXPair> contract32(1,MPXPair(3,2));
   static const std::vector<MPXPair> contract51(1,MPXPair(5,1));
   static const std::vector<MPXPair> contract74(1,MPXPair(7,4));
@@ -42,6 +43,10 @@ namespace ajaj {
   static const std::vector<MPXPair> contract0120 {{MPXPair(0,1), MPXPair(2,0)}};
   static const std::vector<MPXPair> contract0130 {{MPXPair(0,1), MPXPair(3,0)}};
   static const std::vector<MPXPair> contract0210 {{MPXPair(0,2), MPXPair(1,0)}};
+  static const std::vector<MPXPair> contract0241 {{MPXPair(0,2), MPXPair(4,1)}};
+  static const std::vector<MPXPair> contract0310 {{MPXPair(0,3), MPXPair(1,0)}};
+  static const std::vector<MPXPair> contract0311 {{MPXPair(0,3), MPXPair(1,1)}};
+
   static const std::vector<MPXPair> contract1071 {{MPXPair(1,0), MPXPair(7,1)}};
   static const std::vector<MPXPair> contract1122 {{MPXPair(1,1), MPXPair(2,2)}};
   static const std::vector<MPXPair> contract1130 {{MPXPair(1,1), MPXPair(3,0)}};

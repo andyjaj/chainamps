@@ -17,8 +17,6 @@
 
 namespace ajaj{
 
-  typedef EigenStateArray Basis;
-
 /** Vertex Operator class contains the matrix elements and the name of an operator of the local (site or integrable chain) Hilbert space.
  *
  */

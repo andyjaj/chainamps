@@ -176,6 +176,53 @@ namespace ajaj {
 
   void SparseMatrix::print_emptyness() const {if(is_finalised()) {std::cout << std::setprecision(16); std::cout << 1.0-double(get_p(cols()))/double(rows()*cols()) << std::endl;}}
 
+  SparseMatrix SparseMatrix::ExtractSubMatrix(const std::pair<Sparseint,Sparseint>& RowRange, const std::pair<Sparseint,Sparseint>& ColRange) const {
+
+    //std::cout << RowRange.first << " " << RowRange.second <<std::endl;
+    //std::cout << ColRange.first << " " << ColRange.second <<std::endl;
+
+    if (ColRange.first < 0 || RowRange.first < 0 || ColRange.second >= cols() || RowRange.second >= rows()) {
+      std::cout << "Illegal range for sparse matrix extraction" <<std::endl;
+      return SparseMatrix();
+    }
+    Sparseint num_cols(ColRange.second-ColRange.first+1);
+    Sparseint num_rows(RowRange.second-RowRange.first+1);
+
+    //std::cout << num_rows << " " << num_cols <<std::endl;
+  
+    //first pass, count nz
+    Sparseint new_nz=0;
+    for (Sparseint col=ColRange.first;col<=ColRange.second;++col){
+      for (Sparseint p=get_p(col);p<get_p(col+1);++p){
+	if (get_i(p) > RowRange.second) break; //beyond row range already, skip to next col
+	else if (get_i(p) >= RowRange.first) ++new_nz;
+	else {continue;}
+      }
+    }
+    //std::cout << new_nz << std::endl;
+    //allocate
+    SparseMatrix ans(num_rows,num_cols,new_nz,1);
+
+    //second pass, fill values, create new p, and i
+    
+    Sparseint count(0);
+    Sparseint new_col(0);
+    for (Sparseint col=ColRange.first;col<=ColRange.second;++col){
+      ans.put_p(new_col)=count;
+      for (Sparseint p=get_p(col);p<get_p(col+1);++p){
+	if (get_i(p) > RowRange.second) break; //outside range
+	else if (get_i(p) >= RowRange.first) {
+	  ans.put_i(count)=get_i(p)-RowRange.first;
+	  ans.put_x(count++)=get_x(p);
+	}
+      }
+      ++new_col;
+    }
+    ans.put_p(new_col)=count;
+    if (new_nz!=count) {std::cout << "ExtractSubMatrix error " << new_nz << " " << count << std::endl; return SparseMatrix();}
+    else return ans;
+  }
+
 
   SparseMatrix SparseMatrix::ExtractSubMatrix(Sparseint num_row_idxs,const std::vector<Sparseint>& old_idx_dims,const std::vector<std::pair<Sparseint,Sparseint> >& IndexVal,const bool conjugate) const {
     std::vector<std::pair<Sparseint,Sparseint> > RowIndexVal;
@@ -201,12 +248,11 @@ namespace ajaj {
     NTrowidxs.erase(NTrowidxs.end()-RowIndexVal.size(),NTrowidxs.end());
     for (std::vector<std::pair<Sparseint,Sparseint> >::const_iterator cit=ColIndexVal.begin();cit!=ColIndexVal.end();++cit){
       std::remove(NTcolidxs.begin(),NTcolidxs.end(),cit->first);
-      //container size doesn't change!
     }
     NTcolidxs.erase(NTcolidxs.end()-ColIndexVal.size(),NTcolidxs.end());
 
-    Sparseint new_num_rows=1;
-    Sparseint new_num_cols=1;
+    Sparseint new_num_rows(1);
+    Sparseint new_num_cols(1);
 
     for (std::vector<Sparseint>::const_iterator cit=NTrowidxs.begin();cit!=NTrowidxs.end();++cit){
       new_num_rows*=old_idx_dims[*cit];
@@ -220,12 +266,6 @@ namespace ajaj {
     for (Sparseint old_c=0;old_c<m_array->n;++old_c){ //column
       //take apart the column index
       index_decompose(old_c,old_idx_dims.size()-num_row_idxs,old_idx_dims.data()+num_row_idxs,&(old_idxs[num_row_idxs]));
-      /*Sparseint col_div=old_c;
-      for (Sparseint cp=0;cp<num_col_idxs-1;++cp){
-	old_idxs[cp+num_row_idxs]=col_div % old_idx_dims[num_row_idxs+cp];
-	col_div/=old_idx_dims[num_row_idxs+cp];
-      }
-      old_idxs[old_idx_dims.size()-1]=(col_div);*/
       bool colskipflag=0; //check we have a col index that matches our sub matrix
       for (std::vector<std::pair<Sparseint,Sparseint> >::const_iterator cit=ColIndexVal.begin();cit!=ColIndexVal.end();++cit){
 	if (cit->second!=old_idxs[cit->first]){
@@ -238,12 +278,6 @@ namespace ajaj {
 	for (Sparseint p=m_array->p[old_c];p<m_array->p[old_c+1];++p){ //row pointer
 	  //now do the same for the row index
 	  index_decompose(m_array->i[p],num_row_idxs,old_idx_dims.data(),old_idxs);
-	/*Sparseint row_div=old_i;
-	  for (Sparseint ip=0;ip<num_row_idxs-1;++ip){
-	    old_idxs[ip]=(row_div % old_idx_dims[ip]);
-	    row_div/=old_idx_dims[ip];
-	  }
-	  old_idxs[num_row_idxs-1]=(row_div);*/
 	  bool rowskipflag=0; //check we have a row index that matches our sub matrix
 	  for (std::vector<std::pair<Sparseint,Sparseint> >::const_iterator cit=RowIndexVal.begin();cit!=RowIndexVal.end();++cit){
 	    if (cit->second!=old_idxs[cit->first]){

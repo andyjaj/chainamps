@@ -132,6 +132,8 @@ namespace ajaj {
 
   /** Special routine to measure the energy per vertex, because Hamiltonian is a lower triangular matrix product operator */
   std::complex<double> SimpleEnergy(const MPO_matrix& LeftH,const MPO_matrix& RightH,const MPO_matrix& H1,const MPO_matrix& I,const UnitCell& Ortho);
+  std::complex<double> SophisticatedEnergy(const MPO_matrix& ColX,const MPO_matrix& RowX,const MPO_matrix& H1,const UnitCell& Ortho);
+
 }
 
 #endif

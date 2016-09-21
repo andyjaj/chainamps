@@ -595,19 +595,6 @@ namespace ajaj {
   }
 
   MPX_matrix MPX_matrix::ExtractSubMPX(const std::vector<MPXPair >& IndexVal) const {
-    //sets some indices to certain values
-    //making their MPXIndex trivial
-    /*MPX_matrix ans(*(m_SpectrumPtr)); 
-    //set NumRowIndices
-    ans.m_NumRowIndices=m_NumRowIndices;
-    //copy MPXIndices
-    ans.m_Indices=m_Indices;
-    //then overwrite the trivial ones
-    for (std::vector<MPXPair>::const_iterator cit=IndexVal.begin();cit!=IndexVal.end();++cit){
-      ans.m_Indices.at(cit->first)=MPXIndex(m_Indices.at(cit->first),cit->second);
-    }
-    //now make a new sparsematrix
-    ans.m_Matrix=m_Matrix.ExtractSubMatrix(m_NumRowIndices,dimsvector(),IndexVal,0);*/
     MPX_matrix ans(*(m_SpectrumPtr),m_Indices,m_NumRowIndices,m_Matrix.ExtractSubMatrix(m_NumRowIndices,dimsvector(),IndexVal,0)); 
     for (std::vector<MPXPair>::const_iterator cit=IndexVal.begin();cit!=IndexVal.end();++cit){
       ans.m_Indices.at(cit->first)=MPXIndex(m_Indices.at(cit->first),cit->second);
@@ -877,6 +864,27 @@ namespace ajaj {
     m_NumRowIndices=2;
     m_Matrix=SparseMatrix(values,inverse);
   }
+
+  MPO_matrix MPO_matrix::ExtractMPOBlock(const std::pair<MPXInt,MPXInt>& matrix_index_row_range, const std::pair<MPXInt,MPXInt>& matrix_index_col_range) const {
+    //get row range and col range
+    std::pair<MPXInt,MPXInt> array_row_range(matrix_index_row_range.first*basis().size(),(matrix_index_row_range.second+1)*basis().size()-1);
+    std::pair<MPXInt,MPXInt> array_col_range(matrix_index_col_range.first*basis().size(),(matrix_index_col_range.second+1)*basis().size()-1);
+
+   StateArray row_matrix_index;
+   for (MPXInt r=matrix_index_row_range.first;r<=matrix_index_row_range.second;++r){
+      row_matrix_index.emplace_back(Index(1)[r]);
+    }
+
+   StateArray col_matrix_index;
+   for (MPXInt c=matrix_index_col_range.first;c<=matrix_index_col_range.second;++c){
+      col_matrix_index.emplace_back(Index(3)[c]);
+    }
+    
+    return MPO_matrix(basis(),std::vector<MPXIndex>({{1,basis()},{1,std::move(row_matrix_index)},{0,basis()},{0,std::move(col_matrix_index)}}),m_Matrix.ExtractSubMatrix(array_row_range,array_col_range));
+
+  }
+
+
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

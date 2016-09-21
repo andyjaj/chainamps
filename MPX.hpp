@@ -19,7 +19,6 @@
 #include <cstdlib>
 #include <numeric>
 
-
 #include "ajaj_common.hpp"
 #include "sparse_interface.hpp"
 #include "states.hpp"
@@ -71,6 +70,8 @@ namespace ajaj {
     const StateArray* m_IndexStatesPtr; //ptr to the states
   public:
     MPXIndex(bool inward,const StateArray& indexstates) : m_isInward(inward),m_isPhysical(0),m_IndexStates(indexstates),m_IndexStatesPtr(&m_IndexStates){}; /**< Construct a matrix index */
+    MPXIndex(bool inward,StateArray&& indexstates) : m_isInward(inward),m_isPhysical(0),m_IndexStates(indexstates),m_IndexStatesPtr(&m_IndexStates){}; /**< Construct a matrix index */
+
     MPXIndex(bool inward,const EigenStateArray& spectrum) : m_isInward(inward),m_isPhysical(1),m_IndexStatesPtr(&spectrum){}; /**< Construct a physical index. */
     MPXIndex(const MPXIndex& other) : m_isInward(other.m_isInward),m_isPhysical(other.m_isPhysical),m_IndexStates(other.m_IndexStates),m_IndexStatesPtr(m_isPhysical ? other.m_IndexStatesPtr : &m_IndexStates){}; /**< Copy constructor */
     MPXIndex(MPXIndex&& other) noexcept : m_isInward(other.m_isInward),m_isPhysical(other.m_isPhysical),m_IndexStates(std::move(other.m_IndexStates)),m_IndexStatesPtr(m_isPhysical ? other.m_IndexStatesPtr : &m_IndexStates){};/**< Move constructor */
@@ -133,6 +134,7 @@ namespace ajaj {
     const MPXIndex& Index(Sparseint i) const {return m_Indices.at(i);} /**< Lookup the StateArray corresponding to a particular index, interface to storage.*/
     const EigenStateArray& GetPhysicalSpectrum() const {return *m_SpectrumPtr;} /**< Return ref to the Physical spectrum, needs renaming to match convention */
     const EigenStateArray& getPhysicalSpectrum() const {return *m_SpectrumPtr;} /**< Return ref to the Physical spectrum */
+    const Basis& basis() const {return *m_SpectrumPtr;}
     bool isConsistent() const; /**< Check dimensions of SparseMatrix match the dimensions of the indices.*/
     std::vector<Sparseint> dimsvector() const; /**< Return a vector containing all the dimensions of the MPXIndex indices, from left to right. */
     void print_matrix() const; /**< Print the SparseMatrix */
@@ -140,7 +142,7 @@ namespace ajaj {
     void print_sparse_info() const {m_Matrix.print_sparse_info();}
     bool fprint_binary(std::ofstream& outfile) const; /**< Print the MPX_matrix to file in binary format. */
     bool store(const std::string& filename) const; /**< Print the MPX_matrix to file in binary format. */
-    MPX_matrix ExtractSubMPX(const std::vector<MPXPair>& Indexvals) const; /**< Extract a Sub MPX_matrix by giving some indices fixed values according to the pairs in Indexvals . */ 
+    MPX_matrix ExtractSubMPX(const std::vector<MPXPair>& Indexvals) const; /**< Extract a Sub MPX_matrix by giving some indices fixed values according to the pairs in Indexvals . */
     std::vector<BlockStateIndices> GetAllBlockColumns() const; /**< Return a vector of BlockStateIndices corresponding to all the groups of columns with the same quantum numbers.*/
     BlockStateIndices GetBlockColumns(const State& specficstate) const; /**< Return BlockStateIndices for the quantum numbers specified by specificstate. */
     BlockStateIndices GetBlockRows(const State& specficstate) const; /**< Return BlockStateIndices for the quantum numbers specified by specificstate. */
@@ -165,6 +167,8 @@ namespace ajaj {
     complex<double> Trace() const {return m_Matrix.trace();} /**< If MPX_matrix is square, find the trace.*/
     MPX_matrix RestrictColumnIndex();
     MPX_matrix& CombineSimilarMatrixIndices(bool PhysicalInMiddle=0);
+
+
 
     //void swap(MPX_matrix& other);
 
@@ -285,6 +289,9 @@ namespace ajaj {
     MPO_matrix(MPX_matrix&& MPXref) noexcept;
     MPO_matrix(const EigenStateArray& spectrum, const MPXIndex& index, const std::vector<complex<double> >& values,bool inverse=0);
     MPO_matrix(const EigenStateArray& spectrum, const MPXIndex& index, const std::vector<double>& values,bool inverse=0);
+
+    MPO_matrix ExtractMPOBlock(const std::pair<MPXInt,MPXInt>& row_matrix_index_range, const std::pair<MPXInt,MPXInt>& col_matrix_index_range) const;
+
   };
 
   /** Create an identity MPO_matrix. Corresponds to an identity operator.*/
@@ -466,8 +473,6 @@ namespace ajaj {
     const std::vector<double>& GetLambda(size_t i) {return Lambdas.at(i);}
     void OutputPhysicalIndexDensities(std::ofstream& d) const;
     void OutputOneVertexDensityMatrix(std::ofstream& d) const;
-
-
   };
 
   /** Sometimes after a decomposition we need to figure out the new charges of all the rows, which we can do using the columns and the sparse structure.*/
