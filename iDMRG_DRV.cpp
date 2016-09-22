@@ -46,19 +46,19 @@ int main(int argc, char** argv){
     const ajaj::MPO_matrix ColX(myModel.H_MPO.ExtractMPOBlock(std::pair<ajaj::MPXInt,ajaj::MPXInt>(1,myModel.H_MPO.Index(1).size()-2),std::pair<ajaj::MPXInt,ajaj::MPXInt>(0,0)));
     const ajaj::MPO_matrix RowX(myModel.H_MPO.ExtractMPOBlock(std::pair<ajaj::MPXInt,ajaj::MPXInt>(myModel.H_MPO.Index(1).size()-1,myModel.H_MPO.Index(1).size()-1),std::pair<ajaj::MPXInt,ajaj::MPXInt>(1,myModel.H_MPO.Index(3).size()-2)));
 
-    std::vector<double> iDMRGEnergies;
-    std::vector<double> iDMRGEnergies_2;
+    //std::vector<double> iDMRGEnergies_simple;
+    std::vector<double> iDMRGEnergies_accurate;
 
     ajaj::DataOutput infvolresults("iDMRGEnergies.dat");
     for (ajaj::uMPXInt r=0;r< (steps>2 ? steps-2 : 0) ;++r){
       infvol.run(1,-0.0,CHI,minS);
       ajaj::UnitCell Ortho(OrthogonaliseInversionSymmetric(infvol.getCentralDecomposition(),infvol.getPreviousLambda()));
       //at the moment measuring the energy is done in an inelegant way
-      iDMRGEnergies.push_back(real(ajaj::SimpleEnergy(LeftH,RightH,H1,I,Ortho)));
-      iDMRGEnergies_2.push_back(real(ajaj::SophisticatedEnergy(ColX,RowX,H1,Ortho)));
+      //iDMRGEnergies_simple.push_back(real(ajaj::SimpleEnergy(LeftH,RightH,H1,I,Ortho)));
+      iDMRGEnergies_accurate.push_back(real(ajaj::SophisticatedEnergy(ColX,RowX,H1,Ortho)));
 
-      std::cout << "iDMRG energy per vertex " << iDMRGEnergies.back() << " " << iDMRGEnergies_2.back()  << std::endl;
-      ajaj::Data inf_data(std::vector<double>({{iDMRGEnergies.back(),iDMRGEnergies_2.back(),ajaj::entropy(*(Ortho.Lambdas.begin()))}}));
+      std::cout << "iDMRG energy per vertex " << iDMRGEnergies_accurate.back() << std::endl;
+      ajaj::Data inf_data(std::vector<double>({{iDMRGEnergies_accurate.back(),ajaj::entropy(*(Ortho.Lambdas.begin()))}}));
       infvolresults.push(inf_data);
       {
 	std::stringstream DensityMatrixNameStream;
@@ -71,15 +71,13 @@ int main(int argc, char** argv){
     }
     auto t2 = std::chrono::high_resolution_clock::now();
 
-    std::cout << "SUMMARY" << std::endl;
+    std::cout << "SUMMARY of iDMRG thermodynamic energy per vertex" << std::endl;
     std::cout << std::setprecision(16);
-    for (std::vector<double>::const_iterator cit=iDMRGEnergies.begin();cit!=iDMRGEnergies.end();++cit){
-      std::cout << "iDMRG thermodynamic limit energy per vertex: " << *cit << std::endl;
+    for (auto iE : iDMRGEnergies_accurate){
+      std::cout << iE << std::endl;
     }
     std::cout << "Run took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() << " milliseconds" << std::endl;
-    for (std::vector<double>::const_iterator cit=iDMRGEnergies_2.begin();cit!=iDMRGEnergies_2.end();++cit){
-      std::cout << "Alternate iDMRG thermodynamic limit energy per vertex: " << *cit << std::endl;
-    }
+    
     return 0;
   }
   return 1;

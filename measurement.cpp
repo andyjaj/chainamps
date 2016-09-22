@@ -44,12 +44,13 @@ namespace ajaj {
     }
   }
 
-  SparseED TransferMatrixParts::LeftED(Sparseint numevals, char which[3],SparseMatrix* initial){
-    //set up workspace (Evals, Evecs) SparseHED
-    //MPXInt fulldim(m_length);
-    
-    if (m_length<500){
-      //use dense method
+  SparseED TransferMatrixParts::LeftED(Sparseint numevals, char which[3],SparseMatrix* initial){    
+    std::cout <<"Eigensolver for matrix of length " << this->length() << std::endl;
+    std::cout <<"Using reduced subspace of length " << allowed_indices.size() <<std::endl;
+
+    if (m_length<1000){
+      //use simple method
+      std::cout << "Simple method" <<std::endl;
       MPX_matrix TM(MakeLTransferMatrix(BraCell,KetCell));
       return TM.LeftEigs(numevals,which,initial);
     }
@@ -60,7 +61,7 @@ namespace ajaj {
       
       SparseVectorWithRestriction guess_struct(initial,&allowed_indices);
       arpack::arpack_eigs<TransferMatrixParts,SparseVectorWithRestriction> eigensystem(this,&LeftTransferMatrixMultiply,allowed_indices.size(),initial ? &guess_struct : NULL,&ConvertSparseVectorWithRestriction,numevals,which,Evals,Evecs);
-      if (eigensystem.error_status()) {std::cout << "error with tensor arpack" << std::endl;exit(1);}
+      if (eigensystem.error_status()) {std::cout << "Error with tensor arpack" << std::endl;exit(1);}
       for (size_t v=0;v<static_cast<size_t>(numevals);++v){
 	std::cout << "Eval: " << Evals[v] <<std::endl;
 	ans.Values.push_back(Evals[v]);

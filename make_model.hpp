@@ -327,7 +327,8 @@ namespace ajaj{
 	  h_array.finalise();
 	  //build MPO
 	  UserModel.H_MPO=MakeGeneralHMPO(UserModel.vertex,couplings);
-
+	  std::cout << "MPO matrix info:" <<std::endl;
+	  UserModel.H_MPO.print_indices();
 	  return UserModel;
 
 	}

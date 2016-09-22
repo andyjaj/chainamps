@@ -27,7 +27,7 @@ ajaj::MPO_matrix MakeHamiltonian(const ajaj::Vertex& modelvertex, const ajaj::Ve
     M.entry(i+offset_to_last_block,i+offset_to_last_block,1.0);
   }
   //need the hx part too
-  if (couplingparams[1].Value!=0.0){
+  if (couplingparams.size()>1 && couplingparams[1].Value!=0.0){
     M.entry(0+offset_to_last_block,1,couplingparams[1].Value);
     M.entry(1+offset_to_last_block,0,couplingparams[1].Value);
   }

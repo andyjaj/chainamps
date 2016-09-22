@@ -744,14 +744,7 @@ namespace ajaj {
       TranslationBlock<DenseMatrix> TB(contract_conditional<DenseMatrix>(LeftPart,0,RightPart,0,contract21,condition));
       //use lapack
       DenseHED dense_ans(TB.Block.HED(numevals,which));
-      //copy answers across (needless overhead, but not that big if max size is 100)
-      //std::copy_n(dense_ans.Values,numevals,Evals);
-      //still wrong...
-      //exit(1);
       return SparseHED(std::vector<double>(dense_ans.Values,dense_ans.Values+numevals),TB.TranslateRows(dense_ans.EigenVectors));
-      //DenseMatrix dm(TB.TranslateRows(dense_ans.EigenVectors));
-      
-      //move_to_dumb_array(dm,Evecs);
     }
     else {
       std::cout <<"Allocate storage for evals and evecs" << std::endl;

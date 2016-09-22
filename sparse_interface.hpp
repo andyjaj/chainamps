@@ -239,13 +239,13 @@ namespace ajaj {
   public:
     std::vector<T> Values;
     Sparseint ValuesSize() const {return Values.size();}
-    SparseDecompositionBase() : lineardim(0){
+    SparseDecompositionBase() : lineardim(0){}
+    SparseDecompositionBase(const Sparseint& L) : lineardim(L){Values.reserve(L);}
+    SparseDecompositionBase(std::vector<T>&& vals) : lineardim(vals.size()),Values(std::move(vals)){}
+    void printValues() const {
+      for (typename std::vector<T>::const_iterator it=Values.begin();it!=Values.end();++it){std::cout << *it << " ";} 
+      std::cout << std::endl;
     }
-    SparseDecompositionBase(const Sparseint& L) : lineardim(L){
-    }
-    SparseDecompositionBase(std::vector<T>&& vals) : lineardim(vals.size()),Values(std::move(vals)){
-    }
-    void printValues() const {for (typename std::vector<T>::const_iterator it=Values.begin();it!=Values.end();++it){std::cout << *it << " ";} std::cout << std::endl;}
   };
 
   class SparseSVD :public SparseDecompositionBase<double> {
@@ -283,10 +283,10 @@ namespace ajaj {
     const Sparseint m_dim;
   public:
     SparseMatrix EigenVectors;
-    SparseED(const Sparseint& dim, const Sparseint& numevals) : SparseDecompositionBase<complex<double> >(numevals),m_dim(dim),EigenVectors(SparseMatrix(m_dim,numevals)) {
+    SparseED(const Sparseint& dim, const Sparseint& numevals) : SparseDecompositionBase<std::complex<double> >(numevals),m_dim(dim),EigenVectors(SparseMatrix(m_dim,numevals)) {
       //EigenVectors=SparseMatrix(m_dim,numevals);
     }
-    SparseED(SparseED&& other) noexcept : m_dim(other.m_dim), EigenVectors(std::move(other.EigenVectors)){}
+    SparseED(SparseED&& other) noexcept : SparseDecompositionBase<std::complex<double> >(std::move(other.Values)), m_dim(other.m_dim), EigenVectors(std::move(other.EigenVectors)){}
     //~SparseED(){};
   };
 

@@ -5,7 +5,7 @@ option(TBB "Use tbb" ON)
 
 #Requires c++11 compile flag
 set(CMAKE_CXX_FLAGS "-std=c++11")
-set(CMAKE_BUILD_TYPE Release)
+#set(CMAKE_BUILD_TYPE Release)
 add_compile_options(-Wno-return-type-c-linkage -m64 -march=native -mtune=native)
 
 #Required dependencies are BLAS/LAPACK, cxsparse and ARPACK. All should be compiled to use 64 bit integers!
@@ -33,6 +33,7 @@ include_directories(${PROJECT_SOURCE_DIR}/vertex_generators ${PROJECT_SOURCE_DIR
 include_directories(${PROJECT_SOURCE_DIR}/optionparser)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+  #needs LAPACK_ILP64 defined for openblas ilp 64
   add_definitions(-DLAPACK_ILP64)
   #probably need gfortran too
   find_library(GFORTRAN_LIBRARIES gfortran HINTS ${LIB_HINT} PATHS /usr/lib64/ /usr/local/ /usr/)
