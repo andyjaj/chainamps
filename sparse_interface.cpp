@@ -1844,15 +1844,15 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 
     //first calculate the number of nonzeros in the answer
     Sparseint* col_ptrs=allocate_nonzero_totals(lhs.m_array,rhs.m_array);// col_ptrs[rhs.cols()]=number of non zeros in answer
-    if (col_ptrs[rhs.cols()]==0){
+    if (col_ptrs[rhs.cols()]==0){//empty
       cs_free(col_ptrs);
       return std::move(SparseMatrix(lhs.rows(),rhs.cols(),1).cheap_finalise());
     }
     else {
 #if defined(USETBB)
       {      //try to predict whether TBB is useful here
-	size_t chunksize= TBBNZ*rhs.cols()/col_ptrs[rhs.cols()];
-	if (chunksize<rhs.cols()){
+	//size_t chunksize= TBBNZ*rhs.cols()/col_ptrs[rhs.cols()];
+	//if (chunksize<rhs.cols()){
 	  //std::cout << "THREADED" <<std::endl;
 	  bool swap_and_transpose=NoSort ? 0 : (lhs.nz()+rhs.nz()<col_ptrs[rhs.cols()]);
 	  if (swap_and_transpose){
@@ -1868,14 +1868,11 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 	  else {
 	    reduce_sparse body(lhs.m_array,rhs.m_array,col_ptrs,NoSort);
 	    tbb::parallel_reduce(tbb::blocked_range<SuiteSparse_long>(0,rhs.m_array->n),body);
-	    /*if (!NoSort){
-	      order_rows(body.ans_);
-	      }*/
 	    return SparseMatrix(body.ans_,1);
 	  }
-	}
+	  //}
       }
-#endif
+#elif
       {
 	//no TBB
 	//std::cout << "NOT THREADED" <<std::endl;
@@ -1944,6 +1941,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 	}
 	return ans;
       }
+#endif
     }
   }
 

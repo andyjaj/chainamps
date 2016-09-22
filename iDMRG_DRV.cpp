@@ -58,7 +58,7 @@ int main(int argc, char** argv){
       iDMRGEnergies_2.push_back(real(ajaj::SophisticatedEnergy(ColX,RowX,H1,Ortho)));
 
       std::cout << "iDMRG energy per vertex " << iDMRGEnergies.back() << " " << iDMRGEnergies_2.back()  << std::endl;
-      ajaj::Data inf_data(std::vector<double>({{iDMRGEnergies.back(),ajaj::entropy(*(Ortho.Lambdas.begin()))}}));
+      ajaj::Data inf_data(std::vector<double>({{iDMRGEnergies.back(),iDMRGEnergies_2.back(),ajaj::entropy(*(Ortho.Lambdas.begin()))}}));
       infvolresults.push(inf_data);
       {
 	std::stringstream DensityMatrixNameStream;
@@ -78,7 +78,7 @@ int main(int argc, char** argv){
     }
     std::cout << "Run took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() << " milliseconds" << std::endl;
     for (std::vector<double>::const_iterator cit=iDMRGEnergies_2.begin();cit!=iDMRGEnergies_2.end();++cit){
-      std::cout << "iDMRG thermodynamic limit energy 2 per vertex: " << *cit << std::endl;
+      std::cout << "Alternate iDMRG thermodynamic limit energy per vertex: " << *cit << std::endl;
     }
     return 0;
   }
