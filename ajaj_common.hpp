@@ -62,6 +62,8 @@ namespace ajaj {
   static const std::vector<MPXPair> contract2150 {{MPXPair(2,1), MPXPair(5,0)}};
   static const std::vector<MPXPair> contract3150 {{MPXPair(3,1), MPXPair(5,0)}};
   static const std::vector<MPXPair> contract5472 {{MPXPair(5,4), MPXPair(7,2)}};
+  static const std::vector<MPXPair> contract7254 {{MPXPair(7,2), MPXPair(5,4)}};
+
 
   static const std::vector<MPXPair> contract116276 {{MPXPair(1,1), MPXPair(6,2), MPXPair(7,6)}};
   static const std::vector<MPXPair> contract116293 {{MPXPair(1,1), MPXPair(6,2), MPXPair(9,3)}};
@@ -72,6 +74,7 @@ namespace ajaj {
   static const std::vector<MPXInt> reorder102 {{1,0,2}};
   static const std::vector<MPXInt> reorder135 {{1,3,5}};
   static const std::vector<MPXInt> reorder0213 {{0,2,1,3}};
+  static const std::vector<MPXInt> reorder0132 {{0,1,3,2}};
   static const std::vector<MPXInt> reorder032415 {{0,3,2,4,1,5}};
   static const std::vector<MPXInt> reorder203145 {{2,0,3,1,4,5}};
   static const std::vector<MPXInt> reorder021354 {{0,2,1,3,5,4}};

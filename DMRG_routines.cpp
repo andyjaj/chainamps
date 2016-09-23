@@ -688,10 +688,11 @@ namespace ajaj {
     RightPart.print_sparse_info();
 #endif
 
-    indices.emplace_back(1,LeftPart.Index(1));
-    indices.emplace_back(1,LeftPart.Index(7));
-    indices.emplace_back(1,RightPart.Index(2));
-    indices.emplace_back(0,RightPart.Index(6));
+    indices.emplace_back(1,HMPO.Index(2));
+    indices.emplace_back(1,LeftBlock.Index(5));
+    indices.emplace_back(1,HMPO.Index(2));
+    indices.emplace_back(0,RightBlock.Index(4));
+
     const MPXIndex& sigma1(indices[0]);
     const MPXIndex& a0(indices[1]);
     const MPXIndex& sigma2(indices[2]); 
@@ -699,25 +700,27 @@ namespace ajaj {
 
     vrows=sigma1.size()*a0.size();
     vcols=sigma2.size()*a2.size();
+
     for (uMPXInt c_a2=0;c_a2<a2.size();++c_a2){
-      if (TargetStatePtr){ //have we set a target state here? If so, do we have a match, are we in the target state sector?
-	if (a2[c_a2] != *(TargetStatePtr)){continue;}
-      }
-      for (Sparseint c_s2=0;c_s2<sigma2.size();++c_s2){
+      //if (TargetStatePtr){ //have we set a target state here? If so, do we have a match, are we in the target state sector?
+      //	if (a2[c_a2] != *(TargetStatePtr)){continue;}
+      //}
+      for (MPXInt c_s2=0;c_s2<sigma2.size();++c_s2){
 	State loop2acc(a2[c_a2]-sigma2[c_s2]);
-	Sparseint colpart(c_s2+sigma2.size()*c_a2);
-	for (Sparseint r_a0=0;r_a0<a0.size();++r_a0){
+	MPXInt colpart(c_s2+sigma2.size()*c_a2);
+	for (MPXInt r_a0=0;r_a0<a0.size();++r_a0){
 	  State loop3acc(loop2acc-a0[r_a0]);
-	  for (Sparseint r_s1=0;r_s1<sigma1.size();++r_s1){
+	  for (MPXInt r_s1=0;r_s1<sigma1.size();++r_s1){
 	    if (sigma1[r_s1]==loop3acc && (!TargetStatePtr || (a2[c_a2]-a0[r_a0]==*(TargetStatePtr)))){ //check for consistency of charges, and optionally if basis is in target sector
 	      
 	      allowed_indices.push_back(r_s1+sigma1.size()*r_a0+sigma1.size()*a0.size()*colpart);
-	      rows_and_cols.push_back(std::array<Sparseint,2> {{r_s1+sigma1.size()*r_a0,colpart}});
+	      rows_and_cols.push_back(std::array<MPXInt,2> {{r_s1+sigma1.size()*r_a0,colpart}});
 	    }
 	  }
 	}
       }
     }
+
     if (ProjectorsPtr){
       const std::vector<ProjectorBlocks>& PBvec(*ProjectorsPtr);
       for (auto&& pb : PBvec){
@@ -727,7 +730,7 @@ namespace ajaj {
     }
   };
 
-  SparseHED TwoVertexComponents::HED(Sparseint numevals, char which[3],const SparseMatrix* initial){
+  SparseHED TwoVertexComponents::HED(MPXInt numevals, char which[3],const SparseMatrix* initial){
     //set up workspace (Evals, Evecs) SparseHED
     uMPXInt fulldim(this->length());
     std::cout <<"Eigensolver for matrix of length " << fulldim << std::endl;
@@ -741,7 +744,8 @@ namespace ajaj {
     if (allowed_indices.size()<400){
       //just make the (dense) matrix and use lapack
       static std::pair<const std::vector<MPXInt>,const std::vector<MPXInt> > condition={{1,7},{2,6}};
-      TranslationBlock<DenseMatrix> TB(contract_conditional<DenseMatrix>(LeftPart,0,RightPart,0,contract21,condition));
+      //TranslationBlock<DenseMatrix> TB(contract_conditional<DenseMatrix>(LeftPart,0,RightPart,0,contract21,condition));
+      TranslationBlock<DenseMatrix> TB(contract_conditional<DenseMatrix>(contract(H,0,LeftBlock,0,contract13),0,contract(H,0,RightBlock,0,contract32),0,contract21,condition));
       //use lapack
       DenseHED dense_ans(TB.Block.HED(numevals,which));
       return SparseHED(std::vector<double>(dense_ans.Values,dense_ans.Values+numevals),TB.TranslateRows(dense_ans.EigenVectors));
@@ -761,14 +765,14 @@ namespace ajaj {
 	double maxabsvalue=0.0;
 	std::complex<double> maxvalue=0.0;
 	//first pass find largest abs value
-	for (Sparseint i=0;i<allowed_indices.size();++i){
+	for (MPXInt i=0;i<allowed_indices.size();++i){
 	  if (abs(Evecs[i+v*allowed_indices.size()])>maxabsvalue){
 	    maxabsvalue = abs(maxvalue=Evecs[i+v*allowed_indices.size()]);
 	  }
 	}
 	maxvalue=maxabsvalue/maxvalue;
 	//now get rid of possible phase
-	for(Sparseint i=0;i<allowed_indices.size();++i){
+	for(MPXInt i=0;i<allowed_indices.size();++i){
 	  std::complex<double> value=Evecs[i+v*allowed_indices.size()]*maxvalue;
 	  if (abs(value)>SPARSETOL*maxabsvalue){
 	    //convert back to real rows
@@ -785,7 +789,7 @@ namespace ajaj {
 
   void TwoVertexMPOMPSMultiply(TwoVertexComponents* arraystuff, std::complex<double> *in, std::complex<double> *out){
     SparseMatrix V(arraystuff->vcols,arraystuff->vrows,arraystuff->vrows);//undocumented behaviour of SparseMatrix, using transposed rows and cols to avoid unnecessary row ordering...
-    for (struct {std::vector<std::array<Sparseint,2> >::const_iterator cit; Sparseint idx;} itstruct ={arraystuff->rows_and_cols.begin(), 0};itstruct.cit!=arraystuff->rows_and_cols.end();++itstruct.cit,++itstruct.idx){
+    for (struct {std::vector<std::array<MPXInt,2> >::const_iterator cit; MPXInt idx;} itstruct ={arraystuff->rows_and_cols.begin(), 0};itstruct.cit!=arraystuff->rows_and_cols.end();++itstruct.cit,++itstruct.idx){
       V.entry((*(itstruct.cit))[1],(*(itstruct.cit))[0],in[itstruct.idx]);
     }
     MPX_matrix Vector(arraystuff->LeftPart.GetPhysicalSpectrum(),arraystuff->indices,2,V.cheap_no_transpose_finalise());
@@ -812,8 +816,6 @@ namespace ajaj {
 	//std::cout << "Done conjugation and rescale contraction" <<std::endl;
       }
     }
-
-
   }
 
 }

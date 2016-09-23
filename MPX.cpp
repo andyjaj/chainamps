@@ -120,7 +120,7 @@ namespace ajaj {
       //need ot flip indices if conjugation has occurred
       Indices.push_back(MPXIndex(conjA ? A.m_Indices.at(*cit).flip() : A.m_Indices.at(*cit))); 
     }
-    return MPX_matrix(*(A.m_SpectrumPtr),Indices,numrows,reshape(A.m_Matrix,A.m_NumRowIndices,numrows,A.dimsvector(),newindexorder,conjA));
+    return MPX_matrix(*(A.m_SpectrumPtr),Indices,numrows,cheap_reshape(A.m_Matrix,A.m_NumRowIndices,numrows,A.dimsvector(),newindexorder,conjA));
   }
 
   SparseMatrix contract_to_sparse(const MPX_matrix& A, bool conjA,const MPX_matrix& B,bool conjB, const std::vector<MPXPair>& contractidxs){
@@ -197,7 +197,7 @@ namespace ajaj {
     for (std::vector<Sparseint>::const_iterator cit=neworderB.begin()+contractidxs.size();cit!=neworderB.end();++cit){ //loop through remaining B indices
       Indices.emplace_back(conjB ? B.m_Indices.at(*cit).flip() : B.m_Indices.at(*cit));
     }
-    return MPX_matrix(*(A.m_SpectrumPtr),Indices,neworderA.size()-contractidxs.size(),std::move(reshape(A.m_Matrix,A.m_NumRowIndices,neworderA.size()-contractidxs.size(),A.dimsvector(),neworderA,conjA)*reshape(B.m_Matrix,B.m_NumRowIndices,contractidxs.size(),B.dimsvector(),neworderB,conjB)));
+    return MPX_matrix(*(A.m_SpectrumPtr),Indices,neworderA.size()-contractidxs.size(),std::move(cheap_reshape(A.m_Matrix,A.m_NumRowIndices,neworderA.size()-contractidxs.size(),A.dimsvector(),neworderA,conjA)*cheap_reshape(B.m_Matrix,B.m_NumRowIndices,contractidxs.size(),B.dimsvector(),neworderB,conjB)));
 
     //return MPX_matrix(*(A.m_SpectrumPtr),Indices,neworderA.size()-contractidxs.size(),std::move(NoTransMultiply(reshape(A.m_Matrix,A.m_NumRowIndices,neworderA.size()-contractidxs.size(),A.dimsvector(),neworderA,conjA),reshape(B.m_Matrix,B.m_NumRowIndices,contractidxs.size(),B.dimsvector(),neworderB,conjB)).order_rows()));
 

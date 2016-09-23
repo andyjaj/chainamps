@@ -39,9 +39,9 @@ int main(int argc, char** argv){
     //left orthogonalise the unit cell and produce the new singular values for the infinite state
     const ajaj::MPXIndex dummy(1,ajaj::StateArray(1,myModel.basis().getChargeRules())); 
     const ajaj::MPO_matrix H1(myModel.vertex.make_one_site_operator("Vertex_Hamiltonian")); //form the on-vertex part of a Hamiltonian
-    const ajaj::MPO_matrix I(ajaj::IdentityMPO_matrix(myModel.basis())); //form an identity MPO. Useful for some measurements
-    const ajaj::MPO_matrix LeftH(LeftOpenBCHamiltonian(myModel.H_MPO));
-    const ajaj::MPO_matrix RightH(RightOpenBCHamiltonian(myModel.H_MPO));
+    //const ajaj::MPO_matrix I(ajaj::IdentityMPO_matrix(myModel.basis())); //form an identity MPO. Useful for some measurements
+    //const ajaj::MPO_matrix LeftH(LeftOpenBCHamiltonian(myModel.H_MPO));
+    //const ajaj::MPO_matrix RightH(RightOpenBCHamiltonian(myModel.H_MPO));
 
     const ajaj::MPO_matrix ColX(myModel.H_MPO.ExtractMPOBlock(std::pair<ajaj::MPXInt,ajaj::MPXInt>(1,myModel.H_MPO.Index(1).size()-2),std::pair<ajaj::MPXInt,ajaj::MPXInt>(0,0)));
     const ajaj::MPO_matrix RowX(myModel.H_MPO.ExtractMPOBlock(std::pair<ajaj::MPXInt,ajaj::MPXInt>(myModel.H_MPO.Index(1).size()-1,myModel.H_MPO.Index(1).size()-1),std::pair<ajaj::MPXInt,ajaj::MPXInt>(1,myModel.H_MPO.Index(3).size()-2)));

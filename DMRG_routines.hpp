@@ -234,9 +234,9 @@ namespace ajaj {
     const State* TargetStatePtr;
 
     std::vector<MPXIndex> indices;
-    std::vector<Sparseint> allowed_indices;
-    std::vector<Sparseint> left_allowed_indices;
-    std::vector<std::array<Sparseint,2> > rows_and_cols;
+    std::vector<MPXInt> allowed_indices;
+    std::vector<MPXInt> left_allowed_indices;
+    std::vector<std::array<MPXInt,2> > rows_and_cols;
     uMPXInt vrows;
     uMPXInt vcols;
     MPX_matrix LeftPart;
@@ -245,7 +245,7 @@ namespace ajaj {
 
     TwoVertexComponents(const MPX_matrix& L, const MPO_matrix& HMPO, const MPX_matrix& R, const std::vector<ProjectorBlocks>* P=nullptr, const State* StatePtr=nullptr);
 
-    SparseHED HED(Sparseint numevals, char which[3],const SparseMatrix* initial=NULL);
+    SparseHED HED(MPXInt numevals, char which[3],const SparseMatrix* initial=NULL);
     MPXInt length(){return m_length;}
   private:
     uMPXInt m_length;
