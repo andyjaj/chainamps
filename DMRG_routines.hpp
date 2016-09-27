@@ -245,13 +245,13 @@ namespace ajaj {
 
     TwoVertexComponents(const MPX_matrix& L, const MPO_matrix& HMPO, const MPX_matrix& R, const std::vector<ProjectorBlocks>* P=nullptr, const State* StatePtr=nullptr);
 
-    SparseHED HED(MPXInt numevals, char which[3],const SparseMatrix* initial=NULL);
-    MPXInt length(){return m_length;}
+    SparseHED HED(MPXInt numevals, char which[3],const SparseMatrix* initial=NULL) const;
+    MPXInt length()const {return m_length;}
   private:
     uMPXInt m_length;
   };
 
-  void TwoVertexMPOMPSMultiply(TwoVertexComponents* array, std::complex<double> *in, std::complex<double> *out);
+  void TwoVertexMPOMPSMultiply(const TwoVertexComponents* array, std::complex<double> *in, std::complex<double> *out);
 
 }
 

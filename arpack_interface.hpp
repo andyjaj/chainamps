@@ -79,7 +79,7 @@ namespace arpack {
   template <typename ArrayType,typename GuessType>
   class arpack_eigs{
   public:
-    ArrayType* m_array_stuff; //input
+    const ArrayType* m_array_stuff; //input
     arpack_int m_length;
     GuessType* m_initial_guess; //possible input
     std::complex<double>* m_evals; //output
@@ -87,7 +87,7 @@ namespace arpack {
     arpack_workspace m_workspace; //workspace storage objects and params
 
     //need to set up workspace and get pointers to array (or components to make array) and ptrs to output containers
-    arpack_eigs(ArrayType* array_stuff, void (*MV)(ArrayType*,std::complex<double>*,std::complex<double>*), arpack_int length, GuessType* initial_guess, void (*converter)(GuessType*,std::complex<double>*), arpack_int num_e_vals, char which_e_vals[3], std::complex<double> *Evals, std::complex<double> *Evecs=NULL);
+    arpack_eigs(const ArrayType* array_stuff, void (*MV)(const ArrayType*,std::complex<double>*,std::complex<double>*), arpack_int length, GuessType* initial_guess, void (*converter)(GuessType*,std::complex<double>*), arpack_int num_e_vals, char which_e_vals[3], std::complex<double> *Evals, std::complex<double> *Evecs=NULL);
     ~arpack_eigs(){ delete[] resid; }
 
     void do_znaupd();
@@ -99,12 +99,12 @@ namespace arpack {
   private:
     std::complex<double>* resid;
     arpack_int m_cumulative_iterations;
-    void (*m_MV)(ArrayType*,std::complex<double>*,std::complex<double>*);
+    void (*m_MV)(const ArrayType*,std::complex<double>*,std::complex<double>*);
     void (*m_converter)(GuessType*,std::complex<double>*);
   };
 
   template <typename ArrayType, typename GuessType>
-  arpack_eigs<ArrayType,GuessType>::arpack_eigs(ArrayType* array_stuff, void (*MV)(ArrayType*,std::complex<double>*,std::complex<double>*), arpack_int length, GuessType* initial_guess, void (*converter)(GuessType*,std::complex<double>*), arpack_int num_e_vals, char which_e_vals[3], std::complex<double> *Evals, std::complex<double> *Evecs) : m_array_stuff(array_stuff), m_MV(MV), m_length(length), m_initial_guess(initial_guess),m_converter(converter),m_evals(Evals),m_evecs(Evecs),m_workspace(m_length,num_e_vals,which_e_vals,Evals,Evecs ? 1 : 0, Evecs,NULL),m_cumulative_iterations(0){
+  arpack_eigs<ArrayType,GuessType>::arpack_eigs(const ArrayType* array_stuff, void (*MV)(const ArrayType*,std::complex<double>*,std::complex<double>*), arpack_int length, GuessType* initial_guess, void (*converter)(GuessType*,std::complex<double>*), arpack_int num_e_vals, char which_e_vals[3], std::complex<double> *Evals, std::complex<double> *Evecs) : m_array_stuff(array_stuff), m_MV(MV), m_length(length), m_initial_guess(initial_guess),m_converter(converter),m_evals(Evals),m_evecs(Evecs),m_workspace(m_length,num_e_vals,which_e_vals,Evals,Evecs ? 1 : 0, Evecs,NULL),m_cumulative_iterations(0){
     //form resid
     resid = new std::complex<double>[m_length];
     m_workspace.resid=resid;
@@ -199,7 +199,7 @@ namespace arpack {
     return m_cumulative_iterations;
   }
 
-  inline void sparse_matrix_vector_mult(cs_cl* array, std::complex<double> *in, std::complex<double> *out){av(array,in,out);}
+  inline void sparse_matrix_vector_mult(const cs_cl* array, std::complex<double> *in, std::complex<double> *out){av(const_cast<cs_cl*>(array),in,out);}//annoying const_cast required because cxsparse doesn't use const in its sparse matrix vector routines.
   void cs_cl_to_dense(cs_cl* sparsevec, std::complex<double>* densevec);
 
   /** sparse matrix * vector routine */
@@ -210,6 +210,6 @@ namespace arpack {
   void aTv(cs_cl* sparse, std::complex<double> *in, std::complex<double> *out);
 
   /** Sparse eigensolver for which nev eigenvalues and eigenvectors, optional initial guess vector in sparse form*/
-  bool cpparpack(cs_cl* sparse,arpack_int n, arpack_int nev, std::complex<double> *Evals, std::complex<double> *Evecs, char which[3],cs_cl* initial=NULL);
+  bool cpparpack(const cs_cl* sparse,arpack_int n, arpack_int nev, std::complex<double> *Evals, std::complex<double> *Evecs, char which[3],cs_cl* initial=NULL);
 }
 #endif

@@ -310,6 +310,7 @@ namespace ajaj {
     MPS_matrix(const EigenStateArray& spectrum, const std::vector<MPXIndex>& indices, SparseMatrix&& matrix);
 
     MPS_matrix(MPX_matrix&& MPXref) noexcept;
+
     const MPXIndex& getInwardMatrixIndex() const {
       const MPXIndex* Indexptr(nullptr);
       for (auto&& i : m_Indices){
@@ -330,6 +331,26 @@ namespace ajaj {
 	if (i.Physical()) {Indexptr=&i; break;}
       }
       return *Indexptr;
+    }
+
+    MPXInt InwardMatrixIndexNumber() const {
+      for (uMPXInt i=0; i< m_Indices.size() ;++i){
+	if (m_Indices[i].Ingoing() && !m_Indices[i].Physical()) {return i;}
+      }
+      return -1;//should never happen!
+    }
+
+    MPXInt OutwardMatrixIndexNumber() const {
+      for (uMPXInt i=0; i< m_Indices.size() ;++i){
+	if (m_Indices[i].Outgoing() && !m_Indices[i].Physical()) {return i;}
+      }
+      return -1;
+    }
+    MPXInt PhysicalIndexNumber() const {
+      for (uMPXInt i=0; i< m_Indices.size() ;++i){
+	if (m_Indices[i].Physical()) {return i;}
+      }
+      return -1;
     }
 
     MPS_matrix&& left_shape() {
@@ -450,16 +471,17 @@ namespace ajaj {
    */
   class UnitCell {
   protected:
-    const EigenStateArray* m_spectrum_ptr;
+    const Basis* m_spectrum_ptr;
   public:
     std::vector<MPS_matrix> Matrices;
     std::vector<std::vector<double> > Lambdas;
-    //storage format is 'left canonical' based i.e. A_0 A_1 (or lambda_0 Gamma_0 lambda_1 Gamma_1)
+    //storage format is 'left canonical' based i.e. A_0 A_1 (or lambda_0 Gamma_0 lambda_1 Gamma_1...)
     //even if the matrices are not in fact left canonical
     //so a decomposition is of the form lambda_0 Gamma_0 lambda_1 Gamma_1 lambda_0
     UnitCell()=delete;
-    UnitCell(const EigenStateArray& spectrum) : m_spectrum_ptr(&spectrum){}
-    UnitCell(const EigenStateArray& spectrum,const MPS_matrix& m, const std::vector<double>& l,uMPXInt length=1) : m_spectrum_ptr(&spectrum), Matrices(std::vector<MPS_matrix>(length,m)),Lambdas(std::vector<std::vector<double> >(length,l)) {}
+    UnitCell(const Basis& spectrum) : m_spectrum_ptr(&spectrum){}
+    UnitCell(const Basis& spectrum,const MPS_matrix& m, const std::vector<double>& l,uMPXInt length=1) : m_spectrum_ptr(&spectrum), Matrices(std::vector<MPS_matrix>(length,m)),Lambdas(std::vector<std::vector<double> >(length,l)) {}
+    UnitCell(const Basis& spectrum,std::vector<MPS_matrix>&& mvec, std::vector<std::vector<double> >&& lvec) : m_spectrum_ptr(&spectrum), Matrices(mvec),Lambdas(lvec) {}
     UnitCell(const MPSDecomposition& D,const std::vector<double>& PreviousLambda) : m_spectrum_ptr(&D.LeftMatrix.GetPhysicalSpectrum()) {
       Matrices.emplace_back(copy(D.LeftMatrix));
       Matrices.emplace_back(reorder(contract(contract(MPX_matrix(D.LeftMatrix.GetPhysicalSpectrum(),D.RightMatrix.Index(0),D.Values),0,D.RightMatrix,0,contract10),0,MPX_matrix(D.LeftMatrix.GetPhysicalSpectrum(),D.RightMatrix.Index(2),PreviousLambda,1),0,contract20),0,reorder102,2));

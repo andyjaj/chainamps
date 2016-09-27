@@ -52,7 +52,7 @@ int main(int argc, char** argv){
     ajaj::DataOutput infvolresults("iDMRGEnergies.dat");
     for (ajaj::uMPXInt r=0;r< (steps>2 ? steps-2 : 0) ;++r){
       infvol.run(1,-0.0,CHI,minS);
-      ajaj::UnitCell Ortho(OrthogonaliseInversionSymmetric(infvol.getCentralDecomposition(),infvol.getPreviousLambda()));
+      ajaj::UnitCell Ortho(Orthogonalise(infvol.getCentralDecomposition(),infvol.getPreviousLambda()));
       //at the moment measuring the energy is done in an inelegant way
       //iDMRGEnergies_simple.push_back(real(ajaj::SimpleEnergy(LeftH,RightH,H1,I,Ortho)));
       iDMRGEnergies_accurate.push_back(real(ajaj::SophisticatedEnergy(ColX,RowX,H1,Ortho)));

@@ -730,7 +730,7 @@ namespace ajaj {
     }
   };
 
-  SparseHED TwoVertexComponents::HED(MPXInt numevals, char which[3],const SparseMatrix* initial){
+  SparseHED TwoVertexComponents::HED(MPXInt numevals, char which[3],const SparseMatrix* initial) const {
     //set up workspace (Evals, Evecs) SparseHED
     uMPXInt fulldim(this->length());
     std::cout <<"Eigensolver for matrix of length " << fulldim << std::endl;
@@ -787,7 +787,7 @@ namespace ajaj {
     }
   }
 
-  void TwoVertexMPOMPSMultiply(TwoVertexComponents* arraystuff, std::complex<double> *in, std::complex<double> *out){
+  void TwoVertexMPOMPSMultiply(const TwoVertexComponents* arraystuff, std::complex<double> *in, std::complex<double> *out){
     SparseMatrix V(arraystuff->vcols,arraystuff->vrows,arraystuff->vrows);//undocumented behaviour of SparseMatrix, using transposed rows and cols to avoid unnecessary row ordering...
     for (struct {std::vector<std::array<MPXInt,2> >::const_iterator cit; MPXInt idx;} itstruct ={arraystuff->rows_and_cols.begin(), 0};itstruct.cit!=arraystuff->rows_and_cols.end();++itstruct.cit,++itstruct.idx){
       V.entry((*(itstruct.cit))[1],(*(itstruct.cit))[0],in[itstruct.idx]);
