@@ -9,6 +9,8 @@
 
 namespace ajaj {
 
+  static const double IMAGTOL(1.0e-14);
+
   TransferMatrixParts::TransferMatrixParts(const UnitCell& B,const UnitCell& K,const State* T) : BraCell(B),KetCell(K),TargetStatePtr(T){
     if (BraCell.size() != KetCell.size()) {
       std::cout << "Malformed unit cells" << std::endl;
@@ -151,23 +153,26 @@ namespace ajaj {
 
     MPS_matrix NL(contract(contract(MPSD.RightMatrix,0,CurrentLambda,0,contractL),0,PreviousLambdaInverse,0,contract10));
 
-    SparseED LeftTdecomp(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&MPSD.LeftMatrix,&NL}})).LeftED(1,LARGEST));
+    SparseED LeftTdecomp(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&MPSD.LeftMatrix,&NL}})).LeftED(1,LARGESTMAGNITUDE));
 
     std::cout << "Leading left eigenvalue of left transfer matrix: " << LeftTdecomp.Values.at(0) << std::endl; //will need to rescale by this
 
-    if (abs(imag(LeftTdecomp.Values.at(0)))>=1.0e-14) {
+    if (abs(imag(LeftTdecomp.Values.at(0)))>=IMAGTOL) {
       std::cout << "Eigenvalue has non negligible imaginary part, numerical error in transfer matrix contraction?" << std::endl;
       exit(1);
     }
+    //DO THE INVERSE MULTIPLICATION LAST?
+    //std::vector<MPXPair> contractR({{MPXPair(MPSD.LeftMatrix.InwardMatrixIndexNumber(),1)}});
+    //MPS_matrix NR=(contract(contract(MPSD.LeftMatrix,0,PreviousLambdaInverse,0,contractR),0,CurrentLambda,0,contract10));
 
-    std::vector<MPXPair> contractR({{MPXPair(MPSD.LeftMatrix.InwardMatrixIndexNumber(),1)}});
-    MPS_matrix NR=(contract(contract(MPSD.LeftMatrix,0,PreviousLambdaInverse,0,contractR),0,CurrentLambda,0,contract10));
+    std::vector<MPXPair> contractR({{MPXPair(1,MPSD.LeftMatrix.InwardMatrixIndexNumber())}});
+    MPS_matrix NR=(contract(PreviousLambdaInverse,0,contract(MPSD.LeftMatrix,0,CurrentLambda,0,contract20),0,std::vector<MPXPair>({{1,MPSD.LeftMatrix.InwardMatrixIndexNumber()}})));
 
-    SparseED RightTdecomp(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&NR,&MPSD.RightMatrix}})).RightED(1,LARGEST));
+    SparseED RightTdecomp(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&NR,&MPSD.RightMatrix}})).RightED(1,LARGESTMAGNITUDE));
 
-    std::cout << "Leading right eigenvalue of right transfer matrix: " << RightTdecomp.Values.at(0) << std::endl; //will need to rescale by this
+    std::cout << "Leading right eigenvalue of right transfer matrix: " << RightTdecomp.Values.at(0) << std::endl;
 
-    if (abs(imag(RightTdecomp.Values.at(0)))>=1.0e-14) {
+    if (abs(imag(RightTdecomp.Values.at(0)))>=IMAGTOL) {
       std::cout << "Eigenvalue has non negligible imaginary part, numerical error in transfer matrix contraction?" << std::endl;
       exit(1);
     }
@@ -177,24 +182,28 @@ namespace ajaj {
     VLIndices.emplace_back(1,MPSD.LeftMatrix.getInwardMatrixIndex());
     VLIndices.emplace_back(0,MPSD.LeftMatrix.getInwardMatrixIndex());
     //decompose it into Xdagger X form
-    std::pair<std::vector<double>,MPX_matrix> VLDecomp(SqrtDR(MPX_matrix(basis,VLIndices,1,reshape(LeftTdecomp.EigenVectors,MPSD.LeftMatrix.getInwardMatrixIndex().size()))));
+    std::pair<std::vector<double>,MPX_matrix> VLDecomp(SqrtDR(MPX_matrix(basis,VLIndices,1,reshape(LeftTdecomp.EigenVectors/*.ExtractColumns(std::vector<MPXInt>({0}))*/,MPSD.LeftMatrix.getInwardMatrixIndex().size()))));
     MPX_matrix X(contract(MPX_matrix(basis,VLDecomp.second.Index(0),VLDecomp.first),0,VLDecomp.second,0,contract10));
     MPX_matrix Xinv(contract(reorder(VLDecomp.second,1,reorder10,1),0,MPX_matrix(basis,VLDecomp.second.Index(0),VLDecomp.first,1),0,contract10));
 
     std::vector<MPXIndex> VRIndices;
     VRIndices.emplace_back(1,MPSD.RightMatrix.getOutwardMatrixIndex());
     VRIndices.emplace_back(0,MPSD.RightMatrix.getOutwardMatrixIndex());
-    std::pair<std::vector<double>,MPX_matrix> VRDecomp(SqrtDR(MPX_matrix(basis,VRIndices,1,reshape(RightTdecomp.EigenVectors,MPSD.RightMatrix.getOutwardMatrixIndex().size()))));
+    std::pair<std::vector<double>,MPX_matrix> VRDecomp(SqrtDR(MPX_matrix(basis,VRIndices,1,reshape(RightTdecomp.EigenVectors/*.ExtractColumns(std::vector<MPXInt>({0}))*/,MPSD.RightMatrix.getOutwardMatrixIndex().size()))));
     MPX_matrix Y(contract(reorder(VRDecomp.second,1,reorder10,1),0,MPX_matrix(basis,VRDecomp.second.Index(0),VRDecomp.first),0,contract10));
 
-    MPXDecomposition XLYDecomp(contract(contract(X,0,MPX_matrix(basis,MPSD.RightMatrix.getOutwardMatrixIndex(),PreviousLambda),0,contract10),0,Y,0,contract10).SVD());
-    SquareSumRescale(XLYDecomp.Values,1.0);
+    MPXDecomposition XLYDecomp(contract(contract(X,0,MPX_matrix(basis,MPSD.RightMatrix.getOutwardMatrixIndex(),PreviousLambda),0,contract10),0,Y,0,contract10).SVD());//SVD with no args keeps all singular values...
+    SquareSumRescale(XLYDecomp.Values,1.0);//rescale here to set normalisation
     std::cout << "Entropy: " << entropy(XLYDecomp.Values) <<", Bond dimension: " << XLYDecomp.Values.size() << std::endl;
 
     UnitCell ans(basis);
     std::vector<double> scalevecX(MPSD.LeftMatrix.getInwardMatrixIndex().size(),1.0/sqrt(LeftTdecomp.Values.at(0).real()));
+
     ans.Matrices.emplace_back(reorder(contract(contract(XLYDecomp.ColumnMatrix,1,contract(MPX_matrix(basis,X.Index(0),scalevecX),0,X,0,contract10),0,contract00),0,MPSD.LeftMatrix,0,contract11),0,reorder102,2));
     ans.Matrices.emplace_back(contract(NL,0,contract(Xinv,0,XLYDecomp.ColumnMatrix,0,contract10),0,contract20));
+
+    //ans.Matrices.emplace_back(contract(contract(contract(MPSD.RightMatrix,0,CurrentLambda,0,contractL),0,contract(Y,0,XLYDecomp.RowMatrix,1,contract11),0,contract10),0,MPX_matrix(basis,XLYDecomp.RowMatrix.Index(1),XLYDecomp.Values,1),0,contract20));
+
     ans.Lambdas.emplace_back(XLYDecomp.Values);
     ans.Lambdas.emplace_back(MPSD.Values);
     return ans;
@@ -205,7 +214,7 @@ namespace ajaj {
     const EigenStateArray& spectrum(C.Matrices.at(0).GetPhysicalSpectrum());
     std::cout << "Forming left transfer matrix" << std::endl;
     MPX_matrix TransferMatrix(MakeLTransferMatrix(C,C));
-    SparseED LeftTdecomp(TransferMatrix.LeftEigs(State(spectrum[0].getChargeRules()),1,LARGEST));
+    SparseED LeftTdecomp(TransferMatrix.LeftEigs(State(spectrum[0].getChargeRules()),1,LARGESTMAGNITUDE));
     std::cout << "Leading left eigenvalue of left transfer matrix: " << LeftTdecomp.Values.at(0) << std::endl; //will need to rescale by this
     //make it into an MPX_matrix
     std::vector<double> scalevecX(C.Matrices.at(0).Index(1).size(),1.0/sqrt(LeftTdecomp.Values.at(0).real()));
@@ -220,7 +229,7 @@ namespace ajaj {
     //now need to make Y
     std::cout << "Forming right transfer matrix" << std::endl;
     ShiftLTransferMatrixToR(TransferMatrix); //assumes inversion symmetry!!!!!
-    SparseED RightTdecomp(TransferMatrix.RightEigs(State(spectrum[0].getChargeRules()),1,LARGEST));
+    SparseED RightTdecomp(TransferMatrix.RightEigs(State(spectrum[0].getChargeRules()),1,LARGESTMAGNITUDE));
     std::cout << "Leading right eigenvalue of right transfer matrix: " << RightTdecomp.Values.at(0) << std::endl; //will need to rescale by this if used
     std::vector<MPXIndex> VRIndices;
     VRIndices.emplace_back(1,C.Matrices.back().Index(2));
@@ -245,7 +254,7 @@ namespace ajaj {
   UnitCell OrthogonaliseInversionSymmetric(const UnitCell& C){
     std::cout << "Orthogonalising..." << std::endl;
     const EigenStateArray& spectrum(C.Matrices.at(0).GetPhysicalSpectrum());
-    SparseED LeftTdecomp(TransferMatrixParts(C).LeftED(1,LARGEST));
+    SparseED LeftTdecomp(TransferMatrixParts(C).LeftED(1,LARGESTMAGNITUDE));
     std::cout << "Leading left eigenvalue of left transfer matrix: " << LeftTdecomp.Values.at(0) << std::endl; //will need to rescale by this
 
     if (abs(imag(LeftTdecomp.Values.at(0)))>=1.0e-14) {
@@ -330,7 +339,7 @@ namespace ajaj {
   }
 
   std::complex<double> Overlap(const UnitCell& bra, const UnitCell& ket){
-    return MakeLTransferMatrix(bra,ket).LeftEigs(1,LARGEST).Values.at(0);
+    return MakeLTransferMatrix(bra,ket).LeftEigs(1,LARGESTMAGNITUDE).Values.at(0);
   }
 
   std::complex<double> TwoVertexMeasurement(const MPO_matrix& W1, const MPO_matrix& W2, const MPS_matrix& A1, const MPS_matrix& A2, const MPX_matrix& Lambda){
@@ -424,10 +433,10 @@ namespace ajaj {
       }
     }
 
-    left_indices_.emplace_back(1,BraMatrix(0).Index(1));
-    left_indices_.emplace_back(0,KetMatrix(0).Index(1));
-    right_indices_.emplace_back(0,BraMatrix(last()).Index(2));
-    right_indices_.emplace_back(1,KetMatrix(last()).Index(2));
+    left_indices_.emplace_back(1,BraMatrix(0).getInwardMatrixIndex());
+    left_indices_.emplace_back(0,KetMatrix(0).getInwardMatrixIndex());
+    right_indices_.emplace_back(0,BraMatrix(last()).getOutwardMatrixIndex());
+    right_indices_.emplace_back(1,KetMatrix(last()).getOutwardMatrixIndex());
 
     length_=left_indices_[0].size()*left_indices_[1].size();
     if (length_!=right_indices_[0].size()*right_indices_[1].size()){std::cout << "Index dimensions mismatch between ends of translation unit!" <<std::endl; exit(1);}
@@ -481,6 +490,9 @@ namespace ajaj {
       std::complex<double>* Evecs = new std::complex<double>[allowed_indices_.size()*numevals];
       std::complex<double>* Evals = new std::complex<double>[numevals];
       
+      //No initial guess?
+      //try equal weighted indices.      
+
       SparseVectorWithRestriction guess_struct(initial,&allowed_indices_);
       arpack::arpack_eigs<TransferMatrixComponents,SparseVectorWithRestriction> eigensystem(this,&LeftComponentsMultiply,allowed_indices_.size(),initial ? &guess_struct : NULL,&ConvertSparseVectorWithRestriction,numevals,which,Evals,Evecs);
       if (eigensystem.error_status()) {std::cout << "Error with tensor arpack" << std::endl;exit(1);}
@@ -488,9 +500,12 @@ namespace ajaj {
 	std::cout << "Eval: " << Evals[v] <<std::endl;
 	ans.Values.push_back(Evals[v]);
 	
-	for (Sparseint i=0;i<allowed_indices_.size();++i){
-	  ans.EigenVectors.entry(allowed_indices_[i],v,Evecs[i+v*allowed_indices_.size()]);
-	  //ans.EigenVectors.entry(allowed_indices_dagger[i],v,conj(Evecs[i+v*allowed_indices.size()]));
+	for (MPXInt i=0;i<allowed_indices_.size();++i){
+	  //here is where to drop tiny values...
+	  if (abs(Evecs[i+v*allowed_indices_.size()])>SPARSETOL){
+	    ans.EigenVectors.entry(allowed_indices_[i],v,Evecs[i+v*allowed_indices_.size()]);
+	  }
+	  //ans.EigenVectors.entry(allowed_indices_dagger_[i],v,conj(Evecs[i+v*allowed_indices_.size()]));
 	}
 	
       }
@@ -525,9 +540,11 @@ namespace ajaj {
 	std::cout << "Eval: " << Evals[v] <<std::endl;
 	ans.Values.push_back(Evals[v]);
 	
-	for (Sparseint i=0;i<allowed_indices_.size();++i){
-	  ans.EigenVectors.entry(allowed_indices_[i],v,Evecs[i+v*allowed_indices_.size()]);
-	  //ans.EigenVectors.entry(allowed_indices_dagger[i],v,conj(Evecs[i+v*allowed_indices.size()]));
+	for (MPXInt i=0;i<allowed_indices_.size();++i){
+	  if(abs(Evecs[i+v*allowed_indices_.size()])>SPARSETOL){
+	    ans.EigenVectors.entry(allowed_indices_[i],v,Evecs[i+v*allowed_indices_.size()]);
+	  }
+	  //ans.EigenVectors.entry(allowed_indices_dagger_[i],v,conj(Evecs[i+v*allowed_indices_.size()]));
 	}
 	
       }
@@ -550,10 +567,14 @@ namespace ajaj {
     MPX_matrix accumulator(stuff->KetMatrix(0).basis(),stuff->left_indices(),1,V.cheap_no_transpose_finalise());
 
     for (uMPXInt s=0;s<stuff->last();++s){
-      accumulator=std::move(contract(stuff->BraMatrix(s),1,contract(accumulator,0,stuff->KetMatrix(s),0,contract11),0,contract0110));	
+      std::vector<MPXPair> contractK({{1,stuff->KetMatrix(s).InwardMatrixIndexNumber()}});
+      std::vector<MPXPair> contractB({{stuff->BraMatrix(s).PhysicalIndexNumber(),1},{stuff->BraMatrix(s).InwardMatrixIndexNumber(),0}});
+      accumulator=std::move(contract(stuff->BraMatrix(s),1,contract(accumulator,0,stuff->KetMatrix(s),0,contractK),0,contractB));	
     }
 
-    DumbExtractWithZeros(reshape(contract_to_sparse(stuff->BraMatrix(stuff->last()),1,contract(accumulator,0,stuff->KetMatrix(stuff->last()),0,contract11),0,contract0110),stuff->length()),stuff->allowed_indices(),out);
+    std::vector<MPXPair> contractK({{1,stuff->KetMatrix(stuff->last()).InwardMatrixIndexNumber()}});
+    std::vector<MPXPair> contractB({{stuff->BraMatrix(stuff->last()).PhysicalIndexNumber(),1},{stuff->BraMatrix(stuff->last()).InwardMatrixIndexNumber(),0}});
+    DumbExtractWithZeros(reshape(contract_to_sparse(stuff->BraMatrix(stuff->last()),1,contract(accumulator,0,stuff->KetMatrix(stuff->last()),0,contractK),0,contractB),stuff->length()),stuff->allowed_indices(),out);
 
   }
   void RightComponentsMultiply(const TransferMatrixComponents* stuff, std::complex<double> *in, std::complex<double> *out){
@@ -565,9 +586,22 @@ namespace ajaj {
     //loop over all matrices in the unitcells, doing contraction
     MPX_matrix accumulator(stuff->KetMatrix(stuff->last()).basis(),stuff->right_indices(),1,V.cheap_no_transpose_finalise());
     for (uMPXInt s=stuff->last();s>0;--s){
-      accumulator=std::move(contract(stuff->BraMatrix(s),1,contract(accumulator,0,stuff->KetMatrix(s),0,contract12),0,contract0120));	
+      MPXInt KetPhys(stuff->KetMatrix(s).PhysicalIndexNumber());
+      MPXInt KetOut(stuff->KetMatrix(s).OutwardMatrixIndexNumber());
+      MPXInt BraPhys(stuff->BraMatrix(s).PhysicalIndexNumber());
+      MPXInt BraOut(stuff->BraMatrix(s).OutwardMatrixIndexNumber());
+
+      std::vector<MPXPair> contractK({{KetOut,1}});
+      std::vector<MPXPair> contractB({{BraPhys,KetPhys},{BraOut,KetOut}});
+      accumulator=std::move(contract(stuff->BraMatrix(s),1,contract(stuff->KetMatrix(s),0,accumulator,0,contractK),0,contractB));	
     }
-    DumbExtractWithZeros(reshape(contract_to_sparse(stuff->BraMatrix(0),1,contract(accumulator,0,stuff->KetMatrix(0),0,contract12),0,contract0120),stuff->length()),stuff->allowed_indices(),out);
+    MPXInt KetPhys(stuff->KetMatrix(0).PhysicalIndexNumber());
+    MPXInt KetOut(stuff->KetMatrix(0).OutwardMatrixIndexNumber());
+    MPXInt BraPhys(stuff->BraMatrix(0).PhysicalIndexNumber());
+    MPXInt BraOut(stuff->BraMatrix(0).OutwardMatrixIndexNumber());
+    std::vector<MPXPair> contractK({{KetOut,1}});
+    std::vector<MPXPair> contractB({{BraPhys,KetPhys},{BraOut,KetOut}});
+    DumbExtractWithZeros(reshape(contract_to_sparse(stuff->BraMatrix(0),1,contract(stuff->KetMatrix(0),0,accumulator,0,contractK),0,contractB),stuff->length()),stuff->allowed_indices(),out);
 
   }
 

@@ -107,6 +107,7 @@ namespace ajaj {
     Sparseint nz() const;
     bool is_finalised() const;
     bool is_dense() const; //*< check to see if the array is actually dense
+    bool is_row_ordered() const;
     Sparseint get_p(Sparseint col) const; //gives p[col]
     Sparseint get_i(Sparseint p) const;//gives row[p]
     std::complex<double> get_x(Sparseint p) const;//gives value[p]
@@ -194,14 +195,16 @@ namespace ajaj {
   };
 
   inline SparseMatrix NoTransMultiply(const SparseMatrix& A,const SparseMatrix& B){
-    //return SparseMatrix(cs_cl_multiply(A.m_array,B.m_array),1);
     return sparse_multiply_ajaj(A,B,1); //1 flag means don't sort rows
   }
 
   inline Sparseint SparseMatrix::rows() const {return(m_finalised ? m_array->m : m_array->n) ;}
   inline Sparseint SparseMatrix::cols() const {return(m_finalised ? m_array->n : m_array->m) ;}
   inline Sparseint SparseMatrix::nz() const {return(m_array->nz==-1 ? m_array->p[m_array->n] : m_array->nz);}
-  inline bool SparseMatrix::is_finalised() const {return m_finalised;}
+  inline bool SparseMatrix::is_finalised() const {
+    return is_row_ordered();
+    //return m_finalised;
+  }
   inline bool SparseMatrix::is_dense() const {return (nz() == rows() * cols());} 
 
   inline Sparseint SparseMatrix::get_p(Sparseint col) const {return m_array->p[col];}

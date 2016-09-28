@@ -114,15 +114,17 @@ namespace arpack {
       m_converter(m_initial_guess,resid);//convert guess format to dense vector
       m_workspace.info=1; //tell arpack to use initial guess vector
     }
-    /*else { //fill resid with uniform values
+    else { //no initial guess? fill resid with uniform values
       for (arpack_int i=0; i< m_length; ++i) resid[i]=1.0/sqrt(m_length);
       m_workspace.info=1; //tell arpack to use initial guess vector
-      }*/
+    }
     do {
       if (m_workspace.info==-9){//if info is -9 then use a random vector
-	std::cout << "Initial guess vector is zero, trying a random vector..." << std::endl;
+	std::cout << "Initial guess vector is zero, trying a different vector..." << std::endl;
 	m_workspace.reset();
-	m_workspace.info=0; //set to zero to cause generation of random initial vector
+	for (arpack_int i=0; i< m_length; ++i) resid[i]=1.0/sqrt(m_length);
+	m_workspace.info=1; //tell arpack to use initial guess vector
+	//m_workspace.info=0; //set to zero to cause generation of random initial vector
 	//arpack will populate resid itself if info!=1
       }
 
@@ -134,7 +136,7 @@ namespace arpack {
 	  std::cout << "Arpack out of iterations, adding more..." << std::endl;
 	}
 	else if (iterations()<4*m_workspace.maxiter){
-	  std::cout << "Poor convergence, trying a different random starting vector..." << std::endl;
+	  std::cout << "Poor convergence, trying a random starting vector..." << std::endl;
 	  m_workspace.info=0; //set to zero to cause generation of random initial vector
 	}
 	else {

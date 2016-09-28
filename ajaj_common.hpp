@@ -70,7 +70,7 @@ namespace ajaj {
   static const std::vector<MPXPair> contract00112233 {{MPXPair(0,0), MPXPair(1,1), MPXPair(2,2),MPXPair(3,3)}};
 
   static const std::vector<MPXInt> reorder10 {{1,0}};
-  static const std::vector<MPXInt> reorder024 {{0,2,4}};
+  static const std::vector<MPXInt> reorder021 {{0,2,1}};
   static const std::vector<MPXInt> reorder102 {{1,0,2}};
   static const std::vector<MPXInt> reorder135 {{1,3,5}};
   static const std::vector<MPXInt> reorder0213 {{0,2,1,3}};
@@ -79,7 +79,7 @@ namespace ajaj {
   static const std::vector<MPXInt> reorder203145 {{2,0,3,1,4,5}};
   static const std::vector<MPXInt> reorder021354 {{0,2,1,3,5,4}};
 
-  static char LARGEST[]={'L','M','\n'};
+  static char LARGESTMAGNITUDE[]={'L','M','\n'};
   static char SMALLESTREAL[]={'S','R','\n'}; //lowest real part for energies
 
 }

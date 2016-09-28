@@ -174,6 +174,7 @@ namespace ajaj {
     m_array=nullptr;
   };
 
+
   void SparseMatrix::print_emptyness() const {if(is_finalised()) {std::cout << std::setprecision(16); std::cout << 1.0-double(get_p(cols()))/double(rows()*cols()) << std::endl;}}
 
   SparseMatrix SparseMatrix::ExtractSubMatrix(const std::pair<Sparseint,Sparseint>& RowRange, const std::pair<Sparseint,Sparseint>& ColRange) const {
@@ -419,9 +420,9 @@ namespace ajaj {
   }
 
   void SparseMatrix::entry(Sparseint i, Sparseint j, std::complex<double> value){
-    if (abs(value) > SPARSETOL){
+    //if (abs(value) > SPARSETOL){
       cs_cl_entry(m_array,j,i,value); //we work with the transpose until finalised!!!!
-    }
+      //}
   };
 
   void SparseMatrix::zero_entry(Sparseint i, Sparseint j){
@@ -435,13 +436,13 @@ namespace ajaj {
   //cheap entry assumes we have preallocated correctly and have the correct dimensions!!!!
   void SparseMatrix::cheap_entry(Sparseint i, Sparseint j, std::complex<double> value){
     //col, because we entr things as transpose 
-    if (abs(value) > SPARSETOL){
+    //if (abs(value) > SPARSETOL){
       m_array->i[m_array->nz]=j;
       //row
       m_array->p[m_array->nz]=i;
       //val
       m_array->x[m_array->nz++]=value;
-    }
+      //}
   };
 
   SparseMatrix&& SparseMatrix::finalise(){
@@ -607,6 +608,24 @@ namespace ajaj {
     std::complex<double> val=check.trace()/(1.0*check.rows());
     return val;
   }
+
+  bool SparseMatrix::is_row_ordered() const {
+    if (!m_finalised) return 0;
+#ifndef NDEBUG
+    //check rows are ordered
+    for (Sparseint c=0;c<cols();++c){
+      Sparseint previous_row=-1;
+      for (Sparseint p=get_p(c);p<get_p(c+1);++p){
+	if (get_i(p)<=previous_row) return 0;
+	else {
+	  previous_row=get_i(p);
+	}
+      }
+    }
+#endif
+    return 1;
+  }
+
 
   std::complex<double> SparseMatrix::element(const Sparseint i, const Sparseint j) const { //super inefficient for sparse types!
     if (!m_finalised){std::cout << "Not finalised! Probably you didn't mean to do this yet!" << std::endl; exit(1);}
@@ -919,6 +938,16 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     if (old_prod!=old.rows()*old.cols()){std::cout << "Incorrect old params: " << old.rows()*old.cols() << ", " << old_prod << std::endl; exit(1);}
     if (old_idx_dims.size()!=new_idx_order.size()){std::cout << "Incorrect size params, new and old number of indices don't match " << old_idx_dims.size() <<" "<< new_idx_order.size() << std::endl; exit(1);}
 
+    double largest(0.0);
+
+    for (Sparseint p=0;p<old.nz();++p){
+      if (abs(old.get_x(p))>largest){
+	largest=abs(old.get_x(p));
+      }
+    }
+
+    //std::cout << "LARGEST VALUE IS " << largest <<std::endl;
+
     Sparseint old_num_col_idxs=old_idx_dims.size()-old_num_row_idxs;
     Sparseint* multipliers=new Sparseint[old_idx_dims.size()];
     Sparseint new_num_rows=1;
@@ -977,13 +1006,12 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 	    }
 	  }
 	  //check the value is not effectively zero
-	  if (abs(old.m_array->x[p])>SPARSETOL){
+	  if (abs(old.m_array->x[p])>SPARSETOL*largest){
 	    Sparseint entry;   
 	    entry=new_matrix.m_array->nz++;
 	    new_matrix.m_array->i[entry]=x1x2[old.m_array->i[p]][1]+y2;
 	    new_matrix.m_array->p[entry]=x1x2[old.m_array->i[p]][0]+y1;
 	    new_matrix.m_array->x[entry]=conjugate ? conj(old.m_array->x[p]) : old.m_array->x[p];
-	    //new_matrix.cheap_entry(x1x2[old.m_array->i[p]][0]+y1,x1x2[old.m_array->i[p]][1]+y2,conjugate ? conj(old.m_array->x[p]) : old.m_array->x[p]);
 	  }
 	}
       }
@@ -1213,9 +1241,29 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 #endif
     //we will always sort, in case we want to truncate later
     std::sort(UnsortedValues.begin(),UnsortedValues.end(),singular_value_compare);
-    std::vector<Sparseint> sortindices;
     size_t length=(D>0 && D< UnsortedValues.size()) ? D : UnsortedValues.size();
+
+    //We should also probably reject singular vals that are smaller the M_EPS times the largest singular value...
+    std::vector<Sparseint> sortindices;
     sortindices.reserve(length);
+    sortindices.push_back(UnsortedValues[0].first);
+    std::vector<double> Values;
+    Values.reserve(length);
+    Values.push_back(UnsortedValues[0].second);
+    double kept_weight(UnsortedValues[0].second*UnsortedValues[0].second);
+
+    for (size_t s=1;s<length;++s){
+      if (UnsortedValues[s].second < std::numeric_limits<double>::epsilon() * UnsortedValues.begin()->second) {
+	length=s;
+	std::cout << "Truncating singular vals further due to very small singular vals" <<std::endl; 
+	break;
+      }
+      sortindices.push_back(UnsortedValues[s].first);
+      kept_weight+=UnsortedValues[s].second*UnsortedValues[s].second;
+      Values.push_back(UnsortedValues[s].second);
+    }
+    //std::cout << std::endl << "LARGEST S VAL " << UnsortedValues[0].second <<", SMALLEST S VAL " << UnsortedValues[length-1].second <<std::endl <<std::endl;
+    /* sortindices.reserve(length);
     std::vector<double> Values;
     Values.reserve(length);
     double kept_weight(0.0);
@@ -1226,7 +1274,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
       sortindices.push_back(UnsortedValues[s].first);
       kept_weight+=UnsortedValues[s].second*UnsortedValues[s].second;
       Values.push_back(UnsortedValues[s].second);
-    }
+    }*/
 #ifndef NDEBUG
     std::cout << "Resizing arrays" << std::endl;
 #endif
@@ -1452,12 +1500,13 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 
   SparseED SparseMatrix::ED(Sparseint requested_numevals, char which[3],SparseMatrix* initial) const {
     if (this->rows()!=this->cols()){std::cout << "Matrix not square for ED! " << this->rows() << " " << this->cols() << std::endl; exit(1);}
-    SparseED ans(this->rows(),requested_numevals);
     std::complex<double>* Evecs = new std::complex<double>[this->rows()*requested_numevals];
     std::complex<double>* Evals = new std::complex<double>[requested_numevals];
-    //Run arpack an check for errors
+    SparseED ans(this->rows(),requested_numevals);
+
+    //Run arpack and check for errors
     if(this->cols() < 10 || arpack::cpparpack(this->m_array,this->rows(),requested_numevals,Evals, Evecs, which,initial ? initial->m_array : NULL)){
-      std::cout << "Arpack error for array size " << this->rows() << " " << this->cols() << std::endl;
+      //std::cout << "Arpack error for array size " << this->rows() << " " << this->cols() << std::endl;
       if (this->rows()==1 && this->cols()==1){
 	Evecs[0]=1.0; Evals[0]=this->m_array->x[0];
 	std::cout << "Trivial answer" << std::endl;
@@ -1465,6 +1514,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
       else {
 //turn initial to dense
 	std::cout << "Using dense method for Non Hermitian eigenvalues..." << std::endl;
+
 	std::complex<double>* dEvecs= new std::complex<double>[this->rows()*this->rows()];
 	std::complex<double>* dEvals = new std::complex<double>[this->rows()];
 

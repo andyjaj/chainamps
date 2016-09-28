@@ -29,7 +29,7 @@ int main(int argc, char** argv){
     ajaj::iDMRG infvol(std::string("GroundState"),myModel.H_MPO,TargetState,results);
 
     ajaj::uMPXInt CHI(RuntimeArgs.chi());
-    double minS(1.0e-14);
+    double minS(0.0);
     ajaj::uMPXInt steps(RuntimeArgs.number_of_steps());
 
     auto t1 = std::chrono::high_resolution_clock::now();
