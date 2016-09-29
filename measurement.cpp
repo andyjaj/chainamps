@@ -9,7 +9,7 @@
 
 namespace ajaj {
 
-  static const double IMAGTOL(1.0e-14);
+  static const double IMAGTOL(100*std::numeric_limits<double>::epsilon());
 
   TransferMatrixParts::TransferMatrixParts(const UnitCell& B,const UnitCell& K,const State* T) : BraCell(B),KetCell(K),TargetStatePtr(T){
     if (BraCell.size() != KetCell.size()) {
@@ -149,32 +149,33 @@ namespace ajaj {
     MPX_matrix CurrentLambda(basis,MPSD.LeftMatrix.Index(2),MPSD.Values);
 
     //note rightmatrix is stored as a_i-1 sigma_i a_i format...
-    std::vector<MPXPair> contractL({{MPXPair(MPSD.RightMatrix.InwardMatrixIndexNumber(),1)}});
+    //std::vector<MPXPair> contractL({{MPXPair(MPSD.RightMatrix.InwardMatrixIndexNumber(),1)}});
+    //MPS_matrix NL(contract(contract(MPSD.RightMatrix,0,CurrentLambda,0,contractL),0,PreviousLambdaInverse,0,contract10));
 
-    MPS_matrix NL(contract(contract(MPSD.RightMatrix,0,CurrentLambda,0,contractL),0,PreviousLambdaInverse,0,contract10));
+    std::vector<MPXPair> contractL({{MPXPair(1,MPSD.RightMatrix.InwardMatrixIndexNumber())}});
+    MPS_matrix NL(MPS_matrix(contract(CurrentLambda,0,contract(MPSD.RightMatrix,0,PreviousLambdaInverse,0,contract20),0,contractL)).left_shape());
 
     SparseED LeftTdecomp(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&MPSD.LeftMatrix,&NL}})).LeftED(1,LARGESTMAGNITUDE));
 
     std::cout << "Leading left eigenvalue of left transfer matrix: " << LeftTdecomp.Values.at(0) << std::endl; //will need to rescale by this
 
-    if (abs(imag(LeftTdecomp.Values.at(0)))>=IMAGTOL) {
+    if (abs(imag(LeftTdecomp.Values.at(0)))>=IMAGTOL*abs(real(LeftTdecomp.Values.at(0)))) {
       std::cout << "Eigenvalue has non negligible imaginary part, numerical error in transfer matrix contraction?" << std::endl;
-      exit(1);
+      return UnitCell(basis);
     }
-    //DO THE INVERSE MULTIPLICATION LAST?
-    //std::vector<MPXPair> contractR({{MPXPair(MPSD.LeftMatrix.InwardMatrixIndexNumber(),1)}});
-    //MPS_matrix NR=(contract(contract(MPSD.LeftMatrix,0,PreviousLambdaInverse,0,contractR),0,CurrentLambda,0,contract10));
+    std::vector<MPXPair> contractR({{MPXPair(MPSD.LeftMatrix.InwardMatrixIndexNumber(),1)}});
+    MPS_matrix NR=(contract(contract(MPSD.LeftMatrix,0,PreviousLambdaInverse,0,contractR),0,CurrentLambda,0,contract10));
 
-    std::vector<MPXPair> contractR({{MPXPair(1,MPSD.LeftMatrix.InwardMatrixIndexNumber())}});
-    MPS_matrix NR=(contract(PreviousLambdaInverse,0,contract(MPSD.LeftMatrix,0,CurrentLambda,0,contract20),0,std::vector<MPXPair>({{1,MPSD.LeftMatrix.InwardMatrixIndexNumber()}})));
+    //std::vector<MPXPair> contractR({{MPXPair(1,MPSD.LeftMatrix.InwardMatrixIndexNumber())}});
+    //MPS_matrix NR=(contract(PreviousLambdaInverse,0,contract(MPSD.LeftMatrix,0,CurrentLambda,0,contract20),0,std::vector<MPXPair>({{1,MPSD.LeftMatrix.InwardMatrixIndexNumber()}})));
 
     SparseED RightTdecomp(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&NR,&MPSD.RightMatrix}})).RightED(1,LARGESTMAGNITUDE));
 
     std::cout << "Leading right eigenvalue of right transfer matrix: " << RightTdecomp.Values.at(0) << std::endl;
 
-    if (abs(imag(RightTdecomp.Values.at(0)))>=IMAGTOL) {
+    if (abs(imag(RightTdecomp.Values.at(0)))>=IMAGTOL*abs(real(RightTdecomp.Values.at(0)))) {
       std::cout << "Eigenvalue has non negligible imaginary part, numerical error in transfer matrix contraction?" << std::endl;
-      exit(1);
+      return UnitCell(basis);
     }
 
     //decompose into Xdagger X form
@@ -183,6 +184,10 @@ namespace ajaj {
     VLIndices.emplace_back(0,MPSD.LeftMatrix.getInwardMatrixIndex());
     //decompose it into Xdagger X form
     std::pair<std::vector<double>,MPX_matrix> VLDecomp(SqrtDR(MPX_matrix(basis,VLIndices,1,reshape(LeftTdecomp.EigenVectors/*.ExtractColumns(std::vector<MPXInt>({0}))*/,MPSD.LeftMatrix.getInwardMatrixIndex().size()))));
+
+    //If failure, return dummy
+    if (!VLDecomp.first.size()) return UnitCell(basis);
+
     MPX_matrix X(contract(MPX_matrix(basis,VLDecomp.second.Index(0),VLDecomp.first),0,VLDecomp.second,0,contract10));
     MPX_matrix Xinv(contract(reorder(VLDecomp.second,1,reorder10,1),0,MPX_matrix(basis,VLDecomp.second.Index(0),VLDecomp.first,1),0,contract10));
 
@@ -190,6 +195,9 @@ namespace ajaj {
     VRIndices.emplace_back(1,MPSD.RightMatrix.getOutwardMatrixIndex());
     VRIndices.emplace_back(0,MPSD.RightMatrix.getOutwardMatrixIndex());
     std::pair<std::vector<double>,MPX_matrix> VRDecomp(SqrtDR(MPX_matrix(basis,VRIndices,1,reshape(RightTdecomp.EigenVectors/*.ExtractColumns(std::vector<MPXInt>({0}))*/,MPSD.RightMatrix.getOutwardMatrixIndex().size()))));
+    //If failure, return dummy
+    if (!VRDecomp.first.size()) return UnitCell(basis);
+
     MPX_matrix Y(contract(reorder(VRDecomp.second,1,reorder10,1),0,MPX_matrix(basis,VRDecomp.second.Index(0),VRDecomp.first),0,contract10));
 
     MPXDecomposition XLYDecomp(contract(contract(X,0,MPX_matrix(basis,MPSD.RightMatrix.getOutwardMatrixIndex(),PreviousLambda),0,contract10),0,Y,0,contract10).SVD());//SVD with no args keeps all singular values...
@@ -370,7 +378,7 @@ namespace ajaj {
   }
 
   std::complex<double> SophisticatedEnergy(const MPO_matrix& ColX,const MPO_matrix& RowX,const MPO_matrix& H1,const UnitCell& Ortho){
-    if (Ortho.Matrices.size()>2){std::cout << "Only two vertex basis accepted for now" <<std::endl; return 0.0;}
+    if (Ortho.Matrices.size()!=2){std::cout << "Only two vertex basis accepted for now" <<std::endl; return 0.0;}
     MPX_matrix LAMBDA0(H1.basis(),Ortho.Matrices.at(0).Index(1),Ortho.Lambdas.at(0));
 
     std::complex<double> LocalEnergy(contract_to_sparse(contract(Ortho.Matrices.at(1),1,contract(contract(Ortho.Matrices.at(0),1,contract(H1,0,Ortho.Matrices.at(0),0,contract20),0,contract0013),0,Ortho.Matrices.at(1),0,contract31),0,contract0310),0,contract(LAMBDA0,0,LAMBDA0,0,contract10),0,contract0130).trace());
@@ -478,7 +486,7 @@ namespace ajaj {
     std::cout <<"Eigensolver for matrix of length " << length() << std::endl;
     std::cout <<"Using reduced subspace of length " << allowed_indices_.size() <<std::endl;
 
-    if (length()<1000){
+    if (length()<500){
       //use simple method
       std::cout << "Simple method" <<std::endl;
       //accumulate
@@ -521,7 +529,7 @@ namespace ajaj {
     std::cout <<"Eigensolver for matrix of length " << length() << std::endl;
     std::cout <<"Using reduced subspace of length " << allowed_indices_.size() <<std::endl;
 
-    if (length()<1000){
+    if (length()<500){
       //use simple method
       std::cout << "Simple method" <<std::endl;
       //accumulate

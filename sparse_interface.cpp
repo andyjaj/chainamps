@@ -177,6 +177,22 @@ namespace ajaj {
 
   void SparseMatrix::print_emptyness() const {if(is_finalised()) {std::cout << std::setprecision(16); std::cout << 1.0-double(get_p(cols()))/double(rows()*cols()) << std::endl;}}
 
+  void SparseMatrix::print_l_s() const {
+    if (m_finalised){
+      double largest(abs(get_x(0)));
+      double smallest(abs(get_x(0)));
+      Sparseint p_l(0);
+      Sparseint p_s(0);
+      for (Sparseint p=0;p<nz();++p){
+	double current(abs(get_x(p)));
+	if (current > largest) {largest=current; p_l=p;}
+	if (current < smallest) {smallest=current; p_s=p;}
+      }
+      std::cout << "Largest value: " << get_x(p_l) << " Smallest value: " << get_x(p_s) << std::endl;
+    }
+  }
+
+
   SparseMatrix SparseMatrix::ExtractSubMatrix(const std::pair<Sparseint,Sparseint>& RowRange, const std::pair<Sparseint,Sparseint>& ColRange) const {
 
     //std::cout << RowRange.first << " " << RowRange.second <<std::endl;
@@ -516,7 +532,7 @@ namespace ajaj {
     for (Sparseint elem=0;elem<m_array->p[m_array->n];++elem){
       if (abs(m_array->x[elem])>maxabs){maxabs=abs(m_array->x[elem]);}
     }
-    double tol=maxabs*std::numeric_limits<double>::epsilon();
+    double tol=maxabs*SPARSETOL;
     return(cs_cl_droptol(m_array,tol));
   }
 
@@ -938,13 +954,13 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     if (old_prod!=old.rows()*old.cols()){std::cout << "Incorrect old params: " << old.rows()*old.cols() << ", " << old_prod << std::endl; exit(1);}
     if (old_idx_dims.size()!=new_idx_order.size()){std::cout << "Incorrect size params, new and old number of indices don't match " << old_idx_dims.size() <<" "<< new_idx_order.size() << std::endl; exit(1);}
 
-    double largest(0.0);
+    /*double largest(0.0);
 
     for (Sparseint p=0;p<old.nz();++p){
       if (abs(old.get_x(p))>largest){
 	largest=abs(old.get_x(p));
       }
-    }
+      }*/
 
     //std::cout << "LARGEST VALUE IS " << largest <<std::endl;
 
@@ -1006,13 +1022,13 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 	    }
 	  }
 	  //check the value is not effectively zero
-	  if (abs(old.m_array->x[p])>SPARSETOL*largest){
+	  //if (abs(old.m_array->x[p])>SPARSETOL*largest){
 	    Sparseint entry;   
 	    entry=new_matrix.m_array->nz++;
 	    new_matrix.m_array->i[entry]=x1x2[old.m_array->i[p]][1]+y2;
 	    new_matrix.m_array->p[entry]=x1x2[old.m_array->i[p]][0]+y1;
 	    new_matrix.m_array->x[entry]=conjugate ? conj(old.m_array->x[p]) : old.m_array->x[p];
-	  }
+	    //}
 	}
       }
     }
@@ -1218,24 +1234,23 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
       std::cout << "Reading back into Sparse" << std::endl;
 #endif
       for (Sparseint v=0;v<Blockans.ValuesSize();++v){
-  	if (Blockans.Values[v]>min_s_val){
-  	  //read column of U into sparse
-  	  for (Sparseint i=0;i<Blockans.U.rows();++i){
-  	    if (abs(Blockans.U.Value(i,v))>std::numeric_limits<double>::epsilon()){
-  	      UnsortedU.entry(TB.RowLookups[i],UnsortedValues.size(),Blockans.U.Value(i,v));
-  	    }
-  	  }
-  	  //read row of Vdagger into sparse 
-  	  for (Sparseint j=0;j<Blockans.Vdagger.cols();++j){
-  	    if (abs(Blockans.Vdagger.Value(v,j))>std::numeric_limits<double>::epsilon()){
-  	      UnsortedVstar.entry(TB.ColLookups[j],UnsortedValues.size(),Blockans.Vdagger.Value(v,j));
-  	    }
-  	  }
-  	  UnsortedValues.push_back(std::pair<Sparseint,double>(UnsortedValues.size(),Blockans.Values[v]));
-  	  //
-  	}
+	//read column of U into sparse
+	for (Sparseint i=0;i<Blockans.U.rows();++i){
+	  //because cols of U are normalised vectors, and these vectors are not absurdly long, we drop the smallest values.
+	  if (abs(Blockans.U.Value(i,v))>SPARSETOL){
+	    UnsortedU.entry(TB.RowLookups[i],UnsortedValues.size(),Blockans.U.Value(i,v));
+	  }
+	}
+	//read row of Vdagger into sparse 
+	for (Sparseint j=0;j<Blockans.Vdagger.cols();++j){
+	  if (abs(Blockans.Vdagger.Value(v,j))>SPARSETOL){
+	    UnsortedVstar.entry(TB.ColLookups[j],UnsortedValues.size(),Blockans.Vdagger.Value(v,j));
+	  }
+	}
+	UnsortedValues.push_back(std::pair<Sparseint,double>(UnsortedValues.size(),Blockans.Values[v]));
       }
     }
+
 #ifndef NDEBUG
     std::cout << "Sorting " << UnsortedValues.size()  << " singular values" << std::endl;
 #endif
@@ -1251,31 +1266,28 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     Values.reserve(length);
     Values.push_back(UnsortedValues[0].second);
     double kept_weight(UnsortedValues[0].second*UnsortedValues[0].second);
-
     for (size_t s=1;s<length;++s){
-      if (UnsortedValues[s].second < std::numeric_limits<double>::epsilon() * UnsortedValues.begin()->second) {
+      if (UnsortedValues[s].second < sqrt(SPARSETOL)*UnsortedValues.begin()->second) {
 	length=s;
-	std::cout << "Truncating singular vals further due to very small singular vals" <<std::endl; 
+	std::cout << "Truncating further due to very small singular values." <<std::endl; 
 	break;
       }
       sortindices.push_back(UnsortedValues[s].first);
       kept_weight+=UnsortedValues[s].second*UnsortedValues[s].second;
       Values.push_back(UnsortedValues[s].second);
     }
-    //std::cout << std::endl << "LARGEST S VAL " << UnsortedValues[0].second <<", SMALLEST S VAL " << UnsortedValues[length-1].second <<std::endl <<std::endl;
-    /* sortindices.reserve(length);
-    std::vector<double> Values;
-    Values.reserve(length);
-    double kept_weight(0.0);
+
+    double discarded_weight(0.0);
+    for (size_t s=length;s<UnsortedValues.size();++s){
+      discarded_weight+=UnsortedValues[s].second*UnsortedValues[s].second;
+    }
+
 #ifndef NDEBUG
-    std::cout << "Collecting sorted answers" << std::endl;
-#endif
-    for (size_t s=0;s<length;++s){
-      sortindices.push_back(UnsortedValues[s].first);
-      kept_weight+=UnsortedValues[s].second*UnsortedValues[s].second;
-      Values.push_back(UnsortedValues[s].second);
-    }*/
-#ifndef NDEBUG
+    std::cout << "SVD()" << std::endl;
+    std::cout << "Largest s val: " << UnsortedValues[0].second << ", Smallest s val: " << UnsortedValues[length-1].second << std::endl <<std::endl;
+    std::cout << "Total weight is: " << total_weight << std::endl;
+    std::cout << "Kept weight is: " << kept_weight << std::endl;
+    std::cout << "Discarded weight is: " << discarded_weight << std::endl <<std::endl;
     std::cout << "Resizing arrays" << std::endl;
 #endif
     //Unsorted are now in fact sorted
@@ -1284,18 +1296,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 #ifndef NDEBUG
     std::cout << "Populating output object" << std::endl;
 #endif
-    SparseSVD ans(std::move(Values),std::move(UnsortedU.ExtractColumns(sortindices)),std::move(UnsortedVstar.ExtractColumns(sortindices).transpose()));
-
-    //ans.U=UnsortedU.ExtractColumns(sortindices);
-    //ans.Vdagger=UnsortedVstar.ExtractColumns(sortindices).transpose();
-#ifndef NDEBUG
-    std::cout << "Fixing kept weight" << std::endl;
-#endif
-    ans.set_weights(total_weight,kept_weight);
-#ifndef NDEBUG
-    std::cout << "Returning" << std::endl;
-#endif
-    return ans;
+    return SparseSVD(std::move(Values),std::move(UnsortedU.ExtractColumns(sortindices)),std::move(UnsortedVstar.ExtractColumns(sortindices).transpose()),kept_weight,discarded_weight);
   }
   //////////////////////////////////////////////////////////
   std::vector<double> SparseMatrix::SVD() const{
@@ -1319,7 +1320,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
       for (Sparseint v=0;v<Blockans.ValuesSize();++v){
 	//read column of EigenVectors into sparse
 	for (Sparseint i=0;i<Blockans.EigenVectors.rows();++i){
-	  if (abs(Blockans.EigenVectors.Value(i,v))>std::numeric_limits<double>::epsilon()){
+	  if (abs(Blockans.EigenVectors.Value(i,v))>SPARSETOL){
 	    //ans.EigenVectors.entry(TB.ColLookups[i],ans.ValuesSize(),Blockans.EigenVectors.Value(i,v));
 	    ans.EigenVectors.entry(TB.ColLookups[i],ans.ValuesSize(),Blockans.EigenVectors.Value(i,v));
 	  }
@@ -1353,7 +1354,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
       for (Sparseint v=0;v<Blockans.ValuesSize();++v){
 	//read column of EigenVectors into sparse
 	for (Sparseint i=0;i<Blockans.EigenVectors.rows();++i){
-	  if (abs(Blockans.EigenVectors.Value(i,v))>std::numeric_limits<double>::epsilon()){
+	  if (abs(Blockans.EigenVectors.Value(i,v))>SPARSETOL){
 	      //ans.EigenVectors.entry(TB.ColLookups[i],ans.ValuesSize(),Blockans.EigenVectors.Value(i,v));
 	    ans.EigenVectors.entry(TB.ColLookups[i],ans.ValuesSize(),Blockans.EigenVectors.Value(i,v));
 	  }

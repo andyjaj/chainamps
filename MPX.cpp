@@ -294,7 +294,7 @@ namespace ajaj {
 	std::cout << "All eigenvalues:" << std::endl;
 	std::cout << *it << std::endl;
       }
-      exit(1);
+      return std::pair<std::vector<double>,MPX_matrix>(std::vector<double>(),MPX_matrix());
     }
     
     std::vector<MPXIndex> XIndices;
@@ -476,7 +476,7 @@ namespace ajaj {
 #ifndef NDEBUG
     std::cout << "return SVD" << std::endl;
 #endif				     
-    return MPXDecomposition(MPX_matrix(this->GetPhysicalSpectrum(),leftindices,m_NumRowIndices,std::move(decomposition.U)),std::move(decomposition.Values),MPX_matrix(this->GetPhysicalSpectrum(),rightindices,1,std::move(decomposition.Vdagger)));
+    return MPXDecomposition(MPX_matrix(this->GetPhysicalSpectrum(),leftindices,m_NumRowIndices,std::move(decomposition.U)),std::move(decomposition.Values),MPX_matrix(this->GetPhysicalSpectrum(),rightindices,1,std::move(decomposition.Vdagger)),decomposition.discarded_weight());
   }
 
   MPX_matrix& MPX_matrix::Transpose(){
@@ -987,7 +987,7 @@ namespace ajaj {
   }
 
   void UnitCell::OutputPhysicalIndexDensities(std::ofstream& d) const {
-    if (d.is_open()){
+    if (d.is_open() && size()){
       std::vector<std::complex<double> > densities;
       MPX_matrix accumulator(contract(Matrices.at(0),1,Matrices.at(0),0,contract0011));
       for (uMPXInt i=1;i<Matrices.size()-1;++i){
@@ -1007,7 +1007,7 @@ namespace ajaj {
   }
   
   void UnitCell::OutputOneVertexDensityMatrix(std::ofstream& d) const {
-    if (d.is_open()){
+    if (d.is_open() && size()){
       MPX_matrix accumulator(contract(Matrices.at(0),1,Matrices.at(0),0,contract0011));
       for (uMPXInt i=1;i<Matrices.size()-1;++i){
 	accumulator=std::move(contract(contract(accumulator,0,Matrices.at(i),1,contract01),0,Matrices.at(i),0,contract0110));
@@ -1019,6 +1019,16 @@ namespace ajaj {
 	SparseMatrix S(contract_to_sparse(contract(temp,1,accumulator,0,contract10),0,temp,0,contract1221));
 	S.fprint(d);
       }
+    }
+  }
+
+  double UnitCell::Entropy() const {
+    if (Lambdas.size()){
+      return entropy(Lambdas[0]);
+    }
+    else {
+      std::cout << "UnitCell illformed. Can't compute entanglement entropy, returning -1" <<std::endl;
+      return -1.0; //indicates failure
     }
   }
 

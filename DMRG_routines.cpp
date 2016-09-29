@@ -167,7 +167,7 @@ namespace ajaj {
     double S_E(entropy(CentralDecomposition.Values));
     std::cout << "Current Bond Dimension: " << CentralDecomposition.Values.size() << ", Entropy: " << S_E << std::endl;
     two_vertex_energy.Real_measurements.push_back(S_E);
-    two_vertex_energy.Real_measurements.push_back(CentralDecomposition.getRescaleDifference());
+    two_vertex_energy.Real_measurements.push_back(CentralDecomposition.Truncation);
     two_vertex_energy.Real_measurements.push_back(0.0);
     return two_vertex_energy;
   }
@@ -184,7 +184,7 @@ namespace ajaj {
     }
     Prediction Next(MakePrediction(CentralDecomposition,previous_lambda_));
     std::cout << "checking overlap" << std::endl;
-    double convergence(CheckConvergence(Next,previous_lambda_));
+    fidelity_=CheckConvergence(Next,previous_lambda_);
     //we don't need the central decomp anymore, so we could steal/swap from it
     previous_lambda_=CentralDecomposition.Values;
     //update numbers
@@ -196,9 +196,9 @@ namespace ajaj {
     push_density();
     double S_E(entropy(CentralDecomposition.Values));
     energy.Real_measurements.push_back(S_E);
-    energy.Real_measurements.push_back(CentralDecomposition.getRescaleDifference());
-    energy.Real_measurements.push_back(convergence);
-    std::cout <<"1-Overlap: " << convergence << ", Current Bond Dimension: " << CentralDecomposition.Values.size() << ", Entropy: " << S_E << std::endl;
+    energy.Real_measurements.push_back(CentralDecomposition.Truncation);
+    energy.Real_measurements.push_back(fidelity_);
+    std::cout <<"1-fidelity: " << fidelity_ << ", Current Bond Dimension: " << CentralDecomposition.Values.size() << ", Entropy: " << S_E << std::endl;
     //after calculation, insert the two new sites
     return energy;
   }
@@ -224,7 +224,7 @@ namespace ajaj {
     push_density();
     double S_E(entropy(CentralDecomposition.Values));
     energy.Real_measurements.push_back(S_E);
-    energy.Real_measurements.push_back(CentralDecomposition.getRescaleDifference());
+    energy.Real_measurements.push_back(CentralDecomposition.Truncation);
     energy.Real_measurements.push_back(1.0);//overlap not calculated at moment
     std::cout <<"Current Bond Dimension: " << CentralDecomposition.Values.size() << ", Entropy: " << S_E << std::endl;
     return energy;
@@ -251,7 +251,7 @@ namespace ajaj {
     push_density();
     double S_E(entropy(CentralDecomposition.Values));
     energy.Real_measurements.push_back(S_E);
-    energy.Real_measurements.push_back(CentralDecomposition.getRescaleDifference());
+    energy.Real_measurements.push_back(CentralDecomposition.Truncation);
     energy.Real_measurements.push_back(1.0);//overlap not calculated at moment
     std::cout <<"Current Bond Dimension: " << CentralDecomposition.Values.size() << ", Entropy: " << S_E << std::endl;
     return energy;
@@ -400,7 +400,7 @@ namespace ajaj {
 
     double S_E(entropy(CentralDecomposition.Values));
     results.Real_measurements.push_back(S_E);
-    results.Real_measurements.push_back(CentralDecomposition.getRescaleDifference());
+    results.Real_measurements.push_back(CentralDecomposition.Truncation);
     results.Real_measurements.push_back(1.0); //overlap not calculated at moment
     std::cout <<"Current Bond Dimension: " << CentralDecomposition.Values.size() << ", Entropy: " << S_E << std::endl;
     output_ref_.push(results);
@@ -448,7 +448,7 @@ namespace ajaj {
     CentralDecomposition.SquareRescale(1.0);
     double S_E(entropy(CentralDecomposition.Values));
     results.Real_measurements.push_back(S_E);
-    results.Real_measurements.push_back(CentralDecomposition.getRescaleDifference());
+    results.Real_measurements.push_back(CentralDecomposition.Truncation);
     results.Real_measurements.push_back(1.0);//overlap not calculated at moment
     std::cout <<"Current Bond Dimension: " << CentralDecomposition.Values.size() << ", Entropy: " << S_E << std::endl;
     return results;
@@ -494,7 +494,7 @@ namespace ajaj {
     CentralDecomposition.SquareRescale(1.0);
     double S_E(entropy(CentralDecomposition.Values));
     results.Real_measurements.push_back(S_E);
-    results.Real_measurements.push_back(CentralDecomposition.getRescaleDifference());
+    results.Real_measurements.push_back(CentralDecomposition.Truncation);
     results.Real_measurements.push_back(1.0);//overlap not calculated at moment
     std::cout <<"Current Bond Dimension: " << CentralDecomposition.Values.size() << ", Entropy: " << S_E << std::endl;
     return results;

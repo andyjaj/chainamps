@@ -97,8 +97,10 @@ namespace ajaj {
     const MPO_matrix* H_ptr_;
     State TargetState_;
     std::string DensityFileName_;
+
   protected:
     std::vector<double> previous_lambda_;
+    double fidelity_;
   public:
     MPSDecomposition CentralDecomposition;
 
@@ -119,6 +121,8 @@ namespace ajaj {
     const std::vector<double>& getPreviousLambda() const {return previous_lambda_;}
     const State& getTargetState() const {return TargetState_;}
     void push_density() const;
+
+    double getTruncation() const {return CentralDecomposition.Truncation;}
 
     virtual Data initialise(uMPXInt chi=0, double smin=0.0); //two vertex initialisation, returns some two vertex measurements
     virtual Data grow_two_vertex(uMPXInt chi=0, double smin=0.0);
@@ -155,11 +159,11 @@ namespace ajaj {
 
   class iDMRG : public SuperBlock {
   private:
-    double m_convergence;
     DataOutput& output_ref_;
   public:
     iDMRG(const std::string& Name, const MPO_matrix& H, const State& TargetState, DataOutput& resultsref) : SuperBlock(Name,H,TargetState),output_ref_(resultsref) {};
     void run(uMPXInt number_of_steps=0, double convergence_criterion=0.0,  uMPXInt chi=0, double smin=0.0); /**< Perform infinite algorithm growth steps*/
+    double fidelity() const {return fidelity_;}
   };
 
   class FiniteDMRG : public SuperBlock {

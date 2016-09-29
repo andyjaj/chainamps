@@ -116,7 +116,11 @@ namespace ajaj {
     std::complex<double>& put_x(Sparseint p);
     void set_x(const Sparseint p,complex<double> x) {m_array->x[p]=x;}
     void print_emptyness() const;
-    void print_sparse_info() const {std::cout << rows() << "*" <<cols() << std::endl << "Non zeros: " << nz() << " "; print_emptyness(); std::cout << "Approx size: " << double(nz()*sizeof(std::complex<double>))/(1024.0*1024.0) << " megabytes" << std::endl; }
+    void print_l_s() const;
+
+    void print_sparse_info() const {std::cout << rows() << "*" <<cols() << std::endl << "Non zeros: " << nz() << " "; print_emptyness(); std::cout << "Approx size: " << double(nz()*sizeof(std::complex<double>))/(1024.0*1024.0) << " megabytes" << std::endl; 
+      print_l_s();
+    }
     double norm() const;
     double norm(const std::vector<Sparseint>& cols) const;
     double sum_column_square_norms(const std::vector<Sparseint>& cols) const;
@@ -257,6 +261,8 @@ namespace ajaj {
     const Sparseint rightdim;
     double m_kept_weight;
     double m_discarded_weight;
+    //double m_total_weight;
+
   public:
     SparseMatrix U;
     SparseMatrix Vdagger;
@@ -264,7 +270,7 @@ namespace ajaj {
     }
     SparseSVD(std::vector<double>&& vals, SparseMatrix&& umatrix, SparseMatrix&& vdmatrix, double keptweight=0.0,double discardedweight=0.0) : SparseDecompositionBase<double>(std::move(vals)),leftdim(umatrix.rows()),rightdim(vdmatrix.cols()),m_kept_weight(keptweight),m_discarded_weight(discardedweight),U(std::move(umatrix)),Vdagger(std::move(vdmatrix)){};
     //~SparseSVD(){};
-    void set_weights(double total_weight,double kept_weight){m_kept_weight=kept_weight; m_discarded_weight=total_weight-kept_weight;}
+    //void set_weights(double kept_weight,double discarded_weight) :m_kept_weight(kept_weight), m_discarded_weight(discarded_weight) {}
     double kept_weight() const { return m_kept_weight;}
     double discarded_weight() const { return m_discarded_weight;}
   };

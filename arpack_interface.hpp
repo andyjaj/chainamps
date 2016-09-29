@@ -164,7 +164,7 @@ namespace arpack {
 	    smallest=i;	    
 	  }
 	}
-	if (abs(m_workspace.d[smallest])>1.0e3){
+	if (abs(m_workspace.d[smallest])>1.0e6){
 	  std::cout << "Very large absolute value returned from arpack for eigenvalue: " << m_workspace.d[smallest] <<", aborting..." <<std::endl; exit(1);
 	}
 	else if (smallest!=0){

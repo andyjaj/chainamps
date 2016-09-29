@@ -50,15 +50,18 @@ int main(int argc, char** argv){
     std::vector<double> iDMRGEnergies_accurate;
 
     ajaj::DataOutput infvolresults("iDMRGEnergies.dat");
+
+    ajaj::uMPXInt VarCHI(CHI);
+
     for (ajaj::uMPXInt r=0;r< (steps>2 ? steps-2 : 0) ;++r){
-      infvol.run(1,-0.0,CHI,minS);
+      infvol.run(1,-0.0,VarCHI,minS);
       ajaj::UnitCell Ortho(Orthogonalise(infvol.getCentralDecomposition(),infvol.getPreviousLambda()));
       //at the moment measuring the energy is done in an inelegant way
       //iDMRGEnergies_simple.push_back(real(ajaj::SimpleEnergy(LeftH,RightH,H1,I,Ortho)));
       iDMRGEnergies_accurate.push_back(real(ajaj::SophisticatedEnergy(ColX,RowX,H1,Ortho)));
 
       std::cout << "iDMRG energy per vertex " << iDMRGEnergies_accurate.back() << std::endl;
-      ajaj::Data inf_data(std::vector<double>({{iDMRGEnergies_accurate.back(),ajaj::entropy(*(Ortho.Lambdas.begin()))}}));
+      ajaj::Data inf_data(std::vector<double>({{iDMRGEnergies_accurate.back(),Ortho.Entropy()}}));
       infvolresults.push(inf_data);
       {
 	std::stringstream DensityMatrixNameStream;
@@ -68,7 +71,16 @@ int main(int argc, char** argv){
 	Ortho.OutputOneVertexDensityMatrix(DensityMatrixFileStream);
 	DensityMatrixFileStream.close();
       }
+      if (infvol.getTruncation()<=std::numeric_limits<double>::epsilon()){
+	VarCHI-=1;
+	r-=1;
+      }
+      else if (VarCHI<CHI && infvol.getTruncation()>100.0*std::numeric_limits<double>::epsilon()){
+	VarCHI+=1;
+	r-=1;
+      }
     }
+
     auto t2 = std::chrono::high_resolution_clock::now();
 
     std::cout << "SUMMARY of iDMRG thermodynamic energy per vertex" << std::endl;

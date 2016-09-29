@@ -384,23 +384,18 @@ namespace ajaj {
 
   /** Used for storing the results of decompositions. */
   class MPXDecompositionBase {
-  private: 
-    double m_rescalediff;
   public:
+    double Truncation;
     MPX_matrix ColumnMatrix;
     std::vector<double> Values;
-    MPXDecompositionBase(const EigenStateArray& spectrum) : ColumnMatrix(spectrum){};
-    MPXDecompositionBase(MPX_matrix&& cm, std::vector<double>&& v) noexcept : ColumnMatrix(std::move(cm)), Values(std::move(v)){};
-    /*void printValues() const{
-      for (std::vector<double>::const_iterator cit=Values.begin();cit!=Values.end();++cit){
-	std::cout << *cit << std::endl;
-      }
-    }*/
+    MPXDecompositionBase(const Basis& basis) : Truncation(0.0),ColumnMatrix(basis){};
+    MPXDecompositionBase(MPX_matrix&& cm, std::vector<double>&& v, double Trunc=0.0) noexcept : Truncation(Trunc),ColumnMatrix(std::move(cm)), Values(std::move(v)){};
+
     const std::vector<double>& SquareRescale(double sqsum) {
-      m_rescalediff=sqsum-SquareSumRescale(Values,sqsum);
+      Truncation/=sqsum;
+      SquareSumRescale(Values,sqsum);
       return Values;
     }
-    double getRescaleDifference() const {return m_rescalediff;} //in most cases this will be the truncation error
 
     void printValues() const{
       double weight(0.0);
@@ -416,30 +411,26 @@ namespace ajaj {
   class MPXDecomposition : public MPXDecompositionBase {
   public:
     MPX_matrix RowMatrix;
-    MPXDecomposition(const EigenStateArray& spectrum) : MPXDecompositionBase(spectrum), RowMatrix(spectrum){};
-    MPXDecomposition(MPX_matrix&& cm, std::vector<double>&& v, MPX_matrix&& rm) noexcept : MPXDecompositionBase(std::move(cm),std::move(v)), RowMatrix(std::move(rm)) {};
+    MPXDecomposition(const Basis& basis) : MPXDecompositionBase(basis), RowMatrix(basis){};
+    MPXDecomposition(MPX_matrix&& cm, std::vector<double>&& v, MPX_matrix&& rm, double Trunc=0.0) noexcept : MPXDecompositionBase(std::move(cm),std::move(v),Trunc), RowMatrix(std::move(rm)) {};
     
   };
 
   /** Used for storing the results of decompositions, such as SVD (Schmidt decomposition) that produce two new MPS_matrix objects.*/
   class MPSDecomposition {
   private: 
-    double m_rescalediff;
   public:
+    double Truncation;
     std::vector<double> Values;
     MPS_matrix LeftMatrix;
     MPS_matrix RightMatrix;
-    MPSDecomposition(MPXDecomposition&& X) noexcept : m_rescalediff(0.0), Values(std::move(X.Values)), LeftMatrix(std::move(X.ColumnMatrix)), RightMatrix(std::move(X.RowMatrix)){};
-    MPSDecomposition(const EigenStateArray& spectrum) : m_rescalediff(0.0), Values(), LeftMatrix(spectrum), RightMatrix(spectrum){};
+    MPSDecomposition(MPXDecomposition&& X) noexcept : Truncation(X.Truncation), Values(std::move(X.Values)), LeftMatrix(std::move(X.ColumnMatrix)), RightMatrix(std::move(X.RowMatrix)){};
+    MPSDecomposition(const EigenStateArray& spectrum) : Truncation(0.0), Values(), LeftMatrix(spectrum), RightMatrix(spectrum){};
     const std::vector<double>& SquareRescale(double sqsum) {
-      double oldsquaresum(SquareSumRescale(Values,sqsum));
-      m_rescalediff=sqsum-oldsquaresum;
-      if (m_rescalediff<-1.0e-12){
-	std::cout << "Truncation error is negative? :" << m_rescalediff << std::endl; exit(1);
-      }
+      Truncation/=sqsum;
+      SquareSumRescale(Values,sqsum);
       return Values;
     }
-    double getRescaleDifference() const {return m_rescalediff;} //in most cases this will be the truncation error
     void printValues() const {
       for (std::vector<double>::const_iterator cit=Values.begin();cit!=Values.end();++cit){
 	std::cout << *cit << std::endl;
@@ -495,6 +486,7 @@ namespace ajaj {
     const std::vector<double>& GetLambda(size_t i) {return Lambdas.at(i);}
     void OutputPhysicalIndexDensities(std::ofstream& d) const;
     void OutputOneVertexDensityMatrix(std::ofstream& d) const;
+    double Entropy() const;
   };
 
   /** Sometimes after a decomposition we need to figure out the new charges of all the rows, which we can do using the columns and the sparse structure.*/
