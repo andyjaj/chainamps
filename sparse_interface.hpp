@@ -124,6 +124,8 @@ namespace ajaj {
     double norm() const;
     double norm(const std::vector<Sparseint>& cols) const;
     double sum_column_square_norms(const std::vector<Sparseint>& cols) const;
+    double square_norm() const;
+
     //array operations
     void purge(); //the purpose of this is to empty the array, but to keep the dimensions the same and free it up for new entries
     void entry(Sparseint i, Sparseint j, std::complex<double> value);

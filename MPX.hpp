@@ -139,6 +139,7 @@ namespace ajaj {
     std::vector<Sparseint> dimsvector() const; /**< Return a vector containing all the dimensions of the MPXIndex indices, from left to right. */
     void print_matrix() const; /**< Print the SparseMatrix */
     void print_indices() const; /**< Print the dimensions of the indices. Colon indicates how many correspond to rows and how many to columns. */
+    void print_indices_values() const;
     void print_sparse_info() const {m_Matrix.print_sparse_info();}
     bool fprint_binary(std::ofstream& outfile) const; /**< Print the MPX_matrix to file in binary format. */
     bool store(const std::string& filename) const; /**< Print the MPX_matrix to file in binary format. */

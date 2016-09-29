@@ -71,14 +71,6 @@ int main(int argc, char** argv){
 	Ortho.OutputOneVertexDensityMatrix(DensityMatrixFileStream);
 	DensityMatrixFileStream.close();
       }
-      if (infvol.getTruncation()<=std::numeric_limits<double>::epsilon()){
-	VarCHI-=1;
-	r-=1;
-      }
-      else if (VarCHI<CHI && infvol.getTruncation()>100.0*std::numeric_limits<double>::epsilon()){
-	VarCHI+=1;
-	r-=1;
-      }
     }
 
     auto t2 = std::chrono::high_resolution_clock::now();

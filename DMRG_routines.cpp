@@ -141,7 +141,7 @@ namespace ajaj {
 
   Data SuperBlock::initialise(uMPXInt chi, double smin){
     //Assumes any previous contents of the blocks are junk.
-    if(!H_ptr_->isConsistent()){std::cout << "Hamiltonian MPO is malformed. Aborting." << std::endl; exit(1);}
+    if(!H_ptr_->isConsistent()){std::cout << "Hamiltonian MPO is malformed. Aborting." << std::endl; H_ptr_->print_indices_values(); exit(1);}
     //first we store some dummy blocks at the left and right ends (position 0), which are useful
     ends(MakeDummyLeftBlock(getH(),getTargetState()),MakeDummyRightBlock(getH(),getTargetState()));
     //we need the left and right MPO forms of H for open boundary conditions
@@ -643,8 +643,10 @@ namespace ajaj {
     MPX_matrix ALambdaR(reorder(contract(svals,0,Decomp.RightMatrix,0,contract10),0,reorder102,2));
     RotDecomp=ALambdaR.SVD();
     ans.LambdaR=contract_to_sparse(MPX_matrix(spectrum,RotDecomp.RowMatrix.Index(0),RotDecomp.Values),0,RotDecomp.RowMatrix,0,contract10);
-    MPX_matrix InversePreviousLambda(spectrum,Decomp.LeftMatrix.Index(1),PreviousLambda,1); //1 means take inverse values
+    MPX_matrix InversePreviousLambda(spectrum,Decomp.LeftMatrix.Index(1),PreviousLambda,1); //1 means take inverse values    
     ans.Guess=reshape_to_vector(contract(contract(ALambdaR,0,InversePreviousLambda,0,contract20),0,LambdaLB,0,contract20));
+    //ans.Guess.rescale(sqrt(1.0/ans.Guess.square_norm()));
+
     return ans;
   }
 

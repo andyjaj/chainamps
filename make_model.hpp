@@ -363,6 +363,10 @@ namespace ajaj{
 
     }
     QNCombinations differencecombinations(v.basis(),1); //1 means use difference
+
+    //std::cout << "Diff pairs: " << differencecombinations.InvolutionPairs.size() << " " << differencecombinations.OrderedPairs.size() << std::endl;
+    //differencecombinations.print();
+
     MPXInt lineardim((2+CouplingBlocks.size()*differencecombinations.size())*v.basis().size());
 
     SparseMatrix harray(lineardim,lineardim,(2+couplings.size())*v.basis().size());
@@ -414,7 +418,7 @@ namespace ajaj{
 	  }
 	  else {
 	    for (size_t l=0;l<differencecombinations.OrderedPairs.size();++l){
-	      if (diffstate==differencecombinations.OrderedPairs[l].PairState){
+	      if (diffstate==-differencecombinations.OrderedPairs[l].PairState){
 		row_block_d_offset=(differencecombinations.InvolutionPairs.size()+l)*v.basis().size();
 		if (sameflag)
 		  col_block_d_offset=(differencecombinations.size()-l-1)*v.basis().size();		
@@ -445,7 +449,7 @@ namespace ajaj{
 	    }
 	    else {
 	      for (size_t l=0;l<differencecombinations.OrderedPairs.size();++l){
-		if (diffstate==differencecombinations.OrderedPairs[l].PairState){
+		if (diffstate==-differencecombinations.OrderedPairs[l].PairState){
 		  col_block_d_offset=(differencecombinations.size()-l-1)*v.basis().size();		
 		  break;
 		}

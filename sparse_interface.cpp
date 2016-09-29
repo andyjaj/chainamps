@@ -577,8 +577,8 @@ namespace ajaj {
     if (m_array){ //if array ptr isn't null
       //do a deep copy of the array
       //general
-      Sparseint nonzero = m_array->nz==-1 ? m_array->p[m_array->n] : m_array->nz;
-      for (Sparseint i=0; i<nonzero;++i){
+      //Sparseint nonzero = m_array->nz==-1 ? m_array->p[m_array->n] : m_array->nz;
+      for (Sparseint i=0; i<nz();++i){
 	m_array->x[i]*=factor;
       }
       return *this;
@@ -1179,6 +1179,14 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     return sum;
   }
 
+  double SparseMatrix::square_norm() const {
+    double sum=0.0;
+    for (Sparseint p=0;p<this->nz();++p){
+      sum+=real(conj(this->get_x(p))*(this->get_x(p)));
+    }
+    return sum;
+  }
+
   SparseSVD SparseMatrix::SVD(const std::vector<std::vector<Sparseint> >& B,size_t D, double min_s_val) const {
     //loop through groups doing svd
 #ifndef NDEBUG
@@ -1267,7 +1275,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     Values.push_back(UnsortedValues[0].second);
     double kept_weight(UnsortedValues[0].second*UnsortedValues[0].second);
     for (size_t s=1;s<length;++s){
-      if (UnsortedValues[s].second < sqrt(SPARSETOL)*UnsortedValues.begin()->second) {
+      if (UnsortedValues[s].second < SPARSETOL*UnsortedValues.begin()->second) {
 	length=s;
 	std::cout << "Truncating further due to very small singular values." <<std::endl; 
 	break;

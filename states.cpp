@@ -113,6 +113,7 @@ namespace ajaj {
   void QNCombinations::getQNCombinations(const StateArray& sa,const bool negate=0) {
     //list is not great, but we need to erase elements all over the place
     //iterate through sa
+
     std::list<PairStateBlock> unsorted_ans;
     MPXInt lidx=0;
     for (StateArray::const_iterator cit1=sa.begin();cit1!=sa.end();++cit1){

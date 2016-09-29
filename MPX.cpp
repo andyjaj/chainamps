@@ -564,6 +564,14 @@ namespace ajaj {
     std::cout << std::endl;
   }
 
+  void MPX_matrix::print_indices_values() const {
+    uMPXInt count(0);
+    for (auto&& I : m_Indices){
+      std::cout << "Index " << count << ", Direction " << (I.Ingoing() ? "+" : "-") <<std::endl;
+      I.print();
+    }
+  }
+
   bool MPX_matrix::isConsistent() const {
     MPXInt rows=1;
     MPXInt cols=1;
