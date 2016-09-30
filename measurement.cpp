@@ -161,9 +161,9 @@ namespace ajaj {
 
     std::vector<MPXPair> contractL({{MPXPair(1,MPSD.RightMatrix.InwardMatrixIndexNumber())}});
     MPXDecomposition L(MPS_matrix(contract(CurrentLambda,0,MPSD.RightMatrix,0,contractL)).left_shape().SVD());
-    MPS_matrix A2(std::move(L.ColumnMatrix));
-    MPX_matrix P_(contract(MPX_matrix(basis,L.RowMatrix.Index(0),L.Values),0,L.RowMatrix,0,contract10));
-    MPS_matrix NL(contract(contract(A2,0,P_,0,contract20),0,PreviousLambdaInverse,0,contract20));
+    //MPS_matrix A2(std::move(L.ColumnMatrix));
+    //MPX_matrix P_(contract(MPX_matrix(basis,L.RowMatrix.Index(0),L.Values),0,L.RowMatrix,0,contract10));
+    MPS_matrix NL(contract(contract(L.ColumnMatrix,0,contract(MPX_matrix(basis,L.RowMatrix.Index(0),L.Values),0,L.RowMatrix,0,contract10),0,contract20),0,PreviousLambdaInverse,0,contract20));
 
     SparseED LeftTdecomp(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&MPSD.LeftMatrix,&NL}}),1).LeftED(1,LARGESTMAGNITUDE));
 
@@ -175,9 +175,9 @@ namespace ajaj {
 
     std::vector<MPXPair> contractR({{MPXPair(MPSD.LeftMatrix.OutwardMatrixIndexNumber(),0)}});
     MPXDecomposition R(MPS_matrix(contract(MPSD.LeftMatrix,0,CurrentLambda,0,contractR)).right_shape().SVD());
-    MPS_matrix B2(std::move(R.RowMatrix)); //rightshaped
-    MPX_matrix Q_(contract(R.ColumnMatrix,0,MPX_matrix(basis,R.ColumnMatrix.Index(1),R.Values),0,contract10));
-    MPS_matrix NR(contract(PreviousLambdaInverse,0,contract(Q_,0,B2,0,contract10),0,contract10));
+    //MPS_matrix B2(std::move(R.RowMatrix)); //rightshaped
+    //MPX_matrix Q_(contract(R.ColumnMatrix,0,MPX_matrix(basis,R.ColumnMatrix.Index(1),R.Values),0,contract10));
+    MPS_matrix NR(contract(PreviousLambdaInverse,0,contract(contract(R.ColumnMatrix,0,MPX_matrix(basis,R.ColumnMatrix.Index(1),R.Values),0,contract10),0,R.RowMatrix,0,contract10),0,contract10));
 
     SparseED RightTdecomp(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&NR,&MPSD.RightMatrix}}),1).RightED(1,LARGESTMAGNITUDE));
 
