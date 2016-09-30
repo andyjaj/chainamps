@@ -164,11 +164,13 @@ namespace ajaj {
     initial_2(MakeInitialLeftBlock(LeftH,CentralDecomposition.LeftMatrix),MakeInitialRightBlock(RightH,CentralDecomposition.RightMatrix));
     //at this point there are 2 vertices, and we have pre stored the blocks they contribute to
     previous_lambda_=std::vector<double>(1,1.0);
+    pred_=MakePrediction(CentralDecomposition,previous_lambda_);//give use one way of checking overlap of current state with the previous one.
+    fidelity_=CheckConvergence(pred_,previous_lambda_);
     double S_E(entropy(CentralDecomposition.Values));
     std::cout << "Current Bond Dimension: " << CentralDecomposition.Values.size() << ", Entropy: " << S_E << std::endl;
     two_vertex_energy.Real_measurements.push_back(S_E);
     two_vertex_energy.Real_measurements.push_back(CentralDecomposition.Truncation);
-    two_vertex_energy.Real_measurements.push_back(0.0);
+    two_vertex_energy.Real_measurements.push_back(fidelity_);
     return two_vertex_energy;
   }
 
@@ -182,18 +184,20 @@ namespace ajaj {
     else { /*size()>4, make new left and right blocks, insert dummy vertices ready for solving*/
       insert_2(MakeLeftBlock(getLeftBlock(),getH(),CentralDecomposition.LeftMatrix),MakeRightBlock(getRightBlock(),getH(),CentralDecomposition.RightMatrix));
     }
-    Prediction Next(MakePrediction(CentralDecomposition,previous_lambda_));
-    std::cout << "checking overlap" << std::endl;
-    fidelity_=CheckConvergence(Next,previous_lambda_);
+    //Prediction Next(MakePrediction(CentralDecomposition,previous_lambda_));
+    //std::cout << "Checking overlap" << std::endl; //actually we are checking the convergence of the previous iteration...
+    //fidelity_=CheckConvergence(Next,previous_lambda_);
     //we don't need the central decomp anymore, so we could steal/swap from it
     previous_lambda_=CentralDecomposition.Values;
     //update numbers
     //solve
     Data energy;
-    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),nullptr,size(),energy,&(Next.Guess)),chi,smin);
+    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),nullptr,size(),energy,&(pred_.Guess)),chi,smin);
     CentralDecomposition.SquareRescale(1.0);
     //CentralDecomposition.OutputPhysicalIndexDensities(DensityFileStream_);
     push_density();
+    pred_=MakePrediction(CentralDecomposition,previous_lambda_);
+    fidelity_=CheckConvergence(pred_,previous_lambda_);
     double S_E(entropy(CentralDecomposition.Values));
     energy.Real_measurements.push_back(S_E);
     energy.Real_measurements.push_back(CentralDecomposition.Truncation);
@@ -222,6 +226,8 @@ namespace ajaj {
     CentralDecomposition.SquareRescale(1.0);
     //CentralDecomposition.OutputPhysicalIndexDensities(DensityFileStream_);
     push_density();
+    //pred_=MakePrediction(CentralDecomposition,previous_lambda_);
+    //fidelity_=CheckConvergence(pred_,previous_lambda_);
     double S_E(entropy(CentralDecomposition.Values));
     energy.Real_measurements.push_back(S_E);
     energy.Real_measurements.push_back(CentralDecomposition.Truncation);
@@ -249,6 +255,8 @@ namespace ajaj {
     CentralDecomposition.SquareRescale(1.0);
     //CentralDecomposition.OutputPhysicalIndexDensities(DensityFileStream_);
     push_density();
+    //pred_=MakePrediction(CentralDecomposition,previous_lambda_);
+    //fidelity_=CheckConvergence(pred_,previous_lambda_);
     double S_E(entropy(CentralDecomposition.Values));
     energy.Real_measurements.push_back(S_E);
     energy.Real_measurements.push_back(CentralDecomposition.Truncation);
@@ -670,8 +678,8 @@ namespace ajaj {
     return MPX_matrix(LB.GetPhysicalSpectrum(),stuff.indices,2,reshape(decomp.EigenVectors.ExtractColumns(std::vector<MPXInt>(1,0)),LB.GetPhysicalSpectrum().size()*LB.Index(5).size()));
   }
 
-  double CheckConvergence(const Prediction& guess,const std::vector<double>& NewLambda){
-    return 1.0-Sum((guess.LambdaR*SparseMatrix(NewLambda)).SVD());
+  double CheckConvergence(const Prediction& guess,const std::vector<double>& PreviousLambda){
+    return 1.0-Sum((guess.LambdaR*SparseMatrix(PreviousLambda)).SVD());
   }
 
   TwoVertexComponents::TwoVertexComponents(const MPX_matrix& L, const MPO_matrix& HMPO, const MPX_matrix& R, const std::vector<ProjectorBlocks>* P, const State* StatePtr) : LeftBlock(L),H(HMPO),RightBlock(R),ProjectorsPtr(P),TargetStatePtr(StatePtr),m_length(L.Index(5).size()*H.Index(2).size()*R.Index(4).size()*H.Index(2).size()),LeftPart(contract(H,0,LeftBlock,0,contract13)),RightPart(contract(H,0,RightBlock,0,contract32)) {
