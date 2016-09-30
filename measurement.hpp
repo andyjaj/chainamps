@@ -138,6 +138,7 @@ namespace ajaj {
   private:
     const State* TargetStatePtr_;
     const uMPXInt CellSize_;
+    const bool Hermitian_answer_; //setting this true insists that the final eigenvector can be reshaped into a (obviously square) Hermitian matrix
 
     std::vector<std::pair<const MPS_matrix*,const MPS_matrix*> > BraKetMatrixPtrs_;
 
@@ -145,7 +146,7 @@ namespace ajaj {
     std::vector<MPXIndex> left_indices_;
     std::vector<MPXIndex> right_indices_;
     std::vector<Sparseint> allowed_indices_;
-    //std::vector<Sparseint> allowed_indices_dagger_;
+    std::vector<Sparseint> allowed_indices_dagger_;//useful in order to ensure eigenvector can be made reshaped into Hermitian matrix to high precision
     std::vector<std::array<Sparseint,2> > rows_and_cols_;
     uMPXInt vrows_;
     uMPXInt vcols_;
@@ -154,8 +155,8 @@ namespace ajaj {
 
   public:
 
-    TransferMatrixComponents(const std::vector<const MPS_matrix*>& BraPtrs, const std::vector<const MPS_matrix*>& KetPtrs, const State* T=nullptr);
-    TransferMatrixComponents(const std::vector<const MPS_matrix*>& KetPtrs, const State* T=nullptr);
+    TransferMatrixComponents(const std::vector<const MPS_matrix*>& BraPtrs, const std::vector<const MPS_matrix*>& KetPtrs, bool HV=0, const State* T=nullptr);
+    TransferMatrixComponents(const std::vector<const MPS_matrix*>& KetPtrs, bool HV=0, const State* T=nullptr);
 
     const MPS_matrix& BraMatrix(uMPXInt i) const {return *(BraKetMatrixPtrs_.at(i).first);} //public interface
     const MPS_matrix& KetMatrix(uMPXInt i) const {return *(BraKetMatrixPtrs_.at(i).second);}

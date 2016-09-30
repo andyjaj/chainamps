@@ -9,7 +9,7 @@
 
 namespace ajaj {
 
-  static const double IMAGTOL(100*std::numeric_limits<double>::epsilon());
+  static const double IMAGTOL(100.0*std::numeric_limits<double>::epsilon());
 
   TransferMatrixParts::TransferMatrixParts(const UnitCell& B,const UnitCell& K,const State* T) : BraCell(B),KetCell(K),TargetStatePtr(T){
     if (BraCell.size() != KetCell.size()) {
@@ -151,28 +151,37 @@ namespace ajaj {
     //note rightmatrix is stored as a_i-1 sigma_i a_i format...
     //std::vector<MPXPair> contractL({{MPXPair(MPSD.RightMatrix.InwardMatrixIndexNumber(),1)}});
     //MPS_matrix NL(contract(contract(MPSD.RightMatrix,0,CurrentLambda,0,contractL),0,PreviousLambdaInverse,0,contract10));
+    //std::vector<MPXPair> contractL({{MPXPair(1,MPSD.RightMatrix.InwardMatrixIndexNumber())}});
+    //MPS_matrix NL(MPS_matrix(contract(CurrentLambda,0,contract(MPSD.RightMatrix,0,PreviousLambdaInverse,0,contract20),0,contractL)).left_shape());
+
+    //std::vector<MPXPair> contractR({{MPXPair(MPSD.LeftMatrix.InwardMatrixIndexNumber(),1)}});
+    //MPS_matrix NR=(contract(contract(MPSD.LeftMatrix,0,PreviousLambdaInverse,0,contractR),0,CurrentLambda,0,contract10));
+    //std::vector<MPXPair> contractR({{MPXPair(1,MPSD.LeftMatrix.InwardMatrixIndexNumber())}});
+    //MPS_matrix NR=(contract(PreviousLambdaInverse,0,contract(MPSD.LeftMatrix,0,CurrentLambda,0,contract20),0,std::vector<MPXPair>({{1,MPSD.LeftMatrix.InwardMatrixIndexNumber()}})));
 
     std::vector<MPXPair> contractL({{MPXPair(1,MPSD.RightMatrix.InwardMatrixIndexNumber())}});
-    MPS_matrix NL(MPS_matrix(contract(CurrentLambda,0,contract(MPSD.RightMatrix,0,PreviousLambdaInverse,0,contract20),0,contractL)).left_shape());
+    MPXDecomposition L(MPS_matrix(contract(CurrentLambda,0,MPSD.RightMatrix,0,contractL)).left_shape().SVD());
+    MPS_matrix A2(std::move(L.ColumnMatrix));
+    MPX_matrix P_(contract(MPX_matrix(basis,L.RowMatrix.Index(0),L.Values),0,L.RowMatrix,0,contract10));
+    MPS_matrix NL(contract(contract(A2,0,P_,0,contract20),0,PreviousLambdaInverse,0,contract20));
 
-    SparseED LeftTdecomp(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&MPSD.LeftMatrix,&NL}})).LeftED(1,LARGESTMAGNITUDE));
+    SparseED LeftTdecomp(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&MPSD.LeftMatrix,&NL}}),1).LeftED(1,LARGESTMAGNITUDE));
 
     std::cout << "Leading left eigenvalue of left transfer matrix: " << LeftTdecomp.Values.at(0) << std::endl; //will need to rescale by this
-
     if (abs(imag(LeftTdecomp.Values.at(0)))>=IMAGTOL*abs(real(LeftTdecomp.Values.at(0)))) {
       std::cout << "Eigenvalue has non negligible imaginary part, numerical error in transfer matrix contraction?" << std::endl;
       return UnitCell(basis);
     }
-    std::vector<MPXPair> contractR({{MPXPair(MPSD.LeftMatrix.InwardMatrixIndexNumber(),1)}});
-    MPS_matrix NR=(contract(contract(MPSD.LeftMatrix,0,PreviousLambdaInverse,0,contractR),0,CurrentLambda,0,contract10));
 
-    //std::vector<MPXPair> contractR({{MPXPair(1,MPSD.LeftMatrix.InwardMatrixIndexNumber())}});
-    //MPS_matrix NR=(contract(PreviousLambdaInverse,0,contract(MPSD.LeftMatrix,0,CurrentLambda,0,contract20),0,std::vector<MPXPair>({{1,MPSD.LeftMatrix.InwardMatrixIndexNumber()}})));
+    std::vector<MPXPair> contractR({{MPXPair(MPSD.LeftMatrix.OutwardMatrixIndexNumber(),0)}});
+    MPXDecomposition R(MPS_matrix(contract(MPSD.LeftMatrix,0,CurrentLambda,0,contractR)).right_shape().SVD());
+    MPS_matrix B2(std::move(R.RowMatrix)); //rightshaped
+    MPX_matrix Q_(contract(R.ColumnMatrix,0,MPX_matrix(basis,R.ColumnMatrix.Index(1),R.Values),0,contract10));
+    MPS_matrix NR(contract(PreviousLambdaInverse,0,contract(Q_,0,B2,0,contract10),0,contract10));
 
-    SparseED RightTdecomp(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&NR,&MPSD.RightMatrix}})).RightED(1,LARGESTMAGNITUDE));
+    SparseED RightTdecomp(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&NR,&MPSD.RightMatrix}}),1).RightED(1,LARGESTMAGNITUDE));
 
     std::cout << "Leading right eigenvalue of right transfer matrix: " << RightTdecomp.Values.at(0) << std::endl;
-
     if (abs(imag(RightTdecomp.Values.at(0)))>=IMAGTOL*abs(real(RightTdecomp.Values.at(0)))) {
       std::cout << "Eigenvalue has non negligible imaginary part, numerical error in transfer matrix contraction?" << std::endl;
       return UnitCell(basis);
@@ -184,7 +193,6 @@ namespace ajaj {
     VLIndices.emplace_back(0,MPSD.LeftMatrix.getInwardMatrixIndex());
     //decompose it into Xdagger X form
     std::pair<std::vector<double>,MPX_matrix> VLDecomp(SqrtDR(MPX_matrix(basis,VLIndices,1,reshape(LeftTdecomp.EigenVectors/*.ExtractColumns(std::vector<MPXInt>({0}))*/,MPSD.LeftMatrix.getInwardMatrixIndex().size()))));
-
     //If failure, return dummy
     if (!VLDecomp.first.size()) return UnitCell(basis);
 
@@ -428,9 +436,9 @@ namespace ajaj {
 
   }
 
-  TransferMatrixComponents::TransferMatrixComponents(const std::vector<const MPS_matrix*>& KetPtrs, const State* T) : TransferMatrixComponents(KetPtrs,KetPtrs,T) {}
+  TransferMatrixComponents::TransferMatrixComponents(const std::vector<const MPS_matrix*>& KetPtrs, bool HV, const State* Target) : TransferMatrixComponents(KetPtrs,KetPtrs,HV,Target) {}
 
-  TransferMatrixComponents::TransferMatrixComponents(const std::vector<const MPS_matrix*>& BraPtrs, const std::vector<const MPS_matrix*>& KetPtrs, const State* T) : TargetStatePtr_(T), CellSize_(BraPtrs.size()) {
+  TransferMatrixComponents::TransferMatrixComponents(const std::vector<const MPS_matrix*>& BraPtrs, const std::vector<const MPS_matrix*>& KetPtrs, bool HV, const State* Target) : TargetStatePtr_(Target), CellSize_(BraPtrs.size()), Hermitian_answer_(HV) {
     //init ptr lists
 
     //range check
@@ -462,7 +470,7 @@ namespace ajaj {
       for (MPXInt r=0;r<mprimed.size();++r){
 	if (m[c]==mprimed[r]){ //check for consistency of charges	      
 	  allowed_indices_.push_back(r+vrows_*c);
-	  //allowed_indices_dagger_.push_back(c+vcols_*r);
+	  allowed_indices_dagger_.push_back(c+vcols_*r);
 	  rows_and_cols_.push_back(std::array<MPXInt,2> {{r,c}});
 	}
       }
@@ -513,7 +521,8 @@ namespace ajaj {
 	  if (abs(Evecs[i+v*allowed_indices_.size()])>SPARSETOL){
 	    ans.EigenVectors.entry(allowed_indices_[i],v,Evecs[i+v*allowed_indices_.size()]);
 	  }
-	  //ans.EigenVectors.entry(allowed_indices_dagger_[i],v,conj(Evecs[i+v*allowed_indices_.size()]));
+	  if (Hermitian_answer_) //wrecks normalisation, but makes reshape to Hermitian high precision
+	    ans.EigenVectors.entry(allowed_indices_dagger_[i],v,conj(Evecs[i+v*allowed_indices_.size()]));
 	}
 	
       }
@@ -552,7 +561,8 @@ namespace ajaj {
 	  if(abs(Evecs[i+v*allowed_indices_.size()])>SPARSETOL){
 	    ans.EigenVectors.entry(allowed_indices_[i],v,Evecs[i+v*allowed_indices_.size()]);
 	  }
-	  //ans.EigenVectors.entry(allowed_indices_dagger_[i],v,conj(Evecs[i+v*allowed_indices_.size()]));
+	  if (Hermitian_answer_)
+	    ans.EigenVectors.entry(allowed_indices_dagger_[i],v,conj(Evecs[i+v*allowed_indices_.size()]));
 	}
 	
       }
