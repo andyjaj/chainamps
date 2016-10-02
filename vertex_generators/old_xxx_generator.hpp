@@ -178,14 +178,7 @@ namespace oldxxx {
     std::ifstream spectruminfile;
     spectruminfile.open(spectrumnamestream.str().c_str(),ios::in);
     if (!spectruminfile.is_open()){
-      //try alternate name
-      spectrumnamestream.str("");
-      spectrumnamestream.clear();
-      spectrumnamestream << "./vertexdefs/xxx/Heisdmrg_states_N" << xxx_chain_length <<ending2.c_str();
-      MEnamestream.str("");
-      MEnamestream.clear();
-      MEnamestream << "./vertexdefs/xxx/Heisdmrg_MESzmp_N" << xxx_chain_length<<ending2.c_str();
-      spectruminfile.open(spectrumnamestream.str().c_str(),ios::in);
+      std::cout << "Couldn't open state file!" <<std::endl; exit(1);
     }
     if (spectruminfile.is_open()){
       std::cout << spectrumnamestream.str() << std::endl;
