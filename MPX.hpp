@@ -463,7 +463,7 @@ namespace ajaj {
    */
   class UnitCell {
   protected:
-    const Basis* m_spectrum_ptr;
+    const Basis* basis_ptr_;
   public:
     std::vector<MPS_matrix> Matrices;
     std::vector<std::vector<double> > Lambdas;
@@ -471,10 +471,10 @@ namespace ajaj {
     //even if the matrices are not in fact left canonical
     //so a decomposition is of the form lambda_0 Gamma_0 lambda_1 Gamma_1 lambda_0
     UnitCell()=delete;
-    UnitCell(const Basis& spectrum) : m_spectrum_ptr(&spectrum){}
-    UnitCell(const Basis& spectrum,const MPS_matrix& m, const std::vector<double>& l,uMPXInt length=1) : m_spectrum_ptr(&spectrum), Matrices(std::vector<MPS_matrix>(length,m)),Lambdas(std::vector<std::vector<double> >(length,l)) {}
-    UnitCell(const Basis& spectrum,std::vector<MPS_matrix>&& mvec, std::vector<std::vector<double> >&& lvec) : m_spectrum_ptr(&spectrum), Matrices(mvec),Lambdas(lvec) {}
-    UnitCell(const MPSDecomposition& D,const std::vector<double>& PreviousLambda) : m_spectrum_ptr(&D.LeftMatrix.GetPhysicalSpectrum()) {
+    UnitCell(const Basis& spectrum) : basis_ptr_(&spectrum){}
+    UnitCell(const Basis& spectrum,const MPS_matrix& m, const std::vector<double>& l,uMPXInt length=1) : basis_ptr_(&spectrum), Matrices(std::vector<MPS_matrix>(length,m)),Lambdas(std::vector<std::vector<double> >(length,l)) {}
+    UnitCell(const Basis& spectrum,std::vector<MPS_matrix>&& mvec, std::vector<std::vector<double> >&& lvec) : basis_ptr_(&spectrum), Matrices(mvec),Lambdas(lvec) {}
+    UnitCell(const MPSDecomposition& D,const std::vector<double>& PreviousLambda) : basis_ptr_(&D.LeftMatrix.GetPhysicalSpectrum()) {
       Matrices.emplace_back(copy(D.LeftMatrix));
       Matrices.emplace_back(reorder(contract(contract(MPX_matrix(D.LeftMatrix.GetPhysicalSpectrum(),D.RightMatrix.Index(0),D.Values),0,D.RightMatrix,0,contract10),0,MPX_matrix(D.LeftMatrix.GetPhysicalSpectrum(),D.RightMatrix.Index(2),PreviousLambda,1),0,contract20),0,reorder102,2));
       Lambdas.emplace_back(PreviousLambda);
@@ -487,6 +487,11 @@ namespace ajaj {
     const std::vector<double>& GetLambda(size_t i) {return Lambdas.at(i);}
     void OutputPhysicalIndexDensities(std::ofstream& d) const;
     void OutputOneVertexDensityMatrix(std::ofstream& d) const;
+    void OutputOneVertexDensityMatrix(const std::string& name, uMPXInt l) const;
+    
+    void store(const std::string& filename, uMPXInt l) const; /**< Print UnitCell with to binary file, with an index in filename. */
+    void store(const std::string& filename) const; /**< Print the UnitCell to file in binary format. */
+
     double Entropy() const;
   };
 

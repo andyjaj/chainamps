@@ -37,16 +37,11 @@ int main(int argc, char** argv){
     //done for at least "steps" number of steps
     //now do orthogs and averaging
     //left orthogonalise the unit cell and produce the new singular values for the infinite state
-    const ajaj::MPXIndex dummy(1,ajaj::StateArray(1,myModel.basis().getChargeRules())); 
+    //const ajaj::MPXIndex dummy(1,ajaj::StateArray(1,myModel.basis().getChargeRules())); 
     const ajaj::MPO_matrix H1(myModel.vertex.make_one_site_operator("Vertex_Hamiltonian")); //form the on-vertex part of a Hamiltonian
-    //const ajaj::MPO_matrix I(ajaj::IdentityMPO_matrix(myModel.basis())); //form an identity MPO. Useful for some measurements
-    //const ajaj::MPO_matrix LeftH(LeftOpenBCHamiltonian(myModel.H_MPO));
-    //const ajaj::MPO_matrix RightH(RightOpenBCHamiltonian(myModel.H_MPO));
-
     const ajaj::MPO_matrix ColX(myModel.H_MPO.ExtractMPOBlock(std::pair<ajaj::MPXInt,ajaj::MPXInt>(1,myModel.H_MPO.Index(1).size()-2),std::pair<ajaj::MPXInt,ajaj::MPXInt>(0,0)));
     const ajaj::MPO_matrix RowX(myModel.H_MPO.ExtractMPOBlock(std::pair<ajaj::MPXInt,ajaj::MPXInt>(myModel.H_MPO.Index(1).size()-1,myModel.H_MPO.Index(1).size()-1),std::pair<ajaj::MPXInt,ajaj::MPXInt>(1,myModel.H_MPO.Index(3).size()-2)));
 
-    //std::vector<double> iDMRGEnergies_simple;
     std::vector<double> iDMRGEnergies_accurate;
 
     ajaj::DataOutput infvolresults("iDMRGEnergies.dat");
@@ -56,6 +51,7 @@ int main(int argc, char** argv){
     for (ajaj::uMPXInt r=0;r< (steps>2 ? steps-2 : 0) ;++r){
       infvol.run(1,-0.0,VarCHI,minS);
       ajaj::UnitCell Ortho(Orthogonalise(infvol.getCentralDecomposition(),infvol.getPreviousLambda()));
+      Ortho.store("Ortho",r);
       //at the moment measuring the energy is done in an inelegant way
       //iDMRGEnergies_simple.push_back(real(ajaj::SimpleEnergy(LeftH,RightH,H1,I,Ortho)));
       iDMRGEnergies_accurate.push_back(real(ajaj::SophisticatedEnergy(ColX,RowX,H1,Ortho)));
@@ -63,14 +59,7 @@ int main(int argc, char** argv){
       std::cout << "iDMRG energy per vertex " << iDMRGEnergies_accurate.back() << std::endl;
       ajaj::Data inf_data(std::vector<double>({{iDMRGEnergies_accurate.back(),Ortho.Entropy()}}));
       infvolresults.push(inf_data);
-      {
-	std::stringstream DensityMatrixNameStream;
-	DensityMatrixNameStream << "DensityMatrix_" << r << ".dat";
-	std::ofstream DensityMatrixFileStream;
-	DensityMatrixFileStream.open(DensityMatrixNameStream.str().c_str(),ios::out | ios::trunc);
-	Ortho.OutputOneVertexDensityMatrix(DensityMatrixFileStream);
-	DensityMatrixFileStream.close();
-      }
+      Ortho.OutputOneVertexDensityMatrix("OneVertexRho",r);
     }
 
     auto t2 = std::chrono::high_resolution_clock::now();

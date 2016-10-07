@@ -310,11 +310,6 @@ namespace ajaj {
       size_t indexsize(m_IndexStatesPtr->size());
       outfile.write(reinterpret_cast<const char*>(&indexsize),sizeof(size_t));
       if (!m_isPhysical && m_IndexStatesPtr->size()>0){	
-	//second is charge rules (same for all states)
-	//size_t numchargerules(m_IndexStates[0].getChargeRules().size());
-	//outfile.write(reinterpret_cast<const char*>(&numchargerules,sizeof(size_t));
-	//outfile.write(reinterpret_cast<const char*>(&(m_IndexStates[0].getChargeRules()[0])),sizeof(QuantumNumberInt)*numchargerules);
-	//states
 	for (StateArray::const_iterator cit=m_IndexStates.begin();cit!=m_IndexStates.end();++cit){
 	  cit->fprint_binary(outfile);
 	}
@@ -506,10 +501,7 @@ namespace ajaj {
 
   bool MPX_matrix::fprint_binary(std::ofstream& outfile) const {
     if (outfile.is_open()){
-      //std::vector<MPXIndex> m_Indices;
       size_t numindices(m_Indices.size());
-      //Sparseint m_NumRowIndices;
-      //SparseMatrix m_Matrix;
       //print total number of indices and number of row indices
       outfile.write(reinterpret_cast<const char*>(&numindices),sizeof(size_t));
       outfile.write(reinterpret_cast<const char*>(&m_NumRowIndices),sizeof(Sparseint));
@@ -530,21 +522,7 @@ namespace ajaj {
     std::ofstream outfile;
     outfile.open(filename.c_str(),ios::out | ios::trunc | ios::binary);  
     if (outfile.is_open()){
-      //std::vector<MPXIndex> m_Indices;
-      size_t numindices(m_Indices.size());
-      //Sparseint m_NumRowIndices;
-      //SparseMatrix m_Matrix;
-      //print total number of indices and number of row indices
-      outfile.write(reinterpret_cast<const char*>(&numindices),sizeof(size_t));
-      outfile.write(reinterpret_cast<const char*>(&m_NumRowIndices),sizeof(Sparseint));
-      //print the MPXIndex objects
-      for (std::vector<MPXIndex>::const_iterator cit=m_Indices.begin();cit!=m_Indices.end();++cit){
-	cit->fprint_binary(outfile);
-      }
-      //print the sparse matrix  
-       m_Matrix.fprint_binary(outfile);
-       outfile.close();
-       return 0; //worked
+      return fprint_binary(outfile);
     }
     else {
       return 1; //error
@@ -1029,6 +1007,52 @@ namespace ajaj {
       }
     }
   }
+
+  void UnitCell::OutputOneVertexDensityMatrix(const std::string& name, uMPXInt l) const {
+    std::stringstream DensityMatrixNameStream;
+    DensityMatrixNameStream << name << "_" << l << ".dat";
+    std::ofstream DensityMatrixFileStream;
+    DensityMatrixFileStream.open(DensityMatrixNameStream.str().c_str(),ios::out | ios::trunc);
+    OutputOneVertexDensityMatrix(DensityMatrixFileStream);
+    DensityMatrixFileStream.close();
+  }
+
+  void UnitCell::store(const std::string& filename, uMPXInt l) const {
+    std::stringstream FileNameStream;
+    FileNameStream << filename << "_" << l;
+    store(FileNameStream.str());
+  }
+
+  void UnitCell::store(const std::string& filename) const {
+    //first do a consistency check
+    if (Matrices.size()!=Lambdas.size()){
+      std::cout << "Invalid Unit Cell, skipping store." << std::endl; 
+    }
+    else {
+      std::stringstream FileNameStream;
+      FileNameStream << filename << ".UNITCELL"; 
+      std::ofstream outfile;
+      outfile.open(FileNameStream.str().c_str(),ios::out | ios::trunc | ios::binary);
+      //first output basis
+      size_t basis_size(basis_ptr_->size());
+      for (auto&& s : (*basis_ptr_)){
+	s.fprint_binary(outfile);
+      }      
+      size_t num_in_unit_cell(Matrices.size());
+      outfile.write(reinterpret_cast<const char*>(&num_in_unit_cell),sizeof(size_t));
+      for (auto&& m : Matrices){
+	m.fprint_binary(outfile);
+      }
+      for (auto&& l : Lambdas){
+	size_t lambda_size(l.size());
+	outfile.write(reinterpret_cast<const char*>(&lambda_size),sizeof(size_t));	
+	for (auto v : l){
+	  outfile.write(reinterpret_cast<const char*>(&v),sizeof(double));
+	}
+      }
+    }
+  }
+
 
   double UnitCell::Entropy() const {
     if (Lambdas.size()){
