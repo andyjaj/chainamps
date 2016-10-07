@@ -265,7 +265,7 @@ namespace ajaj {
 	if (options[TROTTER_ORDER])
 	  trotter_order_=stoul(options[TROTTER_ORDER].arg);
 	if (options[MEASUREMENT_INTERVAL])
-	  step_size_=stod(options[MEASUREMENT_INTERVAL].arg);
+	  measurement_interval_=stod(options[MEASUREMENT_INTERVAL].arg);
 	if (options[STEP_SIZE])
 	  step_size_=stod(options[STEP_SIZE].arg);
       }
@@ -315,7 +315,7 @@ namespace ajaj {
 	if (options[TROTTER_ORDER])
 	  trotter_order_=stoul(options[TROTTER_ORDER].arg);
 	if (options[MEASUREMENT_INTERVAL])
-	  step_size_=stod(options[MEASUREMENT_INTERVAL].arg);
+	  measurement_interval_=stod(options[MEASUREMENT_INTERVAL].arg);
 	if (options[STEP_SIZE])
 	  step_size_=stod(options[STEP_SIZE].arg);
 	if (options[INITIAL_STATE_NAME])

@@ -1033,11 +1033,11 @@ namespace ajaj {
       FileNameStream << filename << ".UNITCELL"; 
       std::ofstream outfile;
       outfile.open(FileNameStream.str().c_str(),ios::out | ios::trunc | ios::binary);
-      //first output basis
+      /*//first output basis
       size_t basis_size(basis_ptr_->size());
       for (auto&& s : (*basis_ptr_)){
 	s.fprint_binary(outfile);
-      }      
+	}*/      
       size_t num_in_unit_cell(Matrices.size());
       outfile.write(reinterpret_cast<const char*>(&num_in_unit_cell),sizeof(size_t));
       for (auto&& m : Matrices){
@@ -1137,6 +1137,10 @@ namespace ajaj {
     std::cout << "LOADING " << filename << std::endl; 
     std::ifstream infile;
     infile.open(filename.c_str(),ios::in | ios::binary);
+    return load_MPX_matrix_binary(infile,spectrum);
+  }
+
+  MPX_matrix load_MPX_matrix_binary(std::ifstream& infile,const EigenStateArray& spectrum){
     if (infile.is_open()){
       size_t numindices(0);
       Sparseint numrowindices(0);
@@ -1148,8 +1152,7 @@ namespace ajaj {
 	indices.push_back(load_MPXIndex_binary(infile,spectrum));
       }
       MPX_matrix ans(spectrum,indices,numrowindices,load_SparseMatrix_binary(infile));
-      infile.close();
-      ans.print_indices();
+      //ans.print_indices();
       return ans;
     }
     else return MPX_matrix(spectrum);
@@ -1179,35 +1182,30 @@ namespace ajaj {
     return MPS_matrix(spectrum,indices,array);
   }
 
-
-
-  /*void TwoVertexMPOMPSMultiply(TwoVertexComponents* arraystuff, std::complex<double> *in, std::complex<double> *out){
-    std::cout << "Converting in vector to sparse..." << std::endl;
-    SparseMatrix V(arraystuff->vcols,arraystuff->vrows,arraystuff->vrows);//undocumented behaviour of SparseMatrix, using transposed rows and cols to avoid unnecessary row ordering...
-    for (struct {std::vector<std::array<Sparseint,2> >::const_iterator cit; Sparseint idx;} itstruct ={arraystuff->rows_and_cols.begin(), 0};itstruct.cit!=arraystuff->rows_and_cols.end();++itstruct.cit,++itstruct.idx){
-      V.entry((*(itstruct.cit))[1],(*(itstruct.cit))[0],in[itstruct.idx]);
+  UnitCell load_UnitCell_binary(std::ifstream& infile, const Basis& basis){
+    UnitCell ans(basis);
+    if (infile.is_open()){
+      //read in size of unitcell
+      size_t num_in_cell(0);
+      infile.read(reinterpret_cast<char*>(&num_in_cell),sizeof(size_t));
+      for (size_t n=0;n<num_in_cell;++n){
+	ans.Matrices.emplace_back(MPS_matrix(load_MPX_matrix_binary(infile,basis)));
+      }
+      for (size_t n=0;n<num_in_cell;++n){
+	std::vector<double> lambda;
+	size_t num_in_lambda(0);
+	infile.read(reinterpret_cast<char*>(&num_in_lambda),sizeof(size_t));
+	for (size_t l=0;l<num_in_lambda;++l){
+	  double val(0.0);
+	  infile.read(reinterpret_cast<char*>(&val),sizeof(double));
+	  lambda.push_back(val);
+	}
+	ans.Lambdas.emplace_back(std::move(lambda));
+      }
+      return ans;
     }
-    std::cout << "Matrix times Vector Contractions 1"<< std::endl;
-    MPX_matrix sally(contract(arraystuff->LeftPart,0,MPX_matrix(arraystuff->LeftPart.GetPhysicalSpectrum(),arraystuff->indices,2,V.cheap_no_transpose_finalise()),0,contract1071));
-    sally.print_sparse_info();
-    std::cout << "Matrix times Vector Contractions 2"<< std::endl;
-    SparseMatrix jim(contract_to_sparse(std::move(sally),0,arraystuff->RightPart,0,contract116276));
-    jim.print_sparse_info();
-    std::cout << "Back to dense"<< std::endl;
-    DumbExtractWithZeros(reshape(std::move(jim),arraystuff->length()),arraystuff->allowed_indices,out);
-  }*/
-
-  /*void TwoVertexMPOMPSMultiply(TwoVertexComponents* arraystuff, std::complex<double> *in, std::complex<double> *out){
-    std::cout << "Converting in vector to sparse..." << std::endl;
-    SparseMatrix V(arraystuff->vcols,arraystuff->vrows,arraystuff->vrows);//undocumented behaviour of SparseMatrix, using transposed rows and cols to avoid unnecessary row ordering...
-    for (struct {std::vector<std::array<Sparseint,2> >::const_iterator cit; Sparseint idx;} itstruct ={arraystuff->rows_and_cols.begin(), 0};itstruct.cit!=arraystuff->rows_and_cols.end();++itstruct.cit,++itstruct.idx){
-      V.entry((*(itstruct.cit))[1],(*(itstruct.cit))[0],in[itstruct.idx]);
+    else {
+      return ans;
     }
-
-    SparseMatrix jim(contract_to_sparse(contract(contract(arraystuff->H,0,contract(arraystuff->LeftBlock,0,MPX_matrix(arraystuff->LeftBlock.GetPhysicalSpectrum(),arraystuff->indices,2,V.cheap_no_transpose_finalise()),0,contract51),0,contract1325),0,arraystuff->H,0,contract1162),0,arraystuff->RightBlock,0,contract5472));
-
-    std::cout << "Back to dense"<< std::endl;
-    DumbExtractWithZeros(reshape(std::move(jim),arraystuff->length()),arraystuff->allowed_indices,out);
-    }*/
-
+  }
 }

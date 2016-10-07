@@ -500,10 +500,12 @@ namespace ajaj {
   /** Load a MPXIndex from binary storage format*/
   MPXIndex load_MPXIndex_binary(std::ifstream& infile,const EigenStateArray& spectrum);
   /** Load a MPX_matrix from binary storage format*/
+  MPX_matrix load_MPX_matrix_binary(std::string& filename,const EigenStateArray& spectrum);
   MPX_matrix load_MPX_matrix_binary(std::ifstream& infile,const EigenStateArray& spectrum);
   MPX_matrix load_MPX_matrix(const std::string& filename,const EigenStateArray& spectrum);
   MPO_matrix load_MPO_matrix(const std::string& filename,const EigenStateArray& spectrum);
   MPS_matrix load_MPS_matrix(const std::string& filename,const EigenStateArray& spectrum);
+  UnitCell load_UnitCell_binary(std::ifstream& infile,const Basis& basis);
   MPS_matrix MakeProductState(const EigenStateArray& spectrum, uMPXInt state_index);
 
 }
