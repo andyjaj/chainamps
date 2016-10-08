@@ -156,12 +156,18 @@ namespace continuumIsing {
     ajaj::Vertex ModelVertex(inputs);
     ModelVertex.ChargeRules.push_back(0); //a momentum like quantum number
     ModelVertex.ChargeRules.push_back(2); //Z_2 quantum number
+   
 
     const ajaj::QNVector& ChargeRules=ModelVertex.ChargeRules;
 
     const double R = inputs[0].Value;
     const double mass=inputs[1].Value;
     const double spectrum_cutoff=inputs[2].Value;
+
+    bool use_sector(1); //default true
+    if (inputs.size()>3){
+      use_sector=static_cast<int>(inputs[3].Value);
+    }
 
     const double Delta = abs(mass); //use the magnitude of delta
     const double DR=Delta*R;
@@ -785,6 +791,7 @@ namespace continuumIsing {
     if (ModelVertex.Spectrum.size()!=static_cast<size_t>(num_chain_states)){
       cout << "Mismatch error" << endl; exit(1);
     }
+    //TempSpectrum is now ordered by energy
 
     cout << "End generating chain spectrum, generated " << num_chain_states << " states" << endl;
     cout << "Starting Matrix Elements" << endl;
@@ -797,12 +804,12 @@ namespace continuumIsing {
 #endif
     ModelVertex.Operators.push_back(ajaj::VertexOperator("Spin Operator",ModelVertex.Spectrum.size()));      
     //off diagonal only
-    for (size_t col=0;col<ModelVertex.Spectrum.size();++col){
+    for (size_t col=0;col<TempSpectrum.size();++col){
       size_t s_col=sort_keys[col].first;
-      for (size_t row=col+1;row<ModelVertex.Spectrum.size();++row){
+      for (size_t row=col+1;row<TempSpectrum.size();++row){
 	size_t s_row=sort_keys[row].first;
 	if(TempSpectrum[row][1]!=TempSpectrum[col][1]){ //off diagonal in Ising 'sector' charge.
-	  complex<double> M_E_=sr*calculate_chainmatrixelement(TempSpectrum,static_cast<ajaj::MPXInt>(s_row),static_cast<ajaj::MPXInt>(s_col),static_cast<ajaj::MPXInt>(onechain_modenumber[s_row]),static_cast<ajaj::MPXInt>(onechain_modenumber[s_col]),onechain_kappa[s_row],onechain_kappa[s_col],onechain_theta[s_row],onechain_theta[s_col],Delta,DR);
+	  complex<double> M_E_=sr*calculate_chainmatrixelement(ModelVertex.Spectrum,static_cast<ajaj::MPXInt>(s_row),static_cast<ajaj::MPXInt>(s_col),static_cast<ajaj::MPXInt>(onechain_modenumber[s_row]),static_cast<ajaj::MPXInt>(onechain_modenumber[s_col]),onechain_kappa[s_row],onechain_kappa[s_col],onechain_theta[s_row],onechain_theta[s_col],Delta,DR);
 	  ModelVertex.Operators.back().MatrixElements.entry(row,col,M_E_);
 	  ModelVertex.Operators.back().MatrixElements.entry(col,row,conj(M_E_));
 	}
@@ -829,7 +836,21 @@ namespace continuumIsing {
       ModelVertex.Operators.back().MatrixElements.finalise();
     }
 
+    if (!use_sector){
+      //if we don't want to use
+      ModelVertex.ChargeRules.resize(1);
+    }
+
     ModelVertex.Spectrum=std::move(TempSpectrum);
+       /*}
+    else { //don't conserve sector
+      //use temp spectrum
+      ModelVertex.ChargeRules[1]=1;
+      ModelVertex.Spectrum.clear();
+      for (ajaj::uMPXInt s=0;s<TempSpectrum.size();++s){
+	ModelVertex.Spectrum.push_back(ajaj::EigenState(TempSpectrum[s],TempSpectrum[s].en));
+      }
+      }*/
 
     //clean up workspace
     delete onechain_theta_ptr;
