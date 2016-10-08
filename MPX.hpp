@@ -389,7 +389,6 @@ namespace ajaj {
     double Truncation;
     MPX_matrix ColumnMatrix;
     std::vector<double> Values;
-
     MPXDecompositionBase(const Basis& basis) : Truncation(0.0),ColumnMatrix(basis){};
     MPXDecompositionBase(MPX_matrix&& cm, std::vector<double>&& v, double Trunc=0.0) noexcept : Truncation(Trunc),ColumnMatrix(std::move(cm)), Values(std::move(v)){};
 
