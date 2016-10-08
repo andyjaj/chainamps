@@ -56,7 +56,7 @@ namespace ajaj{
   public:
     std::string Name;
     VertexParameterArray Parameters; /**< Params used to create this vertex. Could be empty if predefined basis.*/
-    EigenStateArray Spectrum; /**< Params used to create this vertex.*/
+    Basis Spectrum; /**< Describes basis states*/
     VertexOperatorArray Operators; /**< Collection of all necessary matrix elements. */
     QNVector ChargeRules; //vertex should know about its good quantum numbers
 

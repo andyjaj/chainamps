@@ -363,11 +363,6 @@ namespace ajaj {
     std::vector<double> Values;
     MPXDecompositionBase(const EigenStateArray& spectrum) : ColumnMatrix(spectrum){};
     MPXDecompositionBase(MPX_matrix&& cm, std::vector<double>&& v) noexcept : ColumnMatrix(std::move(cm)), Values(std::move(v)){};
-    /*void printValues() const{
-      for (std::vector<double>::const_iterator cit=Values.begin();cit!=Values.end();++cit){
-	std::cout << *cit << std::endl;
-      }
-    }*/
     const std::vector<double>& SquareRescale(double sqsum) {
       m_rescalediff=sqsum-SquareSumRescale(Values,sqsum);
       return Values;
