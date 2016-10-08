@@ -138,7 +138,7 @@
  * @subsection ssiTEBDguide The iTEBD driver
  * iTEBD is implemented via the driver iTEBD_DRV.cpp.
  * @subsubsection sssiTEBDOutput iTEBD Output
- * Output is in the file Evoliution.dat.
+ * Output is in the file Evolution.dat.
  *
  * The columns are: measurement step, time, truncation, entropy, abs(overlap), real(overlap), imag(overlap), real(measured op 1), imag(measured op 1), etc.
  *

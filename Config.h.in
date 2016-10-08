@@ -1,3 +1,0 @@
-// the configured options and settings, set by CMakeLists.txt
-#define CHAINAMPS_VERSION_MAJOR @ChainAMPS_VERSION_MAJOR@
-#define CHAINAMPS_VERSION_MINOR @ChainAMPS_VERSION_MINOR@

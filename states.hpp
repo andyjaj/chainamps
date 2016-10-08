@@ -91,6 +91,8 @@ namespace ajaj {
     const QNVector& getChargeRules() const {return at(0).getChargeRules();}
   };
 
+  typedef EigenStateArray Basis;
+
   /** PairStateBlock is a list of different tensor products of pairs of states that give the same total charges.*/
   struct PairStateBlock {
     State PairState; /**< The combined charges of the tensor product */

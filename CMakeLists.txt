@@ -5,15 +5,26 @@ option(TBB "Use tbb" ON)
 
 #Requires c++11 compile flag
 set(CMAKE_CXX_FLAGS "-std=c++11")
-set(CMAKE_BUILD_TYPE Release)
+#set(CMAKE_BUILD_TYPE Release)
 add_compile_options(-Wno-return-type-c-linkage -m64 -march=native -mtune=native)
 
 #Required dependencies are BLAS/LAPACK, cxsparse and ARPACK. All should be compiled to use 64 bit integers!
 find_package(BLAS REQUIRED)
 find_package(LAPACK REQUIRED)
-find_library(ARPACK_LIBRARIES NAMES arpack PATHS /usr/local/ /opt/local/)
-find_library(CXSPARSE_LIBRARIES cxsparse PATHS /usr/local/ /opt/local/)
-find_path(CXSPARSE_INCLUDE_DIRS cs.h PATHS /usr/local/ /opt/local/)
+message (STATUS "BLAS found:" ${BLAS_LIBRARIES})
+message (STATUS "LAPACK found:" ${LAPACK_LIBRARIES})
+
+get_filename_component(LIB_HINT ${BLAS_LIBRARIES} PATH)
+#message (STATUS "LIBRARIES_DIR:" ${LIB_HINT})
+
+set(INCLUDE_HINT "${LIB_HINT}/../include")
+#message (STATUS "INCLUDE_DIR:" ${INCLUDE_HINT})
+
+find_library(ARPACK_LIBRARIES NAMES arpack HINTS ${LIB_HINT} PATHS /usr/lib64/ /usr/local/ /opt/local/)
+message (STATUS "ARPACK found:" ${ARPACK_LIBRARIES})
+find_library(CXSPARSE_LIBRARIES cxsparse HINTS ${LIB_HINT} PATHS /usr/lib64/ /usr/local/ /opt/local/)
+message (STATUS "CXSPARSE found:" ${CXSPARSE_LIBRARIES})
+find_path(CXSPARSE_INCLUDE_DIRS cs.h HINTS ${INCLUDE_HINT} PATHS /usr/ /usr/local/ /opt/local/)
 
 set(EXTERNAL_LIBS ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES} ${CXSPARSE_LIBRARIES} ${ARPACK_LIBRARIES})
 
@@ -22,15 +33,18 @@ include_directories(${PROJECT_SOURCE_DIR}/vertex_generators ${PROJECT_SOURCE_DIR
 include_directories(${PROJECT_SOURCE_DIR}/optionparser)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+  #needs LAPACK_ILP64 defined for openblas ilp 64
   add_definitions(-DLAPACK_ILP64)
   #probably need gfortran too
-  find_library(GFORTRAN_LIBRARIES NAMES gfortran)
+  find_library(GFORTRAN_LIBRARIES gfortran HINTS ${LIB_HINT} PATHS /usr/lib64/ /usr/local/ /usr/)
+  message (STATUS "GFORTRAN found:" ${GFORTRAN_LIBRARIES})	
   set (EXTERNAL_LIBS ${EXTERNAL_LIBS} ${GFORTRAN_LIBRARIES})
 endif()
 
 if(TBB)
-  find_library(TBB_LIBRARIES tbb PATHS /usr/local/ /opt/local/)
-  find_path(TBB_INCLUDE_DIRS tbb.h PATHS /usr/local/include/tbb/ /opt/local/include/tbb/)
+  find_library(TBB_LIBRARIES tbb HINT ${LIB_HINT} PATHS /usr/lib64/ /usr/local/ /usr/ /opt/local/)
+  message (STATUS "TBB found:" ${TBB_LIBRARIES})	
+  find_path(TBB_INCLUDE_DIRS tbb.h HINT ${INCLUDE_HINT} PATHS /usr/local/include/tbb/ /usr/include/tbb/ /opt/local/include/tbb/)
   add_definitions( -DUSETBB)
   set (EXTERNAL_LIBS ${EXTERNAL_LIBS} ${TBB_LIBRARIES})
   include_directories(${TBB_INCLUDE_DIRS})

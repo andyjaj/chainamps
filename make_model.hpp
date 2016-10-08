@@ -18,13 +18,24 @@
 
 //builtin models
 #include "vertex_generators/continuum_Ising_generator.hpp"
+#include "vertex_generators/continuum_Ising_generator_no_sector.hpp"
 #include "vertex_generators/continuum_ff_generator.hpp"
 #include "vertex_generators/ll_generator.hpp"
 #include "vertex_generators/spin_half_generator.hpp"
+#include "vertex_generators/old_xxx_generator.hpp"
 
 namespace ajaj{
 
-  enum class BuiltinModels : std::size_t { cm_ising, cm_ff, xxx, ll, spin_half, user, last };
+  enum class BuiltinModels : std::size_t {
+    cm_ising,
+    cm_ising_ns,
+    cm_ff, 
+    xxx,
+    ll, 
+    spin_half,
+    user,
+    last
+  };
 
   struct NameGroup{
     BuiltinModels int_name;
@@ -36,10 +47,11 @@ namespace ajaj{
   };
 
   //recognised models, or user defined
-  static const NameGroup m_names[7] = {
+  static const NameGroup m_names[8] = {
     {BuiltinModels::cm_ising, {"continuum_Ising", "continuum_Ising", "continuum ising", "Continuum_Ising", "Continuum Ising", "CONTINUUM_ISING", "CONTINUUM ISING"},&continuumIsing::VertexGenerator,&continuumIsing::MakeHamiltonian},
+    {BuiltinModels::cm_ising_ns, {"CONTINUUM ISING NO SECTOR"},&continuumIsingNoSector::VertexGenerator,&continuumIsingNoSector::MakeHamiltonian},
     {BuiltinModels::cm_ff, {"continuum_free_fermion", "continuum free fermion", "Continuum_Free_Fermion", "Continuum Free Fermion", "CONTINUUM_FREE_FERMION","CONTINUUM FREE FERMION"},&continuumff::VertexGenerator,&continuumff::MakeHamiltonian},
-    {BuiltinModels::xxx, {"xxx","Heisenberg","HEISENBERG","XXX"},nullptr,nullptr},
+    {BuiltinModels::xxx, {"OLD_XXX"},&oldxxx::VertexGenerator,&oldxxx::MakeHamiltonian},
     {BuiltinModels::ll, {"ll","LL","Luttinger_liquid","luttinger_liquid","Luttinger liquid", "luttinger liquid", "LUTTINGER_LIQUID","LUTTINGER LIQUID"},&ll::VertexGenerator,&ll::MakeHamiltonian},
     {BuiltinModels::spin_half, {"spin half","SPIN_HALF","SPIN HALF"},&spin_half::VertexGenerator,&spin_half::MakeHamiltonian},
     {BuiltinModels::user, {"User_Defined","user_defined","User Defined","user defined","USER","user","USER_DEFINED", "USER DEFINED" },nullptr,nullptr},
@@ -228,6 +240,10 @@ namespace ajaj{
 	}
       }
       basisfile.close();
+
+      std::cout << "MODEL'S LOCAL BASIS" <<std::endl;
+      UserModel.basis().print();
+
       std::ifstream operatorsfile;
       operatorsfile.open(vertex_operators_filename.c_str(),std::ios::in);
       if (operatorsfile.is_open()){
@@ -311,7 +327,8 @@ namespace ajaj{
 	  h_array.finalise();
 	  //build MPO
 	  UserModel.H_MPO=MakeGeneralHMPO(UserModel.vertex,couplings);
-
+	  std::cout << "MPO matrix info:" <<std::endl;
+	  UserModel.H_MPO.print_indices();
 	  return UserModel;
 
 	}
@@ -346,6 +363,10 @@ namespace ajaj{
 
     }
     QNCombinations differencecombinations(v.basis(),1); //1 means use difference
+
+    //std::cout << "Diff pairs: " << differencecombinations.InvolutionPairs.size() << " " << differencecombinations.OrderedPairs.size() << std::endl;
+    //differencecombinations.print();
+
     MPXInt lineardim((2+CouplingBlocks.size()*differencecombinations.size())*v.basis().size());
 
     SparseMatrix harray(lineardim,lineardim,(2+couplings.size())*v.basis().size());
@@ -397,7 +418,7 @@ namespace ajaj{
 	  }
 	  else {
 	    for (size_t l=0;l<differencecombinations.OrderedPairs.size();++l){
-	      if (diffstate==differencecombinations.OrderedPairs[l].PairState){
+	      if (diffstate==-differencecombinations.OrderedPairs[l].PairState){
 		row_block_d_offset=(differencecombinations.InvolutionPairs.size()+l)*v.basis().size();
 		if (sameflag)
 		  col_block_d_offset=(differencecombinations.size()-l-1)*v.basis().size();		
@@ -428,7 +449,7 @@ namespace ajaj{
 	    }
 	    else {
 	      for (size_t l=0;l<differencecombinations.OrderedPairs.size();++l){
-		if (diffstate==differencecombinations.OrderedPairs[l].PairState){
+		if (diffstate==-differencecombinations.OrderedPairs[l].PairState){
 		  col_block_d_offset=(differencecombinations.size()-l-1)*v.basis().size();		
 		  break;
 		}

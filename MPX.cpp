@@ -153,7 +153,7 @@ namespace ajaj {
     //Last contractidxs.size() elements of A need to become the first, without messing up their individual order!
 #if defined(USETBB)
     std::rotate(neworderB.begin(),neworderB.end()-contractidxs.size(),neworderB.end());
-    return std::move(cheap_reshape(A.m_Matrix,A.m_NumRowIndices,neworderA.size()-contractidxs.size(),A.dimsvector(),neworderA,conjA)*cheap_reshape(B.m_Matrix,B.m_NumRowIndices,contractidxs.size(),B.dimsvector(),neworderB,conjB));
+    return std::move(reshape(A.m_Matrix,A.m_NumRowIndices,neworderA.size()-contractidxs.size(),A.dimsvector(),neworderA,conjA)*reshape(B.m_Matrix,B.m_NumRowIndices,contractidxs.size(),B.dimsvector(),neworderB,conjB));
 #else
     std::rotate(neworderA.begin(),neworderA.end()-contractidxs.size(),neworderA.end());
     return std::move(NoTransMultiply(reshape(B.m_Matrix,B.m_NumRowIndices,neworderB.size()-contractidxs.size(),B.dimsvector(),neworderB,conjB),reshape(A.m_Matrix,A.m_NumRowIndices,contractidxs.size(),A.dimsvector(),neworderA,conjA)).transpose());
@@ -294,7 +294,7 @@ namespace ajaj {
 	std::cout << "All eigenvalues:" << std::endl;
 	std::cout << *it << std::endl;
       }
-      exit(1);
+      return std::pair<std::vector<double>,MPX_matrix>(std::vector<double>(),MPX_matrix());
     }
     
     std::vector<MPXIndex> XIndices;
@@ -310,11 +310,6 @@ namespace ajaj {
       size_t indexsize(m_IndexStatesPtr->size());
       outfile.write(reinterpret_cast<const char*>(&indexsize),sizeof(size_t));
       if (!m_isPhysical && m_IndexStatesPtr->size()>0){	
-	//second is charge rules (same for all states)
-	//size_t numchargerules(m_IndexStates[0].getChargeRules().size());
-	//outfile.write(reinterpret_cast<const char*>(&numchargerules,sizeof(size_t));
-	//outfile.write(reinterpret_cast<const char*>(&(m_IndexStates[0].getChargeRules()[0])),sizeof(QuantumNumberInt)*numchargerules);
-	//states
 	for (StateArray::const_iterator cit=m_IndexStates.begin();cit!=m_IndexStates.end();++cit){
 	  cit->fprint_binary(outfile);
 	}
@@ -476,7 +471,7 @@ namespace ajaj {
 #ifndef NDEBUG
     std::cout << "return SVD" << std::endl;
 #endif				     
-    return MPXDecomposition(MPX_matrix(this->GetPhysicalSpectrum(),leftindices,m_NumRowIndices,std::move(decomposition.U)),std::move(decomposition.Values),MPX_matrix(this->GetPhysicalSpectrum(),rightindices,1,std::move(decomposition.Vdagger)));
+    return MPXDecomposition(MPX_matrix(this->GetPhysicalSpectrum(),leftindices,m_NumRowIndices,std::move(decomposition.U)),std::move(decomposition.Values),MPX_matrix(this->GetPhysicalSpectrum(),rightindices,1,std::move(decomposition.Vdagger)),decomposition.discarded_weight());
   }
 
   MPX_matrix& MPX_matrix::Transpose(){
@@ -506,10 +501,7 @@ namespace ajaj {
 
   bool MPX_matrix::fprint_binary(std::ofstream& outfile) const {
     if (outfile.is_open()){
-      //std::vector<MPXIndex> m_Indices;
       size_t numindices(m_Indices.size());
-      //Sparseint m_NumRowIndices;
-      //SparseMatrix m_Matrix;
       //print total number of indices and number of row indices
       outfile.write(reinterpret_cast<const char*>(&numindices),sizeof(size_t));
       outfile.write(reinterpret_cast<const char*>(&m_NumRowIndices),sizeof(Sparseint));
@@ -530,21 +522,7 @@ namespace ajaj {
     std::ofstream outfile;
     outfile.open(filename.c_str(),ios::out | ios::trunc | ios::binary);  
     if (outfile.is_open()){
-      //std::vector<MPXIndex> m_Indices;
-      size_t numindices(m_Indices.size());
-      //Sparseint m_NumRowIndices;
-      //SparseMatrix m_Matrix;
-      //print total number of indices and number of row indices
-      outfile.write(reinterpret_cast<const char*>(&numindices),sizeof(size_t));
-      outfile.write(reinterpret_cast<const char*>(&m_NumRowIndices),sizeof(Sparseint));
-      //print the MPXIndex objects
-      for (std::vector<MPXIndex>::const_iterator cit=m_Indices.begin();cit!=m_Indices.end();++cit){
-	cit->fprint_binary(outfile);
-      }
-      //print the sparse matrix  
-       m_Matrix.fprint_binary(outfile);
-       outfile.close();
-       return 0; //worked
+      return fprint_binary(outfile);
     }
     else {
       return 1; //error
@@ -562,6 +540,14 @@ namespace ajaj {
       std::cout << cit->size()<< " ";
     }
     std::cout << std::endl;
+  }
+
+  void MPX_matrix::print_indices_values() const {
+    uMPXInt count(0);
+    for (auto&& I : m_Indices){
+      std::cout << "Index " << count << ", Direction " << (I.Ingoing() ? "+" : "-") <<std::endl;
+      I.print();
+    }
   }
 
   bool MPX_matrix::isConsistent() const {
@@ -595,19 +581,6 @@ namespace ajaj {
   }
 
   MPX_matrix MPX_matrix::ExtractSubMPX(const std::vector<MPXPair >& IndexVal) const {
-    //sets some indices to certain values
-    //making their MPXIndex trivial
-    /*MPX_matrix ans(*(m_SpectrumPtr)); 
-    //set NumRowIndices
-    ans.m_NumRowIndices=m_NumRowIndices;
-    //copy MPXIndices
-    ans.m_Indices=m_Indices;
-    //then overwrite the trivial ones
-    for (std::vector<MPXPair>::const_iterator cit=IndexVal.begin();cit!=IndexVal.end();++cit){
-      ans.m_Indices.at(cit->first)=MPXIndex(m_Indices.at(cit->first),cit->second);
-    }
-    //now make a new sparsematrix
-    ans.m_Matrix=m_Matrix.ExtractSubMatrix(m_NumRowIndices,dimsvector(),IndexVal,0);*/
     MPX_matrix ans(*(m_SpectrumPtr),m_Indices,m_NumRowIndices,m_Matrix.ExtractSubMatrix(m_NumRowIndices,dimsvector(),IndexVal,0)); 
     for (std::vector<MPXPair>::const_iterator cit=IndexVal.begin();cit!=IndexVal.end();++cit){
       ans.m_Indices.at(cit->first)=MPXIndex(m_Indices.at(cit->first),cit->second);
@@ -877,6 +850,27 @@ namespace ajaj {
     m_NumRowIndices=2;
     m_Matrix=SparseMatrix(values,inverse);
   }
+
+  MPO_matrix MPO_matrix::ExtractMPOBlock(const std::pair<MPXInt,MPXInt>& matrix_index_row_range, const std::pair<MPXInt,MPXInt>& matrix_index_col_range) const {
+    //get row range and col range
+    std::pair<MPXInt,MPXInt> array_row_range(matrix_index_row_range.first*basis().size(),(matrix_index_row_range.second+1)*basis().size()-1);
+    std::pair<MPXInt,MPXInt> array_col_range(matrix_index_col_range.first*basis().size(),(matrix_index_col_range.second+1)*basis().size()-1);
+
+   StateArray row_matrix_index;
+   for (MPXInt r=matrix_index_row_range.first;r<=matrix_index_row_range.second;++r){
+      row_matrix_index.emplace_back(Index(1)[r]);
+    }
+
+   StateArray col_matrix_index;
+   for (MPXInt c=matrix_index_col_range.first;c<=matrix_index_col_range.second;++c){
+      col_matrix_index.emplace_back(Index(3)[c]);
+    }
+    
+    return MPO_matrix(basis(),std::vector<MPXIndex>({{1,basis()},{1,std::move(row_matrix_index)},{0,basis()},{0,std::move(col_matrix_index)}}),m_Matrix.ExtractSubMatrix(array_row_range,array_col_range));
+
+  }
+
+
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -979,7 +973,7 @@ namespace ajaj {
   }
 
   void UnitCell::OutputPhysicalIndexDensities(std::ofstream& d) const {
-    if (d.is_open()){
+    if (d.is_open() && size()){
       std::vector<std::complex<double> > densities;
       MPX_matrix accumulator(contract(Matrices.at(0),1,Matrices.at(0),0,contract0011));
       for (uMPXInt i=1;i<Matrices.size()-1;++i){
@@ -999,7 +993,7 @@ namespace ajaj {
   }
   
   void UnitCell::OutputOneVertexDensityMatrix(std::ofstream& d) const {
-    if (d.is_open()){
+    if (d.is_open() && size()){
       MPX_matrix accumulator(contract(Matrices.at(0),1,Matrices.at(0),0,contract0011));
       for (uMPXInt i=1;i<Matrices.size()-1;++i){
 	accumulator=std::move(contract(contract(accumulator,0,Matrices.at(i),1,contract01),0,Matrices.at(i),0,contract0110));
@@ -1011,6 +1005,62 @@ namespace ajaj {
 	SparseMatrix S(contract_to_sparse(contract(temp,1,accumulator,0,contract10),0,temp,0,contract1221));
 	S.fprint(d);
       }
+    }
+  }
+
+  void UnitCell::OutputOneVertexDensityMatrix(const std::string& name, uMPXInt l) const {
+    std::stringstream DensityMatrixNameStream;
+    DensityMatrixNameStream << name << "_" << l << ".dat";
+    std::ofstream DensityMatrixFileStream;
+    DensityMatrixFileStream.open(DensityMatrixNameStream.str().c_str(),ios::out | ios::trunc);
+    OutputOneVertexDensityMatrix(DensityMatrixFileStream);
+    DensityMatrixFileStream.close();
+  }
+
+  void UnitCell::store(const std::string& filename, uMPXInt l) const {
+    std::stringstream FileNameStream;
+    FileNameStream << filename << "_" << l;
+    store(FileNameStream.str());
+  }
+
+  void UnitCell::store(const std::string& filename) const {
+    //first do a consistency check
+    if (Matrices.size()!=Lambdas.size()){
+      std::cout << "Invalid Unit Cell, skipping store." << std::endl; 
+    }
+    else {
+      std::stringstream FileNameStream;
+      FileNameStream << filename << ".UNITCELL"; 
+      std::ofstream outfile;
+      outfile.open(FileNameStream.str().c_str(),ios::out | ios::trunc | ios::binary);
+      /*//first output basis
+      size_t basis_size(basis_ptr_->size());
+      for (auto&& s : (*basis_ptr_)){
+	s.fprint_binary(outfile);
+	}*/      
+      size_t num_in_unit_cell(Matrices.size());
+      outfile.write(reinterpret_cast<const char*>(&num_in_unit_cell),sizeof(size_t));
+      for (auto&& m : Matrices){
+	m.fprint_binary(outfile);
+      }
+      for (auto&& l : Lambdas){
+	size_t lambda_size(l.size());
+	outfile.write(reinterpret_cast<const char*>(&lambda_size),sizeof(size_t));	
+	for (auto v : l){
+	  outfile.write(reinterpret_cast<const char*>(&v),sizeof(double));
+	}
+      }
+    }
+  }
+
+
+  double UnitCell::Entropy() const {
+    if (Lambdas.size()){
+      return entropy(Lambdas[0]);
+    }
+    else {
+      std::cout << "UnitCell illformed. Can't compute entanglement entropy, returning -1" <<std::endl;
+      return -1.0; //indicates failure
     }
   }
 
@@ -1087,6 +1137,10 @@ namespace ajaj {
     std::cout << "LOADING " << filename << std::endl; 
     std::ifstream infile;
     infile.open(filename.c_str(),ios::in | ios::binary);
+    return load_MPX_matrix_binary(infile,spectrum);
+  }
+
+  MPX_matrix load_MPX_matrix_binary(std::ifstream& infile,const EigenStateArray& spectrum){
     if (infile.is_open()){
       size_t numindices(0);
       Sparseint numrowindices(0);
@@ -1098,8 +1152,7 @@ namespace ajaj {
 	indices.push_back(load_MPXIndex_binary(infile,spectrum));
       }
       MPX_matrix ans(spectrum,indices,numrowindices,load_SparseMatrix_binary(infile));
-      infile.close();
-      ans.print_indices();
+      //ans.print_indices();
       return ans;
     }
     else return MPX_matrix(spectrum);
@@ -1129,35 +1182,30 @@ namespace ajaj {
     return MPS_matrix(spectrum,indices,array);
   }
 
-
-
-  /*void TwoVertexMPOMPSMultiply(TwoVertexComponents* arraystuff, std::complex<double> *in, std::complex<double> *out){
-    std::cout << "Converting in vector to sparse..." << std::endl;
-    SparseMatrix V(arraystuff->vcols,arraystuff->vrows,arraystuff->vrows);//undocumented behaviour of SparseMatrix, using transposed rows and cols to avoid unnecessary row ordering...
-    for (struct {std::vector<std::array<Sparseint,2> >::const_iterator cit; Sparseint idx;} itstruct ={arraystuff->rows_and_cols.begin(), 0};itstruct.cit!=arraystuff->rows_and_cols.end();++itstruct.cit,++itstruct.idx){
-      V.entry((*(itstruct.cit))[1],(*(itstruct.cit))[0],in[itstruct.idx]);
+  UnitCell load_UnitCell_binary(std::ifstream& infile, const Basis& basis){
+    UnitCell ans(basis);
+    if (infile.is_open()){
+      //read in size of unitcell
+      size_t num_in_cell(0);
+      infile.read(reinterpret_cast<char*>(&num_in_cell),sizeof(size_t));
+      for (size_t n=0;n<num_in_cell;++n){
+	ans.Matrices.emplace_back(MPS_matrix(load_MPX_matrix_binary(infile,basis)));
+      }
+      for (size_t n=0;n<num_in_cell;++n){
+	std::vector<double> lambda;
+	size_t num_in_lambda(0);
+	infile.read(reinterpret_cast<char*>(&num_in_lambda),sizeof(size_t));
+	for (size_t l=0;l<num_in_lambda;++l){
+	  double val(0.0);
+	  infile.read(reinterpret_cast<char*>(&val),sizeof(double));
+	  lambda.push_back(val);
+	}
+	ans.Lambdas.emplace_back(std::move(lambda));
+      }
+      return ans;
     }
-    std::cout << "Matrix times Vector Contractions 1"<< std::endl;
-    MPX_matrix sally(contract(arraystuff->LeftPart,0,MPX_matrix(arraystuff->LeftPart.GetPhysicalSpectrum(),arraystuff->indices,2,V.cheap_no_transpose_finalise()),0,contract1071));
-    sally.print_sparse_info();
-    std::cout << "Matrix times Vector Contractions 2"<< std::endl;
-    SparseMatrix jim(contract_to_sparse(std::move(sally),0,arraystuff->RightPart,0,contract116276));
-    jim.print_sparse_info();
-    std::cout << "Back to dense"<< std::endl;
-    DumbExtractWithZeros(reshape(std::move(jim),arraystuff->length()),arraystuff->allowed_indices,out);
-  }*/
-
-  /*void TwoVertexMPOMPSMultiply(TwoVertexComponents* arraystuff, std::complex<double> *in, std::complex<double> *out){
-    std::cout << "Converting in vector to sparse..." << std::endl;
-    SparseMatrix V(arraystuff->vcols,arraystuff->vrows,arraystuff->vrows);//undocumented behaviour of SparseMatrix, using transposed rows and cols to avoid unnecessary row ordering...
-    for (struct {std::vector<std::array<Sparseint,2> >::const_iterator cit; Sparseint idx;} itstruct ={arraystuff->rows_and_cols.begin(), 0};itstruct.cit!=arraystuff->rows_and_cols.end();++itstruct.cit,++itstruct.idx){
-      V.entry((*(itstruct.cit))[1],(*(itstruct.cit))[0],in[itstruct.idx]);
+    else {
+      return ans;
     }
-
-    SparseMatrix jim(contract_to_sparse(contract(contract(arraystuff->H,0,contract(arraystuff->LeftBlock,0,MPX_matrix(arraystuff->LeftBlock.GetPhysicalSpectrum(),arraystuff->indices,2,V.cheap_no_transpose_finalise()),0,contract51),0,contract1325),0,arraystuff->H,0,contract1162),0,arraystuff->RightBlock,0,contract5472));
-
-    std::cout << "Back to dense"<< std::endl;
-    DumbExtractWithZeros(reshape(std::move(jim),arraystuff->length()),arraystuff->allowed_indices,out);
-    }*/
-
+  }
 }

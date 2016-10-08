@@ -79,7 +79,7 @@ namespace arpack {
   template <typename ArrayType,typename GuessType>
   class arpack_eigs{
   public:
-    ArrayType* m_array_stuff; //input
+    const ArrayType* m_array_stuff; //input
     arpack_int m_length;
     GuessType* m_initial_guess; //possible input
     std::complex<double>* m_evals; //output
@@ -87,7 +87,7 @@ namespace arpack {
     arpack_workspace m_workspace; //workspace storage objects and params
 
     //need to set up workspace and get pointers to array (or components to make array) and ptrs to output containers
-    arpack_eigs(ArrayType* array_stuff, void (*MV)(ArrayType*,std::complex<double>*,std::complex<double>*), arpack_int length, GuessType* initial_guess, void (*converter)(GuessType*,std::complex<double>*), arpack_int num_e_vals, char which_e_vals[3], std::complex<double> *Evals, std::complex<double> *Evecs=NULL);
+    arpack_eigs(const ArrayType* array_stuff, void (*MV)(const ArrayType*,std::complex<double>*,std::complex<double>*), arpack_int length, GuessType* initial_guess, void (*converter)(GuessType*,std::complex<double>*), arpack_int num_e_vals, char which_e_vals[3], std::complex<double> *Evals, std::complex<double> *Evecs=NULL);
     ~arpack_eigs(){ delete[] resid; }
 
     void do_znaupd();
@@ -99,12 +99,12 @@ namespace arpack {
   private:
     std::complex<double>* resid;
     arpack_int m_cumulative_iterations;
-    void (*m_MV)(ArrayType*,std::complex<double>*,std::complex<double>*);
+    void (*m_MV)(const ArrayType*,std::complex<double>*,std::complex<double>*);
     void (*m_converter)(GuessType*,std::complex<double>*);
   };
 
   template <typename ArrayType, typename GuessType>
-  arpack_eigs<ArrayType,GuessType>::arpack_eigs(ArrayType* array_stuff, void (*MV)(ArrayType*,std::complex<double>*,std::complex<double>*), arpack_int length, GuessType* initial_guess, void (*converter)(GuessType*,std::complex<double>*), arpack_int num_e_vals, char which_e_vals[3], std::complex<double> *Evals, std::complex<double> *Evecs) : m_array_stuff(array_stuff), m_MV(MV), m_length(length), m_initial_guess(initial_guess),m_converter(converter),m_evals(Evals),m_evecs(Evecs),m_workspace(m_length,num_e_vals,which_e_vals,Evals,Evecs ? 1 : 0, Evecs,NULL),m_cumulative_iterations(0){
+  arpack_eigs<ArrayType,GuessType>::arpack_eigs(const ArrayType* array_stuff, void (*MV)(const ArrayType*,std::complex<double>*,std::complex<double>*), arpack_int length, GuessType* initial_guess, void (*converter)(GuessType*,std::complex<double>*), arpack_int num_e_vals, char which_e_vals[3], std::complex<double> *Evals, std::complex<double> *Evecs) : m_array_stuff(array_stuff), m_MV(MV), m_length(length), m_initial_guess(initial_guess),m_converter(converter),m_evals(Evals),m_evecs(Evecs),m_workspace(m_length,num_e_vals,which_e_vals,Evals,Evecs ? 1 : 0, Evecs,NULL),m_cumulative_iterations(0){
     //form resid
     resid = new std::complex<double>[m_length];
     m_workspace.resid=resid;
@@ -114,15 +114,17 @@ namespace arpack {
       m_converter(m_initial_guess,resid);//convert guess format to dense vector
       m_workspace.info=1; //tell arpack to use initial guess vector
     }
-    /*else { //fill resid with uniform values
+    else { //no initial guess? fill resid with uniform values
       for (arpack_int i=0; i< m_length; ++i) resid[i]=1.0/sqrt(m_length);
       m_workspace.info=1; //tell arpack to use initial guess vector
-      }*/
+    }
     do {
       if (m_workspace.info==-9){//if info is -9 then use a random vector
-	std::cout << "Initial guess vector is zero, trying a random vector..." << std::endl;
+	std::cout << "Initial guess vector is zero, trying a different vector..." << std::endl;
 	m_workspace.reset();
-	m_workspace.info=0; //set to zero to cause generation of random initial vector
+	for (arpack_int i=0; i< m_length; ++i) resid[i]=1.0/sqrt(m_length);
+	m_workspace.info=1; //tell arpack to use initial guess vector
+	//m_workspace.info=0; //set to zero to cause generation of random initial vector
 	//arpack will populate resid itself if info!=1
       }
 
@@ -134,7 +136,7 @@ namespace arpack {
 	  std::cout << "Arpack out of iterations, adding more..." << std::endl;
 	}
 	else if (iterations()<4*m_workspace.maxiter){
-	  std::cout << "Poor convergence, trying a different random starting vector..." << std::endl;
+	  std::cout << "Poor convergence, trying a random starting vector..." << std::endl;
 	  m_workspace.info=0; //set to zero to cause generation of random initial vector
 	}
 	else {
@@ -162,7 +164,7 @@ namespace arpack {
 	    smallest=i;	    
 	  }
 	}
-	if (abs(m_workspace.d[smallest])>1.0e3){
+	if (abs(m_workspace.d[smallest])>1.0e6){
 	  std::cout << "Very large absolute value returned from arpack for eigenvalue: " << m_workspace.d[smallest] <<", aborting..." <<std::endl; exit(1);
 	}
 	else if (smallest!=0){
@@ -199,7 +201,7 @@ namespace arpack {
     return m_cumulative_iterations;
   }
 
-  inline void sparse_matrix_vector_mult(cs_cl* array, std::complex<double> *in, std::complex<double> *out){av(array,in,out);}
+  inline void sparse_matrix_vector_mult(const cs_cl* array, std::complex<double> *in, std::complex<double> *out){av(const_cast<cs_cl*>(array),in,out);}//annoying const_cast required because cxsparse doesn't use const in its sparse matrix vector routines.
   void cs_cl_to_dense(cs_cl* sparsevec, std::complex<double>* densevec);
 
   /** sparse matrix * vector routine */
@@ -210,6 +212,6 @@ namespace arpack {
   void aTv(cs_cl* sparse, std::complex<double> *in, std::complex<double> *out);
 
   /** Sparse eigensolver for which nev eigenvalues and eigenvectors, optional initial guess vector in sparse form*/
-  bool cpparpack(cs_cl* sparse,arpack_int n, arpack_int nev, std::complex<double> *Evals, std::complex<double> *Evecs, char which[3],cs_cl* initial=NULL);
+  bool cpparpack(const cs_cl* sparse,arpack_int n, arpack_int nev, std::complex<double> *Evals, std::complex<double> *Evecs, char which[3],cs_cl* initial=NULL);
 }
 #endif

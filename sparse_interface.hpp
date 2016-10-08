@@ -107,6 +107,7 @@ namespace ajaj {
     Sparseint nz() const;
     bool is_finalised() const;
     bool is_dense() const; //*< check to see if the array is actually dense
+    bool is_row_ordered() const;
     Sparseint get_p(Sparseint col) const; //gives p[col]
     Sparseint get_i(Sparseint p) const;//gives row[p]
     std::complex<double> get_x(Sparseint p) const;//gives value[p]
@@ -115,10 +116,16 @@ namespace ajaj {
     std::complex<double>& put_x(Sparseint p);
     void set_x(const Sparseint p,complex<double> x) {m_array->x[p]=x;}
     void print_emptyness() const;
-    void print_sparse_info() const {std::cout << rows() << "*" <<cols() << std::endl << "Non zeros: " << nz() << " "; print_emptyness(); std::cout << "Approx size: " << double(nz()*sizeof(std::complex<double>))/(1024.0*1024.0) << " megabytes" << std::endl; }
+    void print_l_s() const;
+
+    void print_sparse_info() const {std::cout << rows() << "*" <<cols() << std::endl << "Non zeros: " << nz() << " "; print_emptyness(); std::cout << "Approx size: " << double(nz()*sizeof(std::complex<double>))/(1024.0*1024.0) << " megabytes" << std::endl; 
+      print_l_s();
+    }
     double norm() const;
     double norm(const std::vector<Sparseint>& cols) const;
     double sum_column_square_norms(const std::vector<Sparseint>& cols) const;
+    double square_norm() const;
+
     //array operations
     void purge(); //the purpose of this is to empty the array, but to keep the dimensions the same and free it up for new entries
     void entry(Sparseint i, Sparseint j, std::complex<double> value);
@@ -154,6 +161,7 @@ namespace ajaj {
 
     void loopy(void (*funcptr)(Sparseint i, Sparseint p, std::complex<double> x));
     SparseMatrix ExtractSubMatrix(const Sparseint old_num_row_idxs,const std::vector<Sparseint>& old_idx_dims,const std::vector<std::pair<Sparseint,Sparseint> >& IndexVal,const bool conjugate) const;
+    SparseMatrix ExtractSubMatrix(const std::pair<Sparseint,Sparseint>& RowRange, const std::pair<Sparseint,Sparseint>& ColRange) const;
     SparseMatrix ExtractColumns(const std::vector<Sparseint>& cols) const;
     SparseMatrix ExtractColumnsAndPad(const std::vector<Sparseint>& cols,Sparseint extrarows,Sparseint extracols) const;
     SparseMatrix ZeroLastColumns(Sparseint c) const; //drop all finite values in the last c columns
@@ -193,14 +201,16 @@ namespace ajaj {
   };
 
   inline SparseMatrix NoTransMultiply(const SparseMatrix& A,const SparseMatrix& B){
-    //return SparseMatrix(cs_cl_multiply(A.m_array,B.m_array),1);
     return sparse_multiply_ajaj(A,B,1); //1 flag means don't sort rows
   }
 
   inline Sparseint SparseMatrix::rows() const {return(m_finalised ? m_array->m : m_array->n) ;}
   inline Sparseint SparseMatrix::cols() const {return(m_finalised ? m_array->n : m_array->m) ;}
   inline Sparseint SparseMatrix::nz() const {return(m_array->nz==-1 ? m_array->p[m_array->n] : m_array->nz);}
-  inline bool SparseMatrix::is_finalised() const {return m_finalised;}
+  inline bool SparseMatrix::is_finalised() const {
+    return is_row_ordered();
+    //return m_finalised;
+  }
   inline bool SparseMatrix::is_dense() const {return (nz() == rows() * cols());} 
 
   inline Sparseint SparseMatrix::get_p(Sparseint col) const {return m_array->p[col];}
@@ -238,13 +248,13 @@ namespace ajaj {
   public:
     std::vector<T> Values;
     Sparseint ValuesSize() const {return Values.size();}
-    SparseDecompositionBase() : lineardim(0){
+    SparseDecompositionBase() : lineardim(0){}
+    SparseDecompositionBase(const Sparseint& L) : lineardim(L){Values.reserve(L);}
+    SparseDecompositionBase(std::vector<T>&& vals) : lineardim(vals.size()),Values(std::move(vals)){}
+    void printValues() const {
+      for (typename std::vector<T>::const_iterator it=Values.begin();it!=Values.end();++it){std::cout << *it << " ";} 
+      std::cout << std::endl;
     }
-    SparseDecompositionBase(const Sparseint& L) : lineardim(L){
-    }
-    SparseDecompositionBase(std::vector<T>&& vals) : lineardim(vals.size()),Values(std::move(vals)){
-    }
-    void printValues() const {for (typename std::vector<T>::const_iterator it=Values.begin();it!=Values.end();++it){std::cout << *it << " ";} std::cout << std::endl;}
   };
 
   class SparseSVD :public SparseDecompositionBase<double> {
@@ -253,6 +263,8 @@ namespace ajaj {
     const Sparseint rightdim;
     double m_kept_weight;
     double m_discarded_weight;
+    //double m_total_weight;
+
   public:
     SparseMatrix U;
     SparseMatrix Vdagger;
@@ -260,7 +272,7 @@ namespace ajaj {
     }
     SparseSVD(std::vector<double>&& vals, SparseMatrix&& umatrix, SparseMatrix&& vdmatrix, double keptweight=0.0,double discardedweight=0.0) : SparseDecompositionBase<double>(std::move(vals)),leftdim(umatrix.rows()),rightdim(vdmatrix.cols()),m_kept_weight(keptweight),m_discarded_weight(discardedweight),U(std::move(umatrix)),Vdagger(std::move(vdmatrix)){};
     //~SparseSVD(){};
-    void set_weights(double total_weight,double kept_weight){m_kept_weight=kept_weight; m_discarded_weight=total_weight-kept_weight;}
+    //void set_weights(double kept_weight,double discarded_weight) :m_kept_weight(kept_weight), m_discarded_weight(discarded_weight) {}
     double kept_weight() const { return m_kept_weight;}
     double discarded_weight() const { return m_discarded_weight;}
   };
@@ -282,10 +294,10 @@ namespace ajaj {
     const Sparseint m_dim;
   public:
     SparseMatrix EigenVectors;
-    SparseED(const Sparseint& dim, const Sparseint& numevals) : SparseDecompositionBase<complex<double> >(numevals),m_dim(dim),EigenVectors(SparseMatrix(m_dim,numevals)) {
+    SparseED(const Sparseint& dim, const Sparseint& numevals) : SparseDecompositionBase<std::complex<double> >(numevals),m_dim(dim),EigenVectors(SparseMatrix(m_dim,numevals)) {
       //EigenVectors=SparseMatrix(m_dim,numevals);
     }
-    SparseED(SparseED&& other) noexcept : m_dim(other.m_dim), EigenVectors(std::move(other.EigenVectors)){}
+    SparseED(SparseED&& other) noexcept : SparseDecompositionBase<std::complex<double> >(std::move(other.Values)), m_dim(other.m_dim), EigenVectors(std::move(other.EigenVectors)){}
     //~SparseED(){};
   };
 

@@ -98,17 +98,17 @@ namespace ajaj {
 
     TransferMatrixParts(const UnitCell& B,const UnitCell& K,const State* T=NULL);
     TransferMatrixParts(const UnitCell& C,const State* T=NULL);
-    uMPXInt length(){return m_length;}
-    SparseED LeftED(Sparseint numevals, char which[3],SparseMatrix* initial=NULL);
-    SparseED RightED(Sparseint numevals, char which[3],SparseMatrix* initial=NULL);
+    uMPXInt length() const {return m_length;}
+    SparseED LeftED(Sparseint numevals, char which[3],SparseMatrix* initial=NULL) const;
+    SparseED RightED(Sparseint numevals, char which[3],SparseMatrix* initial=NULL) const;
 
   private:
     uMPXInt m_length;
     void m_init();
   };
 
-  void LeftTransferMatrixMultiply(TransferMatrixParts* stuff, std::complex<double> *in, std::complex<double> *out);
-  void RightTransferMatrixMultiply(TransferMatrixParts* stuff, std::complex<double> *in, std::complex<double> *out);
+  void LeftTransferMatrixMultiply(const TransferMatrixParts* stuff, std::complex<double> *in, std::complex<double> *out);
+  void RightTransferMatrixMultiply(const TransferMatrixParts* stuff, std::complex<double> *in, std::complex<double> *out);
 
   /** Orthogonalise a new decomposition, A L_n B inverse L_(n-1). Return a left orthogonal unit cell, and new lambda*/
   UnitCell Orthogonalise(const MPSDecomposition& MPSD,const std::vector<double>& PreviousLambda);
@@ -132,6 +132,52 @@ namespace ajaj {
 
   /** Special routine to measure the energy per vertex, because Hamiltonian is a lower triangular matrix product operator */
   std::complex<double> SimpleEnergy(const MPO_matrix& LeftH,const MPO_matrix& RightH,const MPO_matrix& H1,const MPO_matrix& I,const UnitCell& Ortho);
+  std::complex<double> SophisticatedEnergy(const MPO_matrix& ColX,const MPO_matrix& RowX,const MPO_matrix& H1,const UnitCell& Ortho);
+
+  class TransferMatrixComponents {
+  private:
+    const State* TargetStatePtr_;
+    const uMPXInt CellSize_;
+    const bool Hermitian_answer_; //setting this true insists that the final eigenvector can be reshaped into a (obviously square) Hermitian matrix
+
+    std::vector<std::pair<const MPS_matrix*,const MPS_matrix*> > BraKetMatrixPtrs_;
+
+    uMPXInt length_;
+    std::vector<MPXIndex> left_indices_;
+    std::vector<MPXIndex> right_indices_;
+    std::vector<Sparseint> allowed_indices_;
+    std::vector<Sparseint> allowed_indices_dagger_;//useful in order to ensure eigenvector can be made reshaped into Hermitian matrix to high precision
+    std::vector<std::array<Sparseint,2> > rows_and_cols_;
+    uMPXInt vrows_;
+    uMPXInt vcols_;
+
+    MPX_matrix accumulate_() const;
+
+  public:
+
+    TransferMatrixComponents(const std::vector<const MPS_matrix*>& BraPtrs, const std::vector<const MPS_matrix*>& KetPtrs, bool HV=0, const State* T=nullptr);
+    TransferMatrixComponents(const std::vector<const MPS_matrix*>& KetPtrs, bool HV=0, const State* T=nullptr);
+
+    const MPS_matrix& BraMatrix(uMPXInt i) const {return *(BraKetMatrixPtrs_.at(i).first);} //public interface
+    const MPS_matrix& KetMatrix(uMPXInt i) const {return *(BraKetMatrixPtrs_.at(i).second);}
+    uMPXInt last() const {return CellSize_-1;}
+    uMPXInt length() const {return length_;}
+
+    SparseED LeftED(Sparseint numevals, char which[3],SparseMatrix* initial=NULL) const;
+    SparseED RightED(Sparseint numevals, char which[3],SparseMatrix* initial=NULL) const;
+
+    const std::vector<Sparseint>& allowed_indices() const {return allowed_indices_;}
+    const std::vector<std::array<Sparseint,2> >& rows_and_cols() const {return rows_and_cols_;}
+    uMPXInt vrows() const {return vrows_;}
+    uMPXInt vcols() const {return vcols_;}
+    const std::vector<MPXIndex>& left_indices() const {return left_indices_;}
+    const std::vector<MPXIndex>& right_indices() const {return right_indices_;}
+
+  };
+
+  void LeftComponentsMultiply(const TransferMatrixComponents* stuff, std::complex<double> *in, std::complex<double> *out);
+  void RightComponentsMultiply(const TransferMatrixComponents* stuff, std::complex<double> *in, std::complex<double> *out);
+
 }
 
 #endif

@@ -25,7 +25,6 @@ int main(int argc, char** argv){
   ajaj::TEBD_Args RuntimeArgs(argc,argv);
   if (RuntimeArgs.is_valid()){
     const ajaj::Model myModel(ajaj::MakeModelFromArgs(RuntimeArgs));
-    myModel.basis().print();
     ajaj::uMPXInt CHI(RuntimeArgs.chi());
     double minS(1.0e-14);
     ajaj::uMPXInt number_of_vertices(RuntimeArgs.num_vertices());

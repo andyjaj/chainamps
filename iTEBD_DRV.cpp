@@ -49,7 +49,6 @@ int main(int argc, char** argv){
     //starting state is product state of ground states
     const ajaj::UnitCell Initial(MakeProductStateUnitCell(myModel.basis(),0/*Currently this should be set to the index of a state that has zero for all charges*/));
     ajaj::iTEBD infrun(myModel.H_MPO,Initial,time_step,results,trotter_order);
-
     infrun.evolve(number_of_time_steps,measured_operators,CHI/*bond dimension*/,minS/*min s val*/,measurement_interval);
     return 0;
   }

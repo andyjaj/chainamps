@@ -110,6 +110,8 @@ namespace ajaj{
 	//do we need to take a measurement?
 	if (m_current_time_step % measurement_interval==0) /*make measurement*/ {
 	  UnitCell ortho(OrthogonaliseInversionSymmetric(m_unit));
+	  ortho.OutputOneVertexDensityMatrix("OneVertexRho",m_current_time_step);
+	  ortho.store("Ortho",m_current_time_step);
 	  this->do_measurements(ortho,measuredMPOs);
 	}
       }
@@ -129,6 +131,8 @@ namespace ajaj{
 	  m_unit.swap(0,1);
 	  //measure etc.
 	  m_unit=std::move(OrthogonaliseInversionSymmetric(m_unit));
+	  m_unit.store("Ortho",m_current_time_step);
+	  m_unit.OutputOneVertexDensityMatrix("OneVertexRho",m_current_time_step);
 	  this->do_measurements(m_unit,measuredMPOs);
 
 	  //complete time step
@@ -318,7 +322,7 @@ namespace ajaj{
       std::cout << "Bond dimension: " << RightEnddecomp.Values.size() << std::endl;
       if (NumVertices_==2){ //special case for two vertices only
 	//measure truncation and entropy
-	real_results.push_back(RightEnddecomp.getRescaleDifference());
+	real_results.push_back(RightEnddecomp.Truncation);
 	real_results.push_back(entropy(RightEnddecomp.Values));
       }
       for (auto&& m : measurements){
@@ -356,7 +360,7 @@ namespace ajaj{
       std::cout << "Bond dimension: " << decomp.Values.size() << std::endl;
       if (v==NumVertices_/2){ //if we only have two chains, this is never obeyed...
 	//measure truncation and entropy
-	real_results.push_back(decomp.getRescaleDifference());
+	real_results.push_back(decomp.Truncation);
 	real_results.push_back(entropy(decomp.Values));
       }
       for (auto&& m : measurements){

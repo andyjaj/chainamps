@@ -141,7 +141,7 @@ namespace ajaj {
 
   Data SuperBlock::initialise(uMPXInt chi, double smin){
     //Assumes any previous contents of the blocks are junk.
-    if(!H_ptr_->isConsistent()){std::cout << "Hamiltonian MPO is malformed. Aborting." << std::endl; exit(1);}
+    if(!H_ptr_->isConsistent()){std::cout << "Hamiltonian MPO is malformed. Aborting." << std::endl; H_ptr_->print_indices_values(); exit(1);}
     //first we store some dummy blocks at the left and right ends (position 0), which are useful
     ends(MakeDummyLeftBlock(getH(),getTargetState()),MakeDummyRightBlock(getH(),getTargetState()));
     //we need the left and right MPO forms of H for open boundary conditions
@@ -164,11 +164,13 @@ namespace ajaj {
     initial_2(MakeInitialLeftBlock(LeftH,CentralDecomposition.LeftMatrix),MakeInitialRightBlock(RightH,CentralDecomposition.RightMatrix));
     //at this point there are 2 vertices, and we have pre stored the blocks they contribute to
     previous_lambda_=std::vector<double>(1,1.0);
+    pred_=MakePrediction(CentralDecomposition,previous_lambda_);//give use one way of checking overlap of current state with the previous one.
+    fidelity_=CheckConvergence(pred_,previous_lambda_);
     double S_E(entropy(CentralDecomposition.Values));
     std::cout << "Current Bond Dimension: " << CentralDecomposition.Values.size() << ", Entropy: " << S_E << std::endl;
     two_vertex_energy.Real_measurements.push_back(S_E);
-    two_vertex_energy.Real_measurements.push_back(CentralDecomposition.getRescaleDifference());
-    two_vertex_energy.Real_measurements.push_back(0.0);
+    two_vertex_energy.Real_measurements.push_back(CentralDecomposition.Truncation);
+    two_vertex_energy.Real_measurements.push_back(fidelity_);
     return two_vertex_energy;
   }
 
@@ -182,23 +184,25 @@ namespace ajaj {
     else { /*size()>4, make new left and right blocks, insert dummy vertices ready for solving*/
       insert_2(MakeLeftBlock(getLeftBlock(),getH(),CentralDecomposition.LeftMatrix),MakeRightBlock(getRightBlock(),getH(),CentralDecomposition.RightMatrix));
     }
-    Prediction Next(MakePrediction(CentralDecomposition,previous_lambda_));
-    std::cout << "checking overlap" << std::endl;
-    double convergence(CheckConvergence(Next,previous_lambda_));
+    //Prediction Next(MakePrediction(CentralDecomposition,previous_lambda_));
+    //std::cout << "Checking overlap" << std::endl; //actually we are checking the convergence of the previous iteration...
+    //fidelity_=CheckConvergence(Next,previous_lambda_);
     //we don't need the central decomp anymore, so we could steal/swap from it
     previous_lambda_=CentralDecomposition.Values;
     //update numbers
     //solve
     Data energy;
-    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),nullptr,size(),energy,&(Next.Guess)),chi,smin);
+    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),nullptr,size(),energy,&(pred_.Guess)),chi,smin);
     CentralDecomposition.SquareRescale(1.0);
     //CentralDecomposition.OutputPhysicalIndexDensities(DensityFileStream_);
     push_density();
+    pred_=MakePrediction(CentralDecomposition,previous_lambda_);
+    fidelity_=CheckConvergence(pred_,previous_lambda_);
     double S_E(entropy(CentralDecomposition.Values));
     energy.Real_measurements.push_back(S_E);
-    energy.Real_measurements.push_back(CentralDecomposition.getRescaleDifference());
-    energy.Real_measurements.push_back(convergence);
-    std::cout <<"1-Overlap: " << convergence << ", Current Bond Dimension: " << CentralDecomposition.Values.size() << ", Entropy: " << S_E << std::endl;
+    energy.Real_measurements.push_back(CentralDecomposition.Truncation);
+    energy.Real_measurements.push_back(fidelity_);
+    std::cout <<"1-fidelity: " << fidelity_ << ", Current Bond Dimension: " << CentralDecomposition.Values.size() << ", Entropy: " << S_E << std::endl;
     //after calculation, insert the two new sites
     return energy;
   }
@@ -222,9 +226,11 @@ namespace ajaj {
     CentralDecomposition.SquareRescale(1.0);
     //CentralDecomposition.OutputPhysicalIndexDensities(DensityFileStream_);
     push_density();
+    //pred_=MakePrediction(CentralDecomposition,previous_lambda_);
+    //fidelity_=CheckConvergence(pred_,previous_lambda_);
     double S_E(entropy(CentralDecomposition.Values));
     energy.Real_measurements.push_back(S_E);
-    energy.Real_measurements.push_back(CentralDecomposition.getRescaleDifference());
+    energy.Real_measurements.push_back(CentralDecomposition.Truncation);
     energy.Real_measurements.push_back(1.0);//overlap not calculated at moment
     std::cout <<"Current Bond Dimension: " << CentralDecomposition.Values.size() << ", Entropy: " << S_E << std::endl;
     return energy;
@@ -249,9 +255,11 @@ namespace ajaj {
     CentralDecomposition.SquareRescale(1.0);
     //CentralDecomposition.OutputPhysicalIndexDensities(DensityFileStream_);
     push_density();
+    //pred_=MakePrediction(CentralDecomposition,previous_lambda_);
+    //fidelity_=CheckConvergence(pred_,previous_lambda_);
     double S_E(entropy(CentralDecomposition.Values));
     energy.Real_measurements.push_back(S_E);
-    energy.Real_measurements.push_back(CentralDecomposition.getRescaleDifference());
+    energy.Real_measurements.push_back(CentralDecomposition.Truncation);
     energy.Real_measurements.push_back(1.0);//overlap not calculated at moment
     std::cout <<"Current Bond Dimension: " << CentralDecomposition.Values.size() << ", Entropy: " << S_E << std::endl;
     return energy;
@@ -400,7 +408,7 @@ namespace ajaj {
 
     double S_E(entropy(CentralDecomposition.Values));
     results.Real_measurements.push_back(S_E);
-    results.Real_measurements.push_back(CentralDecomposition.getRescaleDifference());
+    results.Real_measurements.push_back(CentralDecomposition.Truncation);
     results.Real_measurements.push_back(1.0); //overlap not calculated at moment
     std::cout <<"Current Bond Dimension: " << CentralDecomposition.Values.size() << ", Entropy: " << S_E << std::endl;
     output_ref_.push(results);
@@ -448,7 +456,7 @@ namespace ajaj {
     CentralDecomposition.SquareRescale(1.0);
     double S_E(entropy(CentralDecomposition.Values));
     results.Real_measurements.push_back(S_E);
-    results.Real_measurements.push_back(CentralDecomposition.getRescaleDifference());
+    results.Real_measurements.push_back(CentralDecomposition.Truncation);
     results.Real_measurements.push_back(1.0);//overlap not calculated at moment
     std::cout <<"Current Bond Dimension: " << CentralDecomposition.Values.size() << ", Entropy: " << S_E << std::endl;
     return results;
@@ -494,7 +502,7 @@ namespace ajaj {
     CentralDecomposition.SquareRescale(1.0);
     double S_E(entropy(CentralDecomposition.Values));
     results.Real_measurements.push_back(S_E);
-    results.Real_measurements.push_back(CentralDecomposition.getRescaleDifference());
+    results.Real_measurements.push_back(CentralDecomposition.Truncation);
     results.Real_measurements.push_back(1.0);//overlap not calculated at moment
     std::cout <<"Current Bond Dimension: " << CentralDecomposition.Values.size() << ", Entropy: " << S_E << std::endl;
     return results;
@@ -643,8 +651,10 @@ namespace ajaj {
     MPX_matrix ALambdaR(reorder(contract(svals,0,Decomp.RightMatrix,0,contract10),0,reorder102,2));
     RotDecomp=ALambdaR.SVD();
     ans.LambdaR=contract_to_sparse(MPX_matrix(spectrum,RotDecomp.RowMatrix.Index(0),RotDecomp.Values),0,RotDecomp.RowMatrix,0,contract10);
-    MPX_matrix InversePreviousLambda(spectrum,Decomp.LeftMatrix.Index(1),PreviousLambda,1); //1 means take inverse values
+    MPX_matrix InversePreviousLambda(spectrum,Decomp.LeftMatrix.Index(1),PreviousLambda,1); //1 means take inverse values    
     ans.Guess=reshape_to_vector(contract(contract(ALambdaR,0,InversePreviousLambda,0,contract20),0,LambdaLB,0,contract20));
+    //ans.Guess.rescale(sqrt(1.0/ans.Guess.square_norm()));
+
     return ans;
   }
 
@@ -668,8 +678,8 @@ namespace ajaj {
     return MPX_matrix(LB.GetPhysicalSpectrum(),stuff.indices,2,reshape(decomp.EigenVectors.ExtractColumns(std::vector<MPXInt>(1,0)),LB.GetPhysicalSpectrum().size()*LB.Index(5).size()));
   }
 
-  double CheckConvergence(const Prediction& guess,const std::vector<double>& NewLambda){
-    return 1.0-Sum((guess.LambdaR*SparseMatrix(NewLambda)).SVD());
+  double CheckConvergence(const Prediction& guess,const std::vector<double>& PreviousLambda){
+    return 1.0-Sum((guess.LambdaR*SparseMatrix(PreviousLambda)).SVD());
   }
 
   TwoVertexComponents::TwoVertexComponents(const MPX_matrix& L, const MPO_matrix& HMPO, const MPX_matrix& R, const std::vector<ProjectorBlocks>* P, const State* StatePtr) : LeftBlock(L),H(HMPO),RightBlock(R),ProjectorsPtr(P),TargetStatePtr(StatePtr),m_length(L.Index(5).size()*H.Index(2).size()*R.Index(4).size()*H.Index(2).size()),LeftPart(contract(H,0,LeftBlock,0,contract13)),RightPart(contract(H,0,RightBlock,0,contract32)) {
@@ -688,10 +698,11 @@ namespace ajaj {
     RightPart.print_sparse_info();
 #endif
 
-    indices.emplace_back(1,LeftPart.Index(1));
-    indices.emplace_back(1,LeftPart.Index(7));
-    indices.emplace_back(1,RightPart.Index(2));
-    indices.emplace_back(0,RightPart.Index(6));
+    indices.emplace_back(1,HMPO.Index(2));
+    indices.emplace_back(1,LeftBlock.Index(5));
+    indices.emplace_back(1,HMPO.Index(2));
+    indices.emplace_back(0,RightBlock.Index(4));
+
     const MPXIndex& sigma1(indices[0]);
     const MPXIndex& a0(indices[1]);
     const MPXIndex& sigma2(indices[2]); 
@@ -699,25 +710,27 @@ namespace ajaj {
 
     vrows=sigma1.size()*a0.size();
     vcols=sigma2.size()*a2.size();
+
     for (uMPXInt c_a2=0;c_a2<a2.size();++c_a2){
-      if (TargetStatePtr){ //have we set a target state here? If so, do we have a match, are we in the target state sector?
-	if (a2[c_a2] != *(TargetStatePtr)){continue;}
-      }
-      for (Sparseint c_s2=0;c_s2<sigma2.size();++c_s2){
+      //if (TargetStatePtr){ //have we set a target state here? If so, do we have a match, are we in the target state sector?
+      //	if (a2[c_a2] != *(TargetStatePtr)){continue;}
+      //}
+      for (MPXInt c_s2=0;c_s2<sigma2.size();++c_s2){
 	State loop2acc(a2[c_a2]-sigma2[c_s2]);
-	Sparseint colpart(c_s2+sigma2.size()*c_a2);
-	for (Sparseint r_a0=0;r_a0<a0.size();++r_a0){
+	MPXInt colpart(c_s2+sigma2.size()*c_a2);
+	for (MPXInt r_a0=0;r_a0<a0.size();++r_a0){
 	  State loop3acc(loop2acc-a0[r_a0]);
-	  for (Sparseint r_s1=0;r_s1<sigma1.size();++r_s1){
+	  for (MPXInt r_s1=0;r_s1<sigma1.size();++r_s1){
 	    if (sigma1[r_s1]==loop3acc && (!TargetStatePtr || (a2[c_a2]-a0[r_a0]==*(TargetStatePtr)))){ //check for consistency of charges, and optionally if basis is in target sector
 	      
 	      allowed_indices.push_back(r_s1+sigma1.size()*r_a0+sigma1.size()*a0.size()*colpart);
-	      rows_and_cols.push_back(std::array<Sparseint,2> {{r_s1+sigma1.size()*r_a0,colpart}});
+	      rows_and_cols.push_back(std::array<MPXInt,2> {{r_s1+sigma1.size()*r_a0,colpart}});
 	    }
 	  }
 	}
       }
     }
+
     if (ProjectorsPtr){
       const std::vector<ProjectorBlocks>& PBvec(*ProjectorsPtr);
       for (auto&& pb : PBvec){
@@ -727,7 +740,7 @@ namespace ajaj {
     }
   };
 
-  SparseHED TwoVertexComponents::HED(Sparseint numevals, char which[3],const SparseMatrix* initial){
+  SparseHED TwoVertexComponents::HED(MPXInt numevals, char which[3],const SparseMatrix* initial) const {
     //set up workspace (Evals, Evecs) SparseHED
     uMPXInt fulldim(this->length());
     std::cout <<"Eigensolver for matrix of length " << fulldim << std::endl;
@@ -741,17 +754,11 @@ namespace ajaj {
     if (allowed_indices.size()<400){
       //just make the (dense) matrix and use lapack
       static std::pair<const std::vector<MPXInt>,const std::vector<MPXInt> > condition={{1,7},{2,6}};
-      TranslationBlock<DenseMatrix> TB(contract_conditional<DenseMatrix>(LeftPart,0,RightPart,0,contract21,condition));
+      //TranslationBlock<DenseMatrix> TB(contract_conditional<DenseMatrix>(LeftPart,0,RightPart,0,contract21,condition));
+      TranslationBlock<DenseMatrix> TB(contract_conditional<DenseMatrix>(contract(H,0,LeftBlock,0,contract13),0,contract(H,0,RightBlock,0,contract32),0,contract21,condition));
       //use lapack
       DenseHED dense_ans(TB.Block.HED(numevals,which));
-      //copy answers across (needless overhead, but not that big if max size is 100)
-      //std::copy_n(dense_ans.Values,numevals,Evals);
-      //still wrong...
-      //exit(1);
       return SparseHED(std::vector<double>(dense_ans.Values,dense_ans.Values+numevals),TB.TranslateRows(dense_ans.EigenVectors));
-      //DenseMatrix dm(TB.TranslateRows(dense_ans.EigenVectors));
-      
-      //move_to_dumb_array(dm,Evecs);
     }
     else {
       std::cout <<"Allocate storage for evals and evecs" << std::endl;
@@ -768,14 +775,14 @@ namespace ajaj {
 	double maxabsvalue=0.0;
 	std::complex<double> maxvalue=0.0;
 	//first pass find largest abs value
-	for (Sparseint i=0;i<allowed_indices.size();++i){
+	for (MPXInt i=0;i<allowed_indices.size();++i){
 	  if (abs(Evecs[i+v*allowed_indices.size()])>maxabsvalue){
 	    maxabsvalue = abs(maxvalue=Evecs[i+v*allowed_indices.size()]);
 	  }
 	}
 	maxvalue=maxabsvalue/maxvalue;
 	//now get rid of possible phase
-	for(Sparseint i=0;i<allowed_indices.size();++i){
+	for(MPXInt i=0;i<allowed_indices.size();++i){
 	  std::complex<double> value=Evecs[i+v*allowed_indices.size()]*maxvalue;
 	  if (abs(value)>SPARSETOL*maxabsvalue){
 	    //convert back to real rows
@@ -790,9 +797,9 @@ namespace ajaj {
     }
   }
 
-  void TwoVertexMPOMPSMultiply(TwoVertexComponents* arraystuff, std::complex<double> *in, std::complex<double> *out){
+  void TwoVertexMPOMPSMultiply(const TwoVertexComponents* arraystuff, std::complex<double> *in, std::complex<double> *out){
     SparseMatrix V(arraystuff->vcols,arraystuff->vrows,arraystuff->vrows);//undocumented behaviour of SparseMatrix, using transposed rows and cols to avoid unnecessary row ordering...
-    for (struct {std::vector<std::array<Sparseint,2> >::const_iterator cit; Sparseint idx;} itstruct ={arraystuff->rows_and_cols.begin(), 0};itstruct.cit!=arraystuff->rows_and_cols.end();++itstruct.cit,++itstruct.idx){
+    for (struct {std::vector<std::array<MPXInt,2> >::const_iterator cit; MPXInt idx;} itstruct ={arraystuff->rows_and_cols.begin(), 0};itstruct.cit!=arraystuff->rows_and_cols.end();++itstruct.cit,++itstruct.idx){
       V.entry((*(itstruct.cit))[1],(*(itstruct.cit))[0],in[itstruct.idx]);
     }
     MPX_matrix Vector(arraystuff->LeftPart.GetPhysicalSpectrum(),arraystuff->indices,2,V.cheap_no_transpose_finalise());
@@ -819,8 +826,6 @@ namespace ajaj {
 	//std::cout << "Done conjugation and rescale contraction" <<std::endl;
       }
     }
-
-
   }
 
 }

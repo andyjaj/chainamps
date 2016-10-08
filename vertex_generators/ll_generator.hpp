@@ -8,6 +8,10 @@
 
 #include "../ajaj_common.hpp"
 #include "../sparse_interface.hpp"
+#include "../vertex.hpp"
+#include "../MPX.hpp"
+
+
 
 ////////////////////////
 namespace rmk { //namespace for Robert's ancilliary arrays and definitions

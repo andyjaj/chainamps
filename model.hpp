@@ -25,7 +25,12 @@ namespace ajaj{
     MPO_matrix H_MPO;
 
     Model() {};
-    Model(const VertexParameterArray& vp, Vertex (*generator) (const VertexParameterArray&), const VertexParameterArray& cp,  MPO_matrix (*makeH) (const Vertex&, const VertexParameterArray&)) : vertex(generator(vp)),H_MPO(makeH(vertex,cp)) {}
+    Model(const VertexParameterArray& vp, Vertex (*generator) (const VertexParameterArray&), const VertexParameterArray& cp,  MPO_matrix (*makeH) (const Vertex&, const VertexParameterArray&)) : vertex(generator(vp)),H_MPO(makeH(vertex,cp)) {
+      std::cout << "MODEL'S LOCAL BASIS" <<std::endl;
+      basis().print();
+      std::cout << "MPO matrix info" <<std::endl;
+      H_MPO.print_indices();
+    }
 
     const Basis& basis() const {return vertex.basis();}
 

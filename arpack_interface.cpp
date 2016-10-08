@@ -71,7 +71,7 @@ namespace arpack {
       std::cout << "Null iparam! Allocation error" << std::endl; exit(1);
     }
   }
-  bool cpparpack(cs_cl* sparse,arpack_int n, arpack_int nev, std::complex<double> *Evals, std::complex<double> *Evecs, char which[3],cs_cl* initial){
+  bool cpparpack(const cs_cl* sparse,arpack_int n, arpack_int nev, std::complex<double> *Evals, std::complex<double> *Evecs, char which[3],cs_cl* initial){
     return arpack_eigs<cs_cl,cs_cl>(sparse,&sparse_matrix_vector_mult,n,initial,&cs_cl_to_dense,nev,which,Evals,Evecs).error_status();
   }
 
@@ -133,12 +133,12 @@ namespace arpack {
 #endif
   }
   //dense case
-  void av(complex<double> *dense,arpack_int n, complex<double> *in, complex<double> *out) //complex overload
+  void av(std::complex<double> *dense,arpack_int n, std::complex<double> *in, std::complex<double> *out) //complex overload
   {
     std::fill(out,out+n,0.0);
     densefuncs::square_gemv(n,dense,in,out);
   }
-  void aTv(cs_cl* sparse, complex<double> *in, complex<double> *out) //complex overload
+  void aTv(cs_cl* sparse, std::complex<double> *in, std::complex<double> *out) //complex overload
   {
     std::fill(out,out+sparse->n,0.0);
     cs_cl* trans=cs_cl_transpose(sparse,1);
