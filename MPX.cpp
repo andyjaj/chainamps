@@ -1183,7 +1183,7 @@ namespace ajaj {
     UnitCell ans(basis);
     if (infile.is_open()){
       //load in basis
-      load_Basis_binary(infile,charge_rules,basis);
+      if (load_Basis_binary(infile,charge_rules,basis)) return ans;
       //read in size of unitcell
       size_t num_in_cell(0);
       infile.read(reinterpret_cast<char*>(&num_in_cell),sizeof(size_t));

@@ -114,11 +114,13 @@ namespace ajaj {
     //charge rules size
     size_t charge_rules_size(getChargeRules().size());
     outfile.write(reinterpret_cast<const char*>(&(charge_rules_size)),sizeof(size_t));
-    outfile.write(reinterpret_cast<const char*>(&(getChargeRules())),sizeof(QuantumNumberInt)*charge_rules_size);
+    outfile.write(reinterpret_cast<const char*>(getChargeRules().data()),sizeof(QuantumNumberInt)*charge_rules_size);
     size_t basis_size(size());
     outfile.write(reinterpret_cast<const char*>(&(basis_size)),sizeof(size_t));
     //states
-    outfile.write(reinterpret_cast<const char*>(StateArray::data()),sizeof(QuantumNumberInt)*basis_size);
+    for (auto&& s : *this){
+      s.fprint_binary(outfile);
+    }
     //Energies
     outfile.write(reinterpret_cast<const char*>(Energies().data()),sizeof(double)*basis_size);
   }
@@ -128,11 +130,11 @@ namespace ajaj {
       {
 	size_t charge_rules_size(0);
 	infile.read(reinterpret_cast<char*>(&charge_rules_size),sizeof(size_t));
-	std::cout << charge_rules_size << std::endl;
+	//std::cout << charge_rules_size << std::endl;
 	QNVector TempRules(charge_rules_size);
 	infile.read(reinterpret_cast<char*>(TempRules.data()),sizeof(QuantumNumberInt)*charge_rules_size);
 	if (charge_rules.size()==0){
-	  std::cout << "Loading quantum number defs from file" << std::endl;
+	  //std::cout << "Loading quantum number defs from file" << std::endl;
 	  charge_rules=std::move(TempRules);
 	  //new case, populate
 	}
@@ -145,13 +147,12 @@ namespace ajaj {
 	}
       }
       //if we got this far, then charge_rules is fine and we can use it.
-
       size_t basis_size(0);
       infile.read(reinterpret_cast<char*>(&basis_size),sizeof(size_t));
       StateArray states;
       states.reserve(basis_size);
       //get quantum numbers
-      QuantumNumberInt* QNbuffer=new QuantumNumberInt[basis_size];
+      QuantumNumberInt* QNbuffer=new QuantumNumberInt[charge_rules.size()];
       for (size_t b=0; b< basis_size;++b){
 	infile.read(reinterpret_cast<char*>(QNbuffer),sizeof(QuantumNumberInt)*charge_rules.size());
 	states.emplace_back(charge_rules,QNVector(QNbuffer,QNbuffer+charge_rules.size()));
@@ -164,7 +165,7 @@ namespace ajaj {
       Basis TempBasis(std::move(states),std::move(energies));
 
       if (basis.size()==0){
-	std::cout << "Loading basis from file" << std::endl;
+	//std::cout << "Loading basis from file" << std::endl;
 	basis=std::move(TempBasis);
       }
       else{
