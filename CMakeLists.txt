@@ -52,6 +52,7 @@ endif(TBB)
 
 add_library(DMRG STATIC DMRG_routines.cpp measurement.cpp MPX.cpp sparse_interface.cpp dense_interface.cpp arpack_interface.cpp dense_matrix_functions.cpp states.cpp)
 add_library(TIME STATIC TEBD_routines.cpp measurement.cpp MPX.cpp sparse_interface.cpp dense_interface.cpp arpack_interface.cpp dense_matrix_functions.cpp states.cpp)
+add_library(MEAS STATIC measurement.cpp MPX.cpp sparse_interface.cpp dense_interface.cpp arpack_interface.cpp dense_matrix_functions.cpp states.cpp)
 
 add_executable(iDMRG_DRV.bin iDMRG_DRV.cpp)
 target_link_libraries(iDMRG_DRV.bin DMRG ${EXTERNAL_LIBS})
@@ -64,3 +65,6 @@ target_link_libraries(iTEBD_DRV.bin TIME ${EXTERNAL_LIBS})
 
 add_executable(TEBD_DRV.bin TEBD_DRV.cpp)
 target_link_libraries(TEBD_DRV.bin TIME ${EXTERNAL_LIBS})
+
+add_executable(UNITCELL_MEASURE.bin UNITCELL_MEASURE.cpp)
+target_link_libraries(UNITCELL_MEASURE.bin MEAS ${EXTERNAL_LIBS})

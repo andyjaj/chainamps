@@ -70,6 +70,7 @@ namespace ajaj {
     void eprint() const; /**< Prints energy as well as values of quantum numbers. */
 
     friend bool operator==(const State& st1, const EigenState& est2);
+
     friend void swap(EigenState& A, EigenState& B);
     friend State operator+(const State& st1, const EigenState& e2);
     friend State operator-(const State& st1, const EigenState& e2);
@@ -84,14 +85,19 @@ namespace ajaj {
   private:
     std::vector<double> m_energies; /**< The energies of the states. */
   public:
+    EigenStateArray() {};
+    EigenStateArray(StateArray&& s, std::vector<double>&& e) : StateArray(s), m_energies(e) {}
+    EigenStateArray(const StateArray& s, const std::vector<double>& e) : StateArray(s), m_energies(e) {}
+
     void push_back(EigenState estate); /**< Add an EigenState to the end of the container.*/
     EigenState operator[](size_t i) const; /**< Read only access to element i of the container. */
     void print() const; /**< Print all the EigenStates */
     const std::vector<double>& Energies() const {return m_energies;}
-    const QNVector& getChargeRules() const {return at(0).getChargeRules();}
+    const QNVector& getChargeRules() const {return StateArray::data()->getChargeRules();}
+    void fprint_binary(std::ofstream& outfile) const;
   };
-
   typedef EigenStateArray Basis;
+  bool load_Basis_binary(std::ifstream& infile,QNVector& charge_rules, Basis& basis);
 
   /** PairStateBlock is a list of different tensor products of pairs of states that give the same total charges.*/
   struct PairStateBlock {

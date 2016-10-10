@@ -50,7 +50,7 @@ namespace ajaj {
     }
   };
 
-  enum optionIndex {UNKNOWN,CHI,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME};
+  enum optionIndex {UNKNOWN,CHI,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,DISTANCE};
 
   const option::Descriptor iDMRG_usage[4] =
     {
@@ -111,6 +111,14 @@ namespace ajaj {
       { 0, 0, 0, 0, 0, 0 }
     };
 
+  const option::Descriptor iMEAS_usage[3] =
+    {
+      {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: UNITCELL_MEASURE.bin [-D <number>] <unitcell_filename1> ... \n"},
+      {DISTANCE,0,"D","distance",Arg::PositiveNumeric,"  -D <number>, \t--distance=<number>"
+       "  \tDistance between two vertex measurements." },
+      { 0, 0, 0, 0, 0, 0 }
+    };
+
   class Base_Args{
 
   protected:
@@ -123,18 +131,13 @@ namespace ajaj {
     option::Parser parse;
     bool valid_;
 
-    unsigned int N_; //used by finite codes
-
   public:
 
-    Base_Args(int argc, char* argv[], const option::Descriptor* usage) : argc_(argc-(argc>0)),argv_(argv+(argc>0)),usage_(usage),stats(usage_, argc_, argv_),options(stats.options_max),buffer(stats.buffer_max),parse(usage_, argc_, argv_, &options[0], &buffer[0]),valid_(0),N_(0){
+    Base_Args(int argc, char* argv[], const option::Descriptor* usage) : argc_(argc-(argc>0)),argv_(argv+(argc>0)),usage_(usage),stats(usage_, argc_, argv_),options(stats.options_max),buffer(stats.buffer_max),parse(usage_, argc_, argv_, &options[0], &buffer[0]),valid_(0){
       std::cout<< "ChainAMPS" <<std::endl;
       std::cout<< "See LICENSE.txt for copyright info." <<std::endl;
       if (!parse.error() && argc!=0){
 	valid_=1;
-      }
-      if (valid_==1 && parse.nonOptionsCount()>1){
-	N_=stoul(parse.nonOption(1));
       }
     }
 
@@ -205,15 +208,18 @@ namespace ajaj {
     unsigned int E_;
     unsigned int F_;
     double Weight_;
+    unsigned int N_; //used by finite codes
+
 
   public:
-    fDMRG_Args(int argc, char* argv[]) : Base_Args(argc,argv,fDMRG_usage), E_(0), F_(0), Weight_(100.0) {
+    fDMRG_Args(int argc, char* argv[]) : Base_Args(argc,argv,fDMRG_usage), E_(0), F_(0), Weight_(100.0),N_(0) {
       //REQUIRE TWO NON OPTIONAL ARGUMENTS, TREAT AS A FILENAME AND NUMBER OF VERTICES
       if (parse.nonOptionsCount()!=2 || std::string(parse.nonOption(0))==std::string("-") || options[NUMBER_OF_EXCITED].count()>1 ){
 	std::cout << "Incorrect number of command line arguments." << std::endl <<std::endl;
 	valid_=0;
       }
       else {
+	N_=stoul(parse.nonOption(1));
 	valid_=(valid_==1);
       }
       //
@@ -292,15 +298,17 @@ namespace ajaj {
     unsigned long trotter_order_;
     unsigned long measurement_interval_;
     std::string initial_state_name_;
+    unsigned int N_; //used by finite codes
 
   public:
-    TEBD_Args(int argc, char* argv[]) : Base_Args(argc,argv,TEBD_usage), num_steps_(1), step_size_(0.1), trotter_order_(2), measurement_interval_(1){
+    TEBD_Args(int argc, char* argv[]) : Base_Args(argc,argv,TEBD_usage), num_steps_(1), step_size_(0.1), trotter_order_(2), measurement_interval_(1),N_(0){
       
      if (parse.nonOptionsCount()!=2 || std::string(parse.nonOption(0))==std::string("-")){
 	std::cout << "Incorrect number of command line arguments." << std::endl <<std::endl;
 	valid_=0;
       }
       else {
+	N_=stoul(parse.nonOption(1));
 	valid_=(valid_==1);
       }
       //
@@ -342,6 +350,26 @@ namespace ajaj {
     const std::string& initial_state_name() const {
       return initial_state_name_;
     }
+
+  };
+
+  class iMEAS_Args : public Base_Args{
+    unsigned long separation_;
+    std::vector<std::string> files_;
+  public:
+    iMEAS_Args(int argc, char* argv[]) : Base_Args(argc,argv,iMEAS_usage), separation_(0){
+      if (is_valid()){
+	for (size_t f=0;f<parse.nonOptionsCount();++f){
+	  files_.emplace_back(parse.nonOption(f));
+	}
+	if (options[DISTANCE])
+	  separation_=stoul(options[DISTANCE].arg);
+      }
+      print();
+    }
+
+    unsigned long separation() const {return separation_;}
+    const std::vector<std::string>& files() const {return files_;}
 
   };
 

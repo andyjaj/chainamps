@@ -1033,11 +1033,8 @@ namespace ajaj {
       FileNameStream << filename << ".UNITCELL"; 
       std::ofstream outfile;
       outfile.open(FileNameStream.str().c_str(),ios::out | ios::trunc | ios::binary);
-      /*//first output basis
-      size_t basis_size(basis_ptr_->size());
-      for (auto&& s : (*basis_ptr_)){
-	s.fprint_binary(outfile);
-	}*/      
+      //first output basis
+      basis_ptr_->fprint_binary(outfile);   
       size_t num_in_unit_cell(Matrices.size());
       outfile.write(reinterpret_cast<const char*>(&num_in_unit_cell),sizeof(size_t));
       for (auto&& m : Matrices){
@@ -1182,9 +1179,11 @@ namespace ajaj {
     return MPS_matrix(spectrum,indices,array);
   }
 
-  UnitCell load_UnitCell_binary(std::ifstream& infile, const Basis& basis){
+  UnitCell load_UnitCell_binary(std::ifstream& infile, QNVector& charge_rules, Basis& basis){
     UnitCell ans(basis);
     if (infile.is_open()){
+      //load in basis
+      load_Basis_binary(infile,charge_rules,basis);
       //read in size of unitcell
       size_t num_in_cell(0);
       infile.read(reinterpret_cast<char*>(&num_in_cell),sizeof(size_t));
