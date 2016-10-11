@@ -29,8 +29,10 @@ int main(int argc, char** argv){
     //operator_filenames() (can be 1 or 2 at the moment, indicates measurement at multiple locations, specified by distance).
     //use_filename_index(), strip and index from filename and use it to order results, default true
 
-    //read in (possible) operators
-    std::vector<ajaj::SparseMatrix> MElements;
+    ajaj::Vertex iMEAS_vertex;
+
+    //read in (possible) operators    
+
     if (RuntimeArgs.operator_filenames().size()) {
       for (auto&& opfn : RuntimeArgs.operator_filenames()){
 	///open file
@@ -45,7 +47,8 @@ int main(int argc, char** argv){
 	  ajaj::MPXInt cols(0);
 	  std::istringstream line1ss(fileline);
 	  if (line1ss >> rows && line1ss >> cols && line1ss.eof() && rows==cols){
-	    MElements.emplace_back(rows,cols);
+	    iMEAS_vertex.Operators.emplace_back(opfn,rows);
+	    ajaj::SparseMatrix& ME=iMEAS_vertex.Operators.back().MatrixElements;
 	    while (getline(is,fileline)){
 	      std::istringstream liness(fileline);
 	      ajaj::MPXInt row;
@@ -53,7 +56,7 @@ int main(int argc, char** argv){
 	      std::complex<double> value;
 	      if (liness >> row && liness >> col && liness >> value){
 		if (value!=0.0){
-		  MElements.back().entry(row,col,value);
+		  ME.entry(row,col,value);
 		}
 	      }
 	      else {
@@ -61,7 +64,7 @@ int main(int argc, char** argv){
 		return 0;
 	      }
 	    }
-	    MElements.back().finalise();
+	    ME.finalise();
 	  }
 	  else {
 	    std::cout << "Malformed dimension info in " << opfn << std::endl;
@@ -77,24 +80,24 @@ int main(int argc, char** argv){
     }
 
     //check dims
-    ajaj::MPXInt dim(MElements.size() ? MElements[0].rows() : 0);
+    ajaj::MPXInt dim(iMEAS_vertex.Operators.size() ? iMEAS_vertex.Operators[0].MatrixElements.rows() : 0);
 
-    if (MElements.size()>1){
-      for (auto&& m : MElements){
-	if (dim!= m.rows()){
-	  std::cout << "Operator dimensions don't match! " << dim << " " << m.rows() <<std::endl;
+    if (iMEAS_vertex.Operators.size()>1){
+      for (auto&& m : iMEAS_vertex.Operators){
+	if (dim!= m.MatrixElements.rows()){
+	  std::cout << "Operator dimensions don't match! " << dim << " " << m.MatrixElements.rows() <<std::endl;
 	  return 0;
 	}
       }
     }
 
-    ajaj::QNVector charge_rules;
-    ajaj::Basis basis;
-    ajaj::UnitCell cellbuff(basis);
+    //ajaj::QNVector charge_rules;
+    //ajaj::Basis basis;
     std::vector<std::pair<size_t,ajaj::Data> > indexed_results;
     size_t Index(0);
     std::regex ex("_([0-9]+)\\.UNITCELL$"); //regex to match number before filename only.
-
+    std::vector<ajaj::MPO_matrix> Operator_MPOs; //if defined
+    
     for (auto&& f : RuntimeArgs.files()){
       //get an index
       if (RuntimeArgs.use_filename_index()){ //extract from filename
@@ -117,15 +120,34 @@ int main(int argc, char** argv){
       infile.open(f.c_str(),ios::in | ios::binary);
       if (infile.is_open()){
 	std::cout << "Loading " << f << std::endl;
-	ajaj::UnitCell AA(ajaj::load_UnitCell_binary(infile,charge_rules,basis));
+	ajaj::UnitCell AA(ajaj::load_UnitCell_binary(infile,iMEAS_vertex.ChargeRules,iMEAS_vertex.Spectrum));
 	std::complex<double> overlap(ajaj::Overlap(AA,AA));
-	if (MElements.size() && basis.size()!=dim){
-	  std::cout << "UnitCell Basis size doesn't match operator dimensions! " << basis.size() << " " << dim << std::endl;
-	  return 0;
-	}
-
-	//measure.... //how many operators, separation etc...
 	indexed_results.emplace_back(Index,ajaj::Data(abs(overlap)));
+
+	if (iMEAS_vertex.Operators.size()){
+	  if (iMEAS_vertex.Spectrum.size()!=dim){
+	    std::cout << "UnitCell Basis size doesn't match operator dimensions! " << iMEAS_vertex.Spectrum.size() << " " << dim << std::endl;
+	    return 0;
+	  }
+	  //measure.... //how many operators, separation etc...
+	  if (!Operator_MPOs.size()){ //if haven't populated Operators yet, do it now
+	    for (size_t i=0;i<iMEAS_vertex.Operators.size();++i){
+	      Operator_MPOs.emplace_back(iMEAS_vertex.make_one_site_operator(i));
+	    }
+	  }
+
+	  if (iMEAS_vertex.Operators.size()==1){
+	    if (RuntimeArgs.separation()==0)
+	      indexed_results.back().second.Complex_measurements.emplace_back(OneVertexMeasurement(Operator_MPOs[0],AA));
+	    else
+	      indexed_results.back().second.Complex_measurements.emplace_back(TwoVertexMeasurement(Operator_MPOs[0],Operator_MPOs[0],AA,RuntimeArgs.separation()));
+	  }
+	  else if (iMEAS_vertex.Operators.size()==2){
+	    indexed_results.back().second.Complex_measurements.emplace_back(TwoVertexMeasurement(Operator_MPOs[0],Operator_MPOs[1],AA,RuntimeArgs.separation()));
+	  }
+
+
+	}
 
       }
       else {
@@ -143,12 +165,19 @@ int main(int argc, char** argv){
 	});
     }
 
-    ajaj::DataOutput results_file("UnitCellResults.dat","Index,abs(Overlap)");
+    std::stringstream commentstream;
+    commentstream<<"Index,abs(Overlap)";
+    if (iMEAS_vertex.Operators.size()) {
+      std::stringstream opss(iMEAS_vertex.Operators[0].Name);
+      if (iMEAS_vertex.Operators.size()>1)
+	opss << "(0)," << iMEAS_vertex.Operators[1].Name << "(" << RuntimeArgs.separation() << ")";
+      commentstream << ",Re(" << opss.str() <<"),Im(" << opss.str() << ")";
+    }
+    ajaj::DataOutput results_file("UnitCellResults.dat",commentstream.str());
 
     for (auto&& i : indexed_results){
       results_file.push(i.first,i.second);
     }
-
 
     return 1;
   }

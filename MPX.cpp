@@ -692,15 +692,36 @@ namespace ajaj {
   }
 
   MPX_matrix& MPX_matrix::RemoveDummyIndices(std::vector<MPXInt> indices_for_removal){
-    //sort indices so they are ascending
-    std::sort(indices_for_removal.begin(),indices_for_removal.end());
-    //MPXInt rows_to_remove(0);
-    //using reverse iterator, move through the vector
-    for (std::vector<MPXInt>::const_reverse_iterator rit=indices_for_removal.rbegin();rit!=indices_for_removal.rend();++rit){
-      if (*rit<this->m_NumRowIndices){--m_NumRowIndices;}
-      this->m_Indices.erase(m_Indices.begin()+*rit,m_Indices.begin()+*rit+1); //would be better to rotate bad values to the end then erase
+    if (indices_for_removal.size()>=m_Indices.size()){
+      std::cout << "Too many indices for removal!" << std::endl;
+	*this=MPX_matrix();
+	return *this;
     }
-    //this->m_NumRowIndices-=rows_to_remove;
+
+    //check dummies
+    for (auto i : indices_for_removal){
+      if (m_Indices[i].size()!=1 || i >=m_Indices.size()) {
+	std::cout << "Not a dummy index!" << std::endl;
+	*this=MPX_matrix();
+	return *this;
+      }
+    }
+
+    std::vector<MPXInt> newindices(m_Indices.size());
+    std::iota(newindices.begin(),newindices.end(),0);
+    for (auto i : indices_for_removal){
+      *(std::remove(newindices.begin(),newindices.end(),i));
+    }
+    newindices.erase(newindices.begin()+m_Indices.size()-indices_for_removal.size(),newindices.end());
+    //list of kept indices, with removed ones on the end;
+
+    std::vector<MPXIndex> new_m_Indices;
+    for (auto n : newindices){
+      new_m_Indices.emplace_back(m_Indices[n]);
+    }
+
+    swap(new_m_Indices,m_Indices);
+
     return *this;
   }
 

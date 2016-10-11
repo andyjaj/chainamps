@@ -129,6 +129,7 @@ namespace ajaj {
   /** Measure an operator that spans only two vertices. */
   std::complex<double> TwoVertexMeasurement(const MPO_matrix& W1, const MPO_matrix& W2, const MPS_matrix& A1ket, const MPS_matrix& A2ket, const MPX_matrix& Lambda);
   std::complex<double> OneVertexMeasurement(const MPO_matrix& W, const UnitCell& U);
+  std::complex<double> TwoVertexMeasurement(const MPO_matrix& W1,const MPO_matrix& W2,const UnitCell& U,uMPXInt separation=0);
 
   /** Special routine to measure the energy per vertex, because Hamiltonian is a lower triangular matrix product operator */
   std::complex<double> SimpleEnergy(const MPO_matrix& LeftH,const MPO_matrix& RightH,const MPO_matrix& H1,const MPO_matrix& I,const UnitCell& Ortho);

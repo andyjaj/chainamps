@@ -38,6 +38,16 @@ namespace ajaj {
       if (msg) std::cout << "Option '" << std::string(option.name,option.namelen) << "' requires a positive numeric argument" <<std::endl;
       return option::ARG_ILLEGAL;
     }
+    static option::ArgStatus PositiveDefiniteNumeric(const option::Option& option, bool msg)
+    {
+      char* endptr = nullptr;
+      if (option.arg != 0 && strtol(option.arg, &endptr, 10)>0){};
+      if (endptr != option.arg && *endptr == 0)
+	return option::ARG_OK;
+
+      if (msg) std::cout << "Option '" << std::string(option.name,option.namelen) << "' requires a positive definite numeric argument" <<std::endl;
+      return option::ARG_ILLEGAL;
+    }
     static option::ArgStatus PositiveDouble(const option::Option& option, bool msg)
     {
       char* endptr = nullptr;
@@ -116,7 +126,7 @@ namespace ajaj {
       {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: UNITCELL_MEASURE.bin [-D <number>] <unitcell_filename1> ... \n"},
       {OPERATORFILE,0,"O","operator filename",Arg::NonEmpty,"  -O <filename>, \t--operator-file=<filename>"
        "  \tDistance between two vertex measurements." },
-      {SEPARATION,0,"S","separation",Arg::PositiveNumeric,"  -S <number>, \t--separation=<number>"
+      {SEPARATION,0,"S","separation",Arg::PositiveDefiniteNumeric,"  -S <number>, \t--separation=<number>"
        "  \tDistance between two vertex measurements." },
       {NOINDEX,0,"X","No index",Arg::None,"  -X, \t--no-index"
        "  \tDon't extract index from filenames." },
@@ -383,6 +393,12 @@ namespace ajaj {
 	  for (option::Option* opt = options[OPERATORFILE]; opt; opt = opt->next()){
 	    operator_filenames_.emplace_back(opt->arg);
 	  }
+
+	if (operator_filenames_.size()>1 && !options[SEPARATION]){
+	  std::cout << "Specifying more than one operator requires a separation to be defined!" <<std::endl;
+	  valid_=0;
+	}
+
       }
       print();
     }
