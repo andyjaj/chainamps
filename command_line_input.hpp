@@ -21,7 +21,7 @@ namespace ajaj {
 
     static option::ArgStatus NonEmpty(const option::Option& option, bool msg)
     {
-      if (option.arg != 0 && option.arg[0] != 0)
+      if (option.arg != 0 && option.arg[0] != 0 && option.arg[0] != '-')
 	return option::ARG_OK;
 
       if (msg) std::cout << "Option '" << std::string(option.name,option.namelen) << "' requires a non-empty argument" <<std::endl;
@@ -50,7 +50,7 @@ namespace ajaj {
     }
   };
 
-  enum optionIndex {UNKNOWN,CHI,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,DISTANCE};
+  enum optionIndex {UNKNOWN,CHI,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE};
 
   const option::Descriptor iDMRG_usage[4] =
     {
@@ -111,11 +111,15 @@ namespace ajaj {
       { 0, 0, 0, 0, 0, 0 }
     };
 
-  const option::Descriptor iMEAS_usage[3] =
+  const option::Descriptor iMEAS_usage[5] =
     {
       {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: UNITCELL_MEASURE.bin [-D <number>] <unitcell_filename1> ... \n"},
-      {DISTANCE,0,"D","distance",Arg::PositiveNumeric,"  -D <number>, \t--distance=<number>"
+      {OPERATORFILE,0,"O","operator filename",Arg::NonEmpty,"  -O <filename>, \t--operator-file=<filename>"
        "  \tDistance between two vertex measurements." },
+      {SEPARATION,0,"S","separation",Arg::PositiveNumeric,"  -S <number>, \t--separation=<number>"
+       "  \tDistance between two vertex measurements." },
+      {NOINDEX,0,"X","No index",Arg::None,"  -X, \t--no-index"
+       "  \tDon't extract index from filenames." },
       { 0, 0, 0, 0, 0, 0 }
     };
 
@@ -171,7 +175,12 @@ namespace ajaj {
 	}
 	for (auto&& o : options){
 	  if (o)
-	    std::cout << "OPTION: " << std::string(o.name,o.namelen) << " = " << o.arg << std::endl;
+	    for (option::Option* opt = o; opt; opt = opt->next()){
+	      std::cout << "OPTION: " << std::string(opt->name,opt->namelen);
+	      if (opt->arg)
+		std::cout << " = " << opt->arg;
+	      std::cout << std::endl;
+	    }
 	}
       }
     }
@@ -355,21 +364,33 @@ namespace ajaj {
 
   class iMEAS_Args : public Base_Args{
     unsigned long separation_;
+    bool use_filename_index_;
+
+    std::vector<std::string> operator_filenames_;
     std::vector<std::string> files_;
+
   public:
-    iMEAS_Args(int argc, char* argv[]) : Base_Args(argc,argv,iMEAS_usage), separation_(0){
+    iMEAS_Args(int argc, char* argv[]) : Base_Args(argc,argv,iMEAS_usage), separation_(0),use_filename_index_(1){
       if (is_valid()){
 	for (size_t f=0;f<parse.nonOptionsCount();++f){
 	  files_.emplace_back(parse.nonOption(f));
 	}
-	if (options[DISTANCE])
-	  separation_=stoul(options[DISTANCE].arg);
+	if (options[SEPARATION])
+	  separation_=stoul(options[SEPARATION].arg);
+	if (options[NOINDEX])
+	  use_filename_index_=0;
+	if (options[OPERATORFILE])
+	  for (option::Option* opt = options[OPERATORFILE]; opt; opt = opt->next()){
+	    operator_filenames_.emplace_back(opt->arg);
+	  }
       }
       print();
     }
 
     unsigned long separation() const {return separation_;}
     const std::vector<std::string>& files() const {return files_;}
+    const std::vector<std::string>& operator_filenames() const {return operator_filenames_;}
+    bool use_filename_index() const {return use_filename_index_;}
 
   };
 

@@ -41,14 +41,20 @@ namespace ajaj {
   class DataOutput{
   private:
     std::ofstream outfile;
-    uMPXInt Step;
+    uMPXInt Step; //for internal monitoring of the step
   public:
     const std::string filename;
-    DataOutput(const std::string& f) : Step(0), filename(f) {outfile.open(filename.c_str(),ios::out | ios::trunc);outfile << setprecision(16);}
+    std::string comment;
+    DataOutput(const std::string& f,const std::string& cs=std::string()) : Step(0), filename(f),comment(cs) {
+      outfile.open(filename.c_str(),ios::out | ios::trunc);outfile << setprecision(16);
+      if (!cs.empty()){
+	outfile << "# "<< comment << std::endl;
+      }
+    }
     ~DataOutput() {outfile.close();}
-    bool push(const Data& results){
+    bool push(uMPXInt i,const Data& results){
       if (outfile.is_open()){
-	outfile << Step++;
+	outfile << i;
 	for (std::vector<double>::const_iterator cit=results.Real_measurements.begin();cit!=results.Real_measurements.end();++cit){
 	  outfile << " " << *cit;
 	}
@@ -56,11 +62,15 @@ namespace ajaj {
 	  outfile << " " << real(*cit) << " " << imag(*cit) << " ";
 	}
 	outfile << std::endl;
+	Step++;
 	return 0;
       }
       else {
 	return 1;
       }
+    }
+    bool push(const Data& results){
+      return push(Step,results);
     }
   };
 }

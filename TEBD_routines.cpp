@@ -1,6 +1,7 @@
 #include <vector>
 #include <complex>
 #include <iostream>
+#include <sstream>
 
 #include "ajaj_common.hpp"
 //#include "sparse_interface.hpp"
@@ -185,6 +186,7 @@ namespace ajaj{
     return m_unit;
   }
 
+  //use preexisting (from files) MPS
   TEBD::TEBD(const MPO_matrix& H,const std::string& MPSName, uMPXInt NumVertices, double time_step_size, DataOutput& results, uMPXInt order) : TimeBase(time_step_size,results), Spectrum_(H.GetPhysicalSpectrum()), MPSName_(MPSName), NumVertices_(NumVertices), SingleVertexOp_(MakeSingleSiteEvolutionOperator(H,time_step_size)),EvolutionOps_(SeparatedTrotterDecomposition(H,time_step_size,order)) {
     //canonize and store
     for (uMPXInt n=1;n<=NumVertices_/2;++n){
@@ -224,6 +226,7 @@ namespace ajaj{
     std::cout << "Norm: " << Vd.Trace() <<std::endl;
   }
 
+  //use simple (i.e. product state) repeating MPS_matrix
   TEBD::TEBD(const MPO_matrix& H, const std::string& MPSName, const MPS_matrix& InitialMPS_matrix, uMPXInt NumVertices, double time_step_size, DataOutput& results, uMPXInt order) : TimeBase(time_step_size,results), Spectrum_(InitialMPS_matrix.GetPhysicalSpectrum()), MPSName_(MPSName), NumVertices_(NumVertices), SingleVertexOp_(MakeSingleSiteEvolutionOperator(H,time_step_size)),EvolutionOps_(SeparatedTrotterDecomposition(H,time_step_size,order)) {
     //save initial MPS matrices
     //should all be left type!!!
@@ -312,7 +315,6 @@ namespace ajaj{
     //we'd also like to measure the overlap with the initial state...
     MPX_matrix overlap_matrix(Spectrum_);
     MPX_matrix Vd(Spectrum_);
-
     {
       //treats first vertex as a special case
       std::stringstream RightEndstream;
@@ -442,7 +444,7 @@ namespace ajaj{
       std::stringstream Evolvingnamestream;
       Evolvingnamestream << "Evolving_" << MPSName_ << "_Left_" << v << ".MPS_matrix";
       MPS_matrix current(load_MPS_matrix(Evolvingnamestream.str(),Spectrum_));
-      if (v % 2){
+      if (v % 2){ //if odd
 	MPS_matrix(std::move(contract(U,0,current,0,contract10).CombineSimilarMatrixIndices())).store(Evolvingnamestream.str());
       }
       else {

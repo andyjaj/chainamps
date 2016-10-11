@@ -310,8 +310,8 @@ namespace ajaj{
 	  std::string hfileline;
 	  while (getline(hamiltonianfile,hfileline)){
 	    std::istringstream hss(hfileline);
-	    int row;
-	    int col;
+	    MPXInt row;
+	    MPXInt col;
 	    std::complex<double> value;
 	    if (hss >> row && hss >> col && hss >> value){
 	      if (value!=0.0){
