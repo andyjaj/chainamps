@@ -736,13 +736,11 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 	outfile << m_array->p[p] << std::endl;
       }
       //just output non zeros
-      for (Sparseint d=0;d<m_array->p[m_array->n];++d){
-	outfile << m_array->i[d] << std::endl;
-      }
       outfile << std::setprecision(16);
       for (Sparseint d=0;d<m_array->p[m_array->n];++d){
-	outfile << real(m_array->x[d]) << " " << imag(m_array->x[d]) << std::endl;
+	outfile << m_array->i[d] << "\t(" << real(m_array->x[d]) << "," << imag(m_array->x[d]) << ")" << std::endl;
       }
+
       return(0);
     }
     else {std::cout << "SparseMatrix.fprint(), file not open" << std::endl; return(1);}
@@ -854,6 +852,80 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 	}
       }
       return std::move(SparseMatrix(M,final_flag));
+    }
+    else {std::cout << "sparsefread: file not open" << std::endl; cs_cl* M=0;return std::move(SparseMatrix(M,0));}
+  }
+
+//friend
+  SparseMatrix load_SparseMatrix(std::ifstream &infile)
+  {
+    if (infile.is_open()){
+      //cout << "Reading from file" << endl;
+      //csi nzmax ;     /* maximum number of entries */
+      //csi nz ;
+      //csi m ;         /* number of rows */
+      //csi n ;         /* number of columns */
+      //csi *p ;        /* column pointers (size n+1) or col indices (size nzmax) */
+      //csi *i ;        /* row indices, size nzmax */
+      //double *x ;     /* numerical values, size nzmax */
+    
+      Sparseint nzmax,nz,m,n;
+
+      if (!(infile >> nzmax >>  nz >> m >> n)) return SparseMatrix();
+
+      cs_cl* M=(cs_cl*)cs_cl_calloc(1,sizeof(cs_cl));
+      M->nzmax=nzmax;
+      M->nz=nz;
+      M->m=m;
+      M->n=n;
+      if (nzmax<=0) nzmax=1; 
+
+      if (nz!=-1) {
+	//triplet format
+	M->p=(Sparseint*)cs_dl_malloc(nzmax,sizeof(Sparseint));
+	M->i=(Sparseint*)cs_dl_malloc(nzmax,sizeof(Sparseint));
+	M->x=(std::complex<double>*)cs_dl_malloc(nzmax,sizeof(std::complex<double>));
+	Sparseint i;
+	Sparseint j;
+	std::complex<double> x;
+	nz=0;
+	while ((infile >> i >> j >> x) && nz<nzmax){
+	  //we read in as transpose, to make row ordering more efficient
+	  M->p[nz]=i;
+	  M->i[nz]=j;
+	  M->x[nz++]=x;
+	}
+	if (nz!=M->nz){
+	  std::cout << "ERROR: number of non zeros in file doesn't match definition! " << nz << ":" <<M->nz << std::endl;
+	}
+	return std::move(SparseMatrix(M,0).finalise());
+      }
+      else{
+	M->p=(Sparseint*)cs_dl_malloc(n+1,sizeof(Sparseint));
+	M->i=(Sparseint*)cs_dl_malloc(nzmax,sizeof(Sparseint));
+	M->x=(std::complex<double>*)cs_dl_malloc(nzmax,sizeof(std::complex<double>));
+	Sparseint i;
+	Sparseint p;
+	std::complex<double> x;
+	Sparseint col=0;
+	while (infile >> M->p[col] && col<=n){ //last element of p is num non zero
+	  ++col;
+	  //p first
+	}
+	nz=0;
+	while ((infile >> M->i[nz] >> M->x[nz]) && nz<M->p[n] && nzmax > nz){
+	  ++nz;
+	}
+	if (nz!=M->p[n]){
+	  std::cout << "ERROR: number of non zeros in file doesn't match definition! " << nz << ":" <<M->p[n] << std::endl;
+	}
+
+	SparseMatrix ans(M,1);
+
+	if (!ans.is_row_ordered()){ans.order_rows();}
+	
+	return std::move(ans);
+      }
     }
     else {std::cout << "sparsefread: file not open" << std::endl; cs_cl* M=0;return std::move(SparseMatrix(M,0));}
   }

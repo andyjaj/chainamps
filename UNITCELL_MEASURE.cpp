@@ -35,39 +35,17 @@ int main(int argc, char** argv){
 
     if (RuntimeArgs.operator_filenames().size()) {
       for (auto&& opfn : RuntimeArgs.operator_filenames()){
-	///open file
-	//make into sparse matrix
-	//should be coord list, first line dims
+	std::string opname;
+	std::istringstream opss(opfn);
+	getline(opss,opname,'.');
 	std::ifstream is;
 	is.open(opfn.c_str(),std::ios::in);
 	if (is.is_open()){
-	  std::string fileline;
-	  getline(is,fileline);
-	  ajaj::MPXInt rows(0);
-	  ajaj::MPXInt cols(0);
-	  std::istringstream line1ss(fileline);
-	  if (line1ss >> rows && line1ss >> cols && line1ss.eof() && rows==cols){
-	    iMEAS_vertex.Operators.emplace_back(opfn,rows);
-	    ajaj::SparseMatrix& ME=iMEAS_vertex.Operators.back().MatrixElements;
-	    while (getline(is,fileline)){
-	      std::istringstream liness(fileline);
-	      ajaj::MPXInt row;
-	      ajaj::MPXInt col;
-	      std::complex<double> value;
-	      if (liness >> row && liness >> col && liness >> value){
-		if (value!=0.0){
-		  ME.entry(row,col,value);
-		}
-	      }
-	      else {
-		std::cout << "Malformed operator in " << opfn << std::endl;
-		return 0;
-	      }
-	    }
-	    ME.finalise();
-	  }
-	  else {
-	    std::cout << "Malformed dimension info in " << opfn << std::endl;
+	  iMEAS_vertex.Operators.emplace_back(opname);
+	  
+	  iMEAS_vertex.Operators.back().MatrixElements=ajaj::load_SparseMatrix(is);
+	  if (iMEAS_vertex.Operators.back().MatrixElements.rows()!=iMEAS_vertex.Operators.back().MatrixElements.cols()){
+	    std::cout << "Malformed operator in " << opfn << std::endl;
 	    return 0;
 	  }
 	}
@@ -75,7 +53,6 @@ int main(int argc, char** argv){
 	  std::cout << "Couldn't open " << opfn << std::endl;
 	  return 0;
 	}
-	//MElements.back().print();
       }
     }
 
@@ -91,8 +68,6 @@ int main(int argc, char** argv){
       }
     }
 
-    //ajaj::QNVector charge_rules;
-    //ajaj::Basis basis;
     std::vector<std::pair<size_t,ajaj::Data> > indexed_results;
     size_t Index(0);
     std::regex ex("_([0-9]+)\\.UNITCELL$"); //regex to match number before filename only.
@@ -165,15 +140,39 @@ int main(int argc, char** argv){
 	});
     }
 
-    std::stringstream commentstream;
-    commentstream<<"Index,abs(Overlap)";
+
+    std::ostringstream mss;
+    if (iMEAS_vertex.Operators.size()){
+      mss << iMEAS_vertex.Operators[0].Name;
+	if (iMEAS_vertex.Operators.size()>1){
+	  mss << "_" << iMEAS_vertex.Operators[1].Name;
+	}
+	if (RuntimeArgs.separation()){
+	  mss << "_" << RuntimeArgs.separation();
+	}
+    }
+
+    std::ostringstream outfilename;
+    outfilename << "UNITCELL_Results";
+    if (!mss.str().empty())
+      outfilename << "_" << mss.str();
+    outfilename << ".dat";
+
+    std::ostringstream commentstream;
+    commentstream << "Index,abs(Overlap)";
+    //commentstream<<"Index,abs(Overlap)";
     if (iMEAS_vertex.Operators.size()) {
-      std::stringstream opss(iMEAS_vertex.Operators[0].Name);
-      if (iMEAS_vertex.Operators.size()>1)
-	opss << "(0)," << iMEAS_vertex.Operators[1].Name << "(" << RuntimeArgs.separation() << ")";
+      std::ostringstream opss;
+      opss << iMEAS_vertex.Operators[0].Name;
+      if (iMEAS_vertex.Operators.size()>1){
+	opss << "(i)," << iMEAS_vertex.Operators[1].Name << "(i+" << RuntimeArgs.separation() << ")";
+      }
+      else if (RuntimeArgs.separation())
+	opss << "(i)," << iMEAS_vertex.Operators[0].Name << "(i+" << RuntimeArgs.separation() << ")";
       commentstream << ",Re(" << opss.str() <<"),Im(" << opss.str() << ")";
     }
-    ajaj::DataOutput results_file("UnitCellResults.dat",commentstream.str());
+
+    ajaj::DataOutput results_file(outfilename.str(),commentstream.str());
 
     for (auto&& i : indexed_results){
       results_file.push(i.first,i.second);

@@ -54,6 +54,8 @@ namespace ajaj {
   SparseMatrix permute(const SparseMatrix& A, const std::vector<Sparseint>& column_permutations);
   std::vector<Sparseint> GetNonZeroColumns(const SparseMatrix& M);
   SparseMatrix load_SparseMatrix_binary(std::ifstream& infile);
+  SparseMatrix load_SparseMatrix(std::ifstream& infile);
+
   SparseMatrix copy(const SparseMatrix& other);
 
   SparseMatrix operator*(const SparseMatrix& lhs, const SparseMatrix& rhs);//why make the copy if it is only about to be destroyed?
@@ -192,6 +194,7 @@ namespace ajaj {
     //friend SparseMatrix permute(const SparseMatrix& A,  const std::vector<Sparseint>& row_permutations, const std::vector<Sparseint>& column_permutations);
     friend std::vector<Sparseint> GetNonZeroColumns(const SparseMatrix& M);
     friend SparseMatrix load_SparseMatrix_binary(std::ifstream& infile);
+    friend SparseMatrix load_SparseMatrix(std::ifstream& infile);
     friend SparseMatrix operator*(const SparseMatrix& lhs, const SparseMatrix& rhs);//why make the copy if it is only about to be destroyed?
     friend SparseMatrix operator+(const SparseMatrix& lhs, const SparseMatrix& rhs);
     friend SparseMatrix operator-(const SparseMatrix& lhs, const SparseMatrix& rhs);

@@ -708,12 +708,11 @@ namespace ajaj {
     }
 
     std::vector<MPXInt> newindices(m_Indices.size());
-    std::iota(newindices.begin(),newindices.end(),0);
-    for (auto i : indices_for_removal){
+    std::iota(newindices.begin(),newindices.end(),0); //0,1,2...,m_Indices.size()-1
+    for (auto i : indices_for_removal){ //go through and move the ones we want to get rid of
       *(std::remove(newindices.begin(),newindices.end(),i));
     }
-    newindices.erase(newindices.begin()+m_Indices.size()-indices_for_removal.size(),newindices.end());
-    //list of kept indices, with removed ones on the end;
+    newindices.erase(newindices.begin()+m_Indices.size()-indices_for_removal.size(),newindices.end()); //erase the ones we moved
 
     std::vector<MPXIndex> new_m_Indices;
     for (auto n : newindices){

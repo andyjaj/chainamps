@@ -374,12 +374,10 @@ namespace ajaj {
   }
 
   std::complex<double> TwoVertexMeasurement(const MPO_matrix& W1,const MPO_matrix& W2,const UnitCell& U,uMPXInt separation){
+    if (separation==0) return 0.0;
+
     MPX_matrix LAMBDA0(U.Matrices.at(0).basis(),U.Matrices.at(0).Index(1),U.Lambdas.at(0));
-    if (separation==0){
-      //special, apply both to same site...
-      return contract_to_sparse(contract(U.Matrices.at(1),1,contract(contract(contract(U.Matrices.at(0),1,U.Matrices.at(0),0,contract0011),0,U.Matrices.at(1),0,contract11),0,contract(W1,0,W2,0,contract20).RemoveDummyIndices(std::vector<MPXInt>({{1,2,3,5}})),0,contract11),0,contract0210),0,contract(LAMBDA0,0,LAMBDA0,0,contract10),0,contract0110).trace();
-    }
-    else if (separation==1){
+    if (separation==1){
       return TwoVertexMeasurement(W1,W2,U.Matrices.at(0),U.Matrices.at(1),LAMBDA0);
     }
     else {

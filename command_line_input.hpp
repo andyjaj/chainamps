@@ -125,7 +125,7 @@ namespace ajaj {
     {
       {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: UNITCELL_MEASURE.bin [-D <number>] <unitcell_filename1> ... \n"},
       {OPERATORFILE,0,"O","operator filename",Arg::NonEmpty,"  -O <filename>, \t--operator-file=<filename>"
-       "  \tDistance between two vertex measurements." },
+       "  \tFile containing sparse matrix definition of operator." },
       {SEPARATION,0,"S","separation",Arg::PositiveDefiniteNumeric,"  -S <number>, \t--separation=<number>"
        "  \tDistance between two vertex measurements." },
       {NOINDEX,0,"X","No index",Arg::None,"  -X, \t--no-index"
@@ -149,7 +149,7 @@ namespace ajaj {
 
     Base_Args(int argc, char* argv[], const option::Descriptor* usage) : argc_(argc-(argc>0)),argv_(argv+(argc>0)),usage_(usage),stats(usage_, argc_, argv_),options(stats.options_max),buffer(stats.buffer_max),parse(usage_, argc_, argv_, &options[0], &buffer[0]),valid_(0){
       std::cout<< "ChainAMPS" <<std::endl;
-      std::cout<< "See LICENSE.txt for copyright info." <<std::endl;
+      std::cout<< "See LICENSE.txt for copyright info." <<std::endl <<std::endl;
       if (!parse.error() && argc!=0){
 	valid_=1;
       }
@@ -245,7 +245,7 @@ namespace ajaj {
       if (is_valid()){
 	if (N_==0 || (N_ % 2)){
 	  std::cout << "Illegal number of vertices requested: " << N_ << std::endl;
-	  std::cout << "Must be a positive even value!" <<std::endl;
+	  std::cout << "Must be a positive even value!" <<std::endl<<std::endl;
 	  valid_=0;
 	}
 	if (options[WEIGHT_FACTOR]) {
@@ -334,7 +334,7 @@ namespace ajaj {
       if (is_valid()){
 	if (N_==0 || (N_ % 2)){
 	  std::cout << "Illegal number of vertices requested: " << N_ << std::endl;
-	  std::cout << "Must be a positive even value!" <<std::endl;
+	  std::cout << "Must be a positive even value!" <<std::endl<<std::endl;
 	  valid_=0;
 	}
 	if (options[NUMBER_OF_STEPS])
@@ -395,7 +395,7 @@ namespace ajaj {
 	  }
 
 	if (operator_filenames_.size()>1 && !options[SEPARATION]){
-	  std::cout << "Specifying more than one operator requires a separation to be defined!" <<std::endl;
+	  std::cout << "Specifying more than one operator requires a separation to be defined!" <<std::endl<<std::endl;
 	  valid_=0;
 	}
 
