@@ -62,6 +62,12 @@ namespace ajaj {
 
   enum optionIndex {UNKNOWN,CHI,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE};
 
+  const option::Descriptor store_usage[2] =
+    {
+      {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: STORE_OPERATORS.bin <model_filename>"},
+      { 0, 0, 0, 0, 0, 0 }
+    };
+
   const option::Descriptor iDMRG_usage[4] =
     {
       {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: iDMRG_DRV.bin [-B <number> -N <number>] <model_filename>"},
@@ -146,7 +152,6 @@ namespace ajaj {
     bool valid_;
 
   public:
-
     Base_Args(int argc, char* argv[], const option::Descriptor* usage) : argc_(argc-(argc>0)),argv_(argv+(argc>0)),usage_(usage),stats(usage_, argc_, argv_),options(stats.options_max),buffer(stats.buffer_max),parse(usage_, argc_, argv_, &options[0], &buffer[0]),valid_(0){
       std::cout<< "ChainAMPS" <<std::endl;
       std::cout<< "See LICENSE.txt for copyright info." <<std::endl <<std::endl;
@@ -408,6 +413,17 @@ namespace ajaj {
     const std::vector<std::string>& operator_filenames() const {return operator_filenames_;}
     bool use_filename_index() const {return use_filename_index_;}
 
+  };
+
+  class Store_Args : public Base_Args{
+  public:
+    Store_Args(int argc, char* argv[]) : Base_Args(argc,argv,store_usage){
+      if (parse.nonOptionsCount()!=1 || std::string(parse.nonOption(0))==std::string("-")){
+	std::cout << "Incorrect number of command line arguments." << std::endl <<std::endl;
+	valid_=0;
+      }
+      print();
+    }
   };
 
 }

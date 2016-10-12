@@ -35,7 +35,7 @@ include_directories(${PROJECT_SOURCE_DIR}/optionparser)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   #needs LAPACK_ILP64 defined for openblas ilp 64
   add_definitions(-DLAPACK_ILP64)
-  #probably need gfortran too
+  #probably needs gfortran too
   find_library(GFORTRAN_LIBRARIES gfortran HINTS ${LIB_HINT} PATHS /usr/lib64/ /usr/local/ /usr/)
   message (STATUS "GFORTRAN found:" ${GFORTRAN_LIBRARIES})	
   set (EXTERNAL_LIBS ${EXTERNAL_LIBS} ${GFORTRAN_LIBRARIES})
@@ -53,6 +53,7 @@ endif(TBB)
 add_library(DMRG STATIC DMRG_routines.cpp measurement.cpp MPX.cpp sparse_interface.cpp dense_interface.cpp arpack_interface.cpp dense_matrix_functions.cpp states.cpp)
 add_library(TIME STATIC TEBD_routines.cpp measurement.cpp MPX.cpp sparse_interface.cpp dense_interface.cpp arpack_interface.cpp dense_matrix_functions.cpp states.cpp)
 add_library(MEAS STATIC measurement.cpp MPX.cpp sparse_interface.cpp dense_interface.cpp arpack_interface.cpp dense_matrix_functions.cpp states.cpp)
+add_library(STORE STATIC STORE_MODEL.cpp MPX.cpp sparse_interface.cpp dense_interface.cpp arpack_interface.cpp dense_matrix_functions.cpp states.cpp)
 
 add_executable(iDMRG_DRV.bin iDMRG_DRV.cpp)
 target_link_libraries(iDMRG_DRV.bin DMRG ${EXTERNAL_LIBS})
@@ -68,3 +69,6 @@ target_link_libraries(TEBD_DRV.bin TIME ${EXTERNAL_LIBS})
 
 add_executable(UNITCELL_MEASURE.bin UNITCELL_MEASURE.cpp)
 target_link_libraries(UNITCELL_MEASURE.bin MEAS ${EXTERNAL_LIBS})
+
+add_executable(STORE_MODEL.bin STORE_MODEL.cpp)
+target_link_libraries(STORE_MODEL.bin STORE ${EXTERNAL_LIBS})

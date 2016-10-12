@@ -738,7 +738,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
       //just output non zeros
       outfile << std::setprecision(16);
       for (Sparseint d=0;d<m_array->p[m_array->n];++d){
-	outfile << m_array->i[d] << "\t(" << real(m_array->x[d]) << "," << imag(m_array->x[d]) << ")" << std::endl;
+	outfile << m_array->i[d] << " " << m_array->x[d] << std::endl;
       }
 
       return(0);
@@ -889,7 +889,8 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 	Sparseint j;
 	std::complex<double> x;
 	nz=0;
-	while ((infile >> i >> j >> x) && nz<nzmax){
+	//check conditions before read in...
+	while (nz<nzmax && (infile >> i >> j >> x) ){
 	  //we read in as transpose, to make row ordering more efficient
 	  M->p[nz]=i;
 	  M->i[nz]=j;
@@ -904,20 +905,28 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 	M->p=(Sparseint*)cs_dl_malloc(n+1,sizeof(Sparseint));
 	M->i=(Sparseint*)cs_dl_malloc(nzmax,sizeof(Sparseint));
 	M->x=(std::complex<double>*)cs_dl_malloc(nzmax,sizeof(std::complex<double>));
-	Sparseint i;
-	Sparseint p;
-	std::complex<double> x;
+
 	Sparseint col=0;
-	while (infile >> M->p[col] && col<=n){ //last element of p is num non zero
-	  ++col;
+	Sparseint p;
+	//check conditions before read in...
+	while (col<=n && infile >>p){ //last element of p is num non zero
+	  M->p[col++]=p;
 	  //p first
 	}
+
 	nz=0;
-	while ((infile >> M->i[nz] >> M->x[nz]) && nz<M->p[n] && nzmax > nz){
-	  ++nz;
+	Sparseint i;
+	std::complex<double> x;
+	//check conditions before read in...
+	while (nz < M->p[M->n] && nz<nzmax && (infile >> i >> x)){
+	  M->i[nz]=i;
+	  M->x[nz++]=x;
 	}
-	if (nz!=M->p[n]){
-	  std::cout << "ERROR: number of non zeros in file doesn't match definition! " << nz << ":" <<M->p[n] << std::endl;
+	if (nz!=M->p[M->n]){
+	  std::cout << "ERROR: number of non zeros in file doesn't match definition! " << nz << ":" <<M->p[M->n] << std::endl;
+	  std::cout << "Returning empty" <<std::endl;
+	  SparseMatrix(M,1); //cleans up M
+	  return SparseMatrix();
 	}
 
 	SparseMatrix ans(M,1);
