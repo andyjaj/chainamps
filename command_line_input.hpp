@@ -64,7 +64,8 @@ namespace ajaj {
 
   const option::Descriptor store_usage[2] =
     {
-      {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: STORE_OPERATORS.bin <model_filename>"},
+      {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: STORE_OPERATORS.bin <model_filename>"
+       "\tStores all the defined vertex operators for a model as csc SPARSEMATRIX files."},
       { 0, 0, 0, 0, 0, 0 }
     };
 
@@ -133,7 +134,7 @@ namespace ajaj {
       {OPERATORFILE,0,"O","operator filename",Arg::NonEmpty,"  -O <filename>, \t--operator-file=<filename>"
        "  \tFile containing sparse matrix definition of operator." },
       {SEPARATION,0,"S","separation",Arg::PositiveDefiniteNumeric,"  -S <number>, \t--separation=<number>"
-       "  \tDistance between two vertex measurements." },
+       "  \tDistance (in integer units) between two vertex operator measurements: Op1(0),Op2(<number>)" },
       {NOINDEX,0,"X","No index",Arg::None,"  -X, \t--no-index"
        "  \tDon't extract index from filenames." },
       { 0, 0, 0, 0, 0, 0 }

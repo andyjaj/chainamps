@@ -144,12 +144,15 @@ int main(int argc, char** argv){
     std::ostringstream mss;
     if (iMEAS_vertex.Operators.size()){
       mss << iMEAS_vertex.Operators[0].Name;
+      if (RuntimeArgs.separation()) {
 	if (iMEAS_vertex.Operators.size()>1){
 	  mss << "_" << iMEAS_vertex.Operators[1].Name;
 	}
-	if (RuntimeArgs.separation()){
-	  mss << "_" << RuntimeArgs.separation();
-	}
+	else
+	  mss << "_" << iMEAS_vertex.Operators[0].Name;
+
+	mss << "_" << RuntimeArgs.separation();
+      }
     }
 
     std::ostringstream outfilename;
@@ -177,6 +180,8 @@ int main(int argc, char** argv){
     for (auto&& i : indexed_results){
       results_file.push(i.first,i.second);
     }
+
+    std::cout << std::endl << "Done" << std::endl << "Results written to " << outfilename.str() <<std::endl;
 
     return 1;
   }
