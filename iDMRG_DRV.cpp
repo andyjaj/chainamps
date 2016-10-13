@@ -25,7 +25,7 @@ int main(int argc, char** argv){
     const ajaj::Model myModel(ajaj::MakeModelFromArgs(RuntimeArgs));
 
     ajaj::State TargetState(myModel.basis().getChargeRules());
-    ajaj::DataOutput results("Energies.dat");
+    ajaj::DataOutput results("Energies.dat","Index, Energy/vertex, Entropy, Truncation, Fidelity");
     ajaj::iDMRG infvol(std::string("GroundState"),myModel.H_MPO,TargetState,results);
 
     ajaj::uMPXInt CHI(RuntimeArgs.chi());
@@ -42,9 +42,9 @@ int main(int argc, char** argv){
     const ajaj::MPO_matrix ColX(myModel.H_MPO.ExtractMPOBlock(std::pair<ajaj::MPXInt,ajaj::MPXInt>(1,myModel.H_MPO.Index(1).size()-2),std::pair<ajaj::MPXInt,ajaj::MPXInt>(0,0)));
     const ajaj::MPO_matrix RowX(myModel.H_MPO.ExtractMPOBlock(std::pair<ajaj::MPXInt,ajaj::MPXInt>(myModel.H_MPO.Index(1).size()-1,myModel.H_MPO.Index(1).size()-1),std::pair<ajaj::MPXInt,ajaj::MPXInt>(1,myModel.H_MPO.Index(3).size()-2)));
 
-    std::vector<double> iDMRGEnergies_accurate;
+    std::vector<double> iDMRGEnergies;
 
-    ajaj::DataOutput infvolresults("iDMRGEnergies.dat");
+    ajaj::DataOutput infvolresults("iDMRGEnergies.dat","Index, Energy/vertex, Entropy");
 
     ajaj::uMPXInt VarCHI(CHI);
 
@@ -52,12 +52,10 @@ int main(int argc, char** argv){
       infvol.run(1,-0.0,VarCHI,minS);
       ajaj::UnitCell Ortho(Orthogonalise(infvol.getCentralDecomposition(),infvol.getPreviousLambda()));
       Ortho.store("Ortho",r);
-      //at the moment measuring the energy is done in an inelegant way
-      //iDMRGEnergies_simple.push_back(real(ajaj::SimpleEnergy(LeftH,RightH,H1,I,Ortho)));
-      iDMRGEnergies_accurate.push_back(real(ajaj::SophisticatedEnergy(ColX,RowX,H1,Ortho)));
+      iDMRGEnergies.push_back(real(ajaj::iTwoVertexEnergy(ColX,RowX,H1,Ortho)));
 
-      std::cout << "iDMRG energy per vertex " << iDMRGEnergies_accurate.back() << std::endl;
-      ajaj::Data inf_data(std::vector<double>({{iDMRGEnergies_accurate.back(),Ortho.Entropy()}}));
+      std::cout << "iDMRG energy per vertex " << iDMRGEnergies.back() << std::endl;
+      ajaj::Data inf_data(std::vector<double>({{iDMRGEnergies.back(),Ortho.Entropy()}}));
       infvolresults.push(inf_data);
       Ortho.OutputOneVertexDensityMatrix("OneVertexRho",r);
     }
@@ -66,7 +64,7 @@ int main(int argc, char** argv){
 
     std::cout << "SUMMARY of iDMRG thermodynamic energy per vertex" << std::endl;
     std::cout << std::setprecision(16);
-    for (auto iE : iDMRGEnergies_accurate){
+    for (auto iE : iDMRGEnergies){
       std::cout << iE << std::endl;
     }
     std::cout << "Run took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() << " milliseconds" << std::endl;
