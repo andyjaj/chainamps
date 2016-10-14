@@ -712,16 +712,14 @@ namespace ajaj {
     vcols=sigma2.size()*a2.size();
 
     for (uMPXInt c_a2=0;c_a2<a2.size();++c_a2){
-      //if (TargetStatePtr){ //have we set a target state here? If so, do we have a match, are we in the target state sector?
-      //	if (a2[c_a2] != *(TargetStatePtr)){continue;}
-      //}
+
       for (MPXInt c_s2=0;c_s2<sigma2.size();++c_s2){
 	State loop2acc(a2[c_a2]-sigma2[c_s2]);
 	MPXInt colpart(c_s2+sigma2.size()*c_a2);
 	for (MPXInt r_a0=0;r_a0<a0.size();++r_a0){
 	  State loop3acc(loop2acc-a0[r_a0]);
 	  for (MPXInt r_s1=0;r_s1<sigma1.size();++r_s1){
-	    if (sigma1[r_s1]==loop3acc && (!TargetStatePtr || (a2[c_a2]-a0[r_a0]==*(TargetStatePtr)))){ //check for consistency of charges, and optionally if basis is in target sector
+	    if (sigma1[r_s1]==loop3acc){ //check for consistency of charges
 	      
 	      allowed_indices.push_back(r_s1+sigma1.size()*r_a0+sigma1.size()*a0.size()*colpart);
 	      rows_and_cols.push_back(std::array<MPXInt,2> {{r_s1+sigma1.size()*r_a0,colpart}});

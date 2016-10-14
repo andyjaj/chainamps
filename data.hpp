@@ -13,11 +13,23 @@
 #include <iomanip>
 #include <complex>
 #include <string>
+#include <sstream>
 #include <utility>
 
 #include "ajaj_common.hpp"
 
 namespace ajaj {
+
+  inline std::string StripName(const std::string& fullpath){
+    return fullpath.find("/")!=std::string::npos ?  fullpath.substr(fullpath.rfind("/")+1,fullpath.length()) : fullpath;
+  }
+
+  inline std::string OutputName(const std::string& InfileName, const std::string& ResultTypeName){
+    std::ostringstream outss;
+    outss << StripName(InfileName) <<"_"<<ResultTypeName;
+    return outss.str();
+  }
+
   struct Data{
     std::vector<double> Real_measurements;
     std::vector<std::complex<double> > Complex_measurements;

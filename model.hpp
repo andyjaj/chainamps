@@ -28,12 +28,16 @@ namespace ajaj{
     Model(const VertexParameterArray& vp, Vertex (*generator) (const VertexParameterArray&), const VertexParameterArray& cp,  MPO_matrix (*makeH) (const Vertex&, const VertexParameterArray&)) : vertex(generator(vp)),H_MPO(makeH(vertex,cp)) {
       std::cout << "MODEL'S LOCAL BASIS" <<std::endl;
       basis().print();
-      std::cout << "MPO matrix info" <<std::endl;
+      std::cout << "MPO MATRIX INFO" <<std::endl;
       H_MPO.print_indices();
     }
 
     const Basis& basis() const {return vertex.basis();}
 
+    State make_target(const QNVector& vec) const {
+      std::cout <<"Setting target quantum numbers" <<std::endl;
+      return State(basis().getChargeRules(),vec);
+    }
   };
 
   struct Coupling{

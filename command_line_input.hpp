@@ -6,10 +6,52 @@
 #define COMMAND_LINE_INPUT_H
 #include <iostream>
 #include <string>
+#include <sstream>
+#include <limits>
 #include <vector>
 #include "optionparser/optionparser.h" //The Lean Mean C++ Option Parser. See .h file for license info.
 
 namespace ajaj {
+
+  std::istream& operator>>(std::istream& is, std::vector<short>& v)
+  {
+    char check;
+
+    // read c from stream
+    //format is CouplingName,(Op1Name,Op2Name):Value
+
+    //drop initial whitespace
+    is >> std::ws;
+    std::vector<short> temp;
+    bool failure(0);
+    std::string s;
+    int n;
+
+    while (getline(is,s,',')){ //reads to comma, or until eof
+
+      n=stoi(s);
+
+      if (n< std::numeric_limits<short int>::max() && n > std::numeric_limits<short int>::min()){
+	temp.push_back(n);
+      }
+      else {
+	failure=1;
+	break;
+      }
+      if (is.eof()) break;
+    }
+
+    //getline fail?
+
+    std::cout << is.bad() << " " << is.fail() << " " << is.eof() << " " <<is.good() <<std::endl;
+
+    if( failure )
+      is.setstate(std::ios::failbit);
+    else
+      v=temp;
+
+    return is;
+  }
 
   struct Arg: public option::Arg
   {
@@ -38,6 +80,7 @@ namespace ajaj {
       if (msg) std::cout << "Option '" << std::string(option.name,option.namelen) << "' requires a positive numeric argument" <<std::endl;
       return option::ARG_ILLEGAL;
     }
+
     static option::ArgStatus PositiveDefiniteNumeric(const option::Option& option, bool msg)
     {
       char* endptr = nullptr;
@@ -46,6 +89,30 @@ namespace ajaj {
 	return option::ARG_OK;
 
       if (msg) std::cout << "Option '" << std::string(option.name,option.namelen) << "' requires a positive definite numeric argument" <<std::endl;
+      return option::ARG_ILLEGAL;
+    }
+
+    static option::ArgStatus ShortNumeric(const option::Option& option, bool msg)
+    {
+      char* endptr = nullptr;
+      long n;
+      if (option.arg != 0) n=strtol(option.arg, &endptr, 10); //if not null, then convert (base 10)
+      if (endptr != option.arg && *endptr == 0 && n< std::numeric_limits<short int>::max() && n > std::numeric_limits<short int>::min())
+	return option::ARG_OK;
+
+      if (msg) std::cout << "Option '" << std::string(option.name,option.namelen) << "' requires a short integer as an argument" <<std::endl;
+      return option::ARG_ILLEGAL;
+    }
+    static option::ArgStatus CommaSepShorts(const option::Option& option, bool msg)
+    {
+      std::vector<short> testvec;
+      if (option.arg != 0 && option.arg[0]){
+	std::istringstream ss(option.arg);
+	if (ss >> testvec)
+	  return option::ARG_OK;
+      }  
+
+      if (msg) std::cout << "Option '" << std::string(option.name,option.namelen) << "' requires a comma separated list of short integers as an argument" <<std::endl;
       return option::ARG_ILLEGAL;
     }
     static option::ArgStatus PositiveDouble(const option::Option& option, bool msg)
@@ -60,7 +127,7 @@ namespace ajaj {
     }
   };
 
-  enum optionIndex {UNKNOWN,CHI,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE};
+  enum optionIndex {UNKNOWN,CHI,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET};
 
   const option::Descriptor store_usage[2] =
     {
@@ -69,19 +136,21 @@ namespace ajaj {
       { 0, 0, 0, 0, 0, 0 }
     };
 
-  const option::Descriptor iDMRG_usage[4] =
+  const option::Descriptor iDMRG_usage[5] =
     {
-      {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: iDMRG_DRV.bin [-B <number> -N <number>] <model_filename>"},
+      {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: iDMRG_DRV.bin [OPTIONS] <model_filename>"},
       {CHI,0,"B","bond-dimension",Arg::PositiveNumeric,"  -B <number>, \t--bond-dimension=<number>"
        "  \tThe maximum bond dimension, >= 0. If 0, then ignored." },
       {NUMBER_OF_STEPS,0,"N","number-of-steps",Arg::PositiveNumeric,"  -N <number>, \t--number-of-steps=<number>"
        "  \tThe number of infinite volume steps, >= 0" },
+      {TARGET,0,"T","target-charges",Arg::CommaSepShorts,"  -T <number>,<number>,<number>, /t--target-charges=<n>,<n>,<n>"
+       "  \t Charges to target for the unit cell."},
       { 0, 0, 0, 0, 0, 0 }
     };
 
-  const option::Descriptor fDMRG_usage[6] =
+  const option::Descriptor fDMRG_usage[7] =
     {
-      {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: fDMRG_DRV.bin [-B <number> -X <number> -F <number> -W <number>] <model_filename> <number of vertices/chains> \n  <number of vertices/chains> must be EVEN.\n"
+      {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: fDMRG_DRV.bin [OPTIONS] <model_filename> <number of vertices/chains> \n  <number of vertices/chains> must be EVEN.\n"
 	"Options:"},
       {CHI,0,"B","bond-dimension",Arg::PositiveNumeric,"  -B <number>, \t--bond-dimension=<number>"
        "  \tThe maximum bond dimension, >= 0. If 0, then ignored." },
@@ -91,6 +160,8 @@ namespace ajaj {
        "  \tThe number of finite size sweeps to perform, >= 0" },
       {WEIGHT_FACTOR,0,"W","weight-factor",Arg::PositiveDouble,"  -W <number>, \t--weight-factor=<number>"
        "  \tThe weight factor if calculating excited states. Must be > 0. Specifying this indicates that the number of requested excited states is at least 1." },
+      {TARGET,0,"T","target-charges",Arg::CommaSepShorts,"  -T <number>,<number>,<number>, /t--target-charges=<n>,<n>,<n>"
+       "  \tCharges for target state."},
       { 0, 0, 0, 0, 0, 0 }
     };
 
@@ -203,14 +274,16 @@ namespace ajaj {
   };
 
   class iDMRG_Args : public Base_Args{
-  public:
+  private:
     unsigned long num_steps_;
+    std::vector<short int> target_;
 
+  public:
     iDMRG_Args(int argc, char* argv[]) : Base_Args(argc,argv,iDMRG_usage), num_steps_(0){
       
       //REQUIRE ONE NON OPTIONAL ARGUMENT, TREAT AS A FILENAME
       if (parse.nonOptionsCount()!=1 || std::string(parse.nonOption(0))==std::string("-")){
-	std::cout << "Incorrect number of command line arguments." << std::endl <<std::endl;
+	std::cout << "Incorrect command line arguments." << std::endl <<std::endl;
 	valid_=0;
       }
       else {
@@ -218,12 +291,20 @@ namespace ajaj {
       }
       if (is_valid()){
 	if (options[NUMBER_OF_STEPS])
-	  num_steps_=stoul(options[NUMBER_OF_STEPS].arg);
+	  num_steps_=stoul(options[NUMBER_OF_STEPS].arg);\
+	if (options[TARGET]){
+	  std::istringstream tss(options[TARGET].arg);
+	  tss >> target_;
+	}
       }
       print();
     }
     unsigned long number_of_steps() const {
       return num_steps_;
+    }
+
+    const std::vector<short int>& target() const {
+      return target_;
     }
 
   };
@@ -234,13 +315,13 @@ namespace ajaj {
     unsigned int F_;
     double Weight_;
     unsigned int N_; //used by finite codes
-
+    std::vector<short int> target_;
 
   public:
     fDMRG_Args(int argc, char* argv[]) : Base_Args(argc,argv,fDMRG_usage), E_(0), F_(0), Weight_(100.0),N_(0) {
       //REQUIRE TWO NON OPTIONAL ARGUMENTS, TREAT AS A FILENAME AND NUMBER OF VERTICES
       if (parse.nonOptionsCount()!=2 || std::string(parse.nonOption(0))==std::string("-") || options[NUMBER_OF_EXCITED].count()>1 ){
-	std::cout << "Incorrect number of command line arguments." << std::endl <<std::endl;
+	std::cout << "Incorrect command line arguments." << std::endl <<std::endl;
 	valid_=0;
       }
       else {
@@ -262,6 +343,10 @@ namespace ajaj {
 	  E_=stoul(options[NUMBER_OF_EXCITED].arg);
 	if (options[NUMBER_OF_SWEEPS])
 	  F_=stoul(options[NUMBER_OF_SWEEPS].arg);
+	if (options[TARGET]){
+	  std::istringstream tss(options[TARGET].arg);
+	  tss >> target_;
+	}
       }
       print();
     };
@@ -270,6 +355,9 @@ namespace ajaj {
     unsigned int num_excited() const {return E_;}
     unsigned int num_sweeps() const {return F_;}
     double weight_factor() const {return Weight_;}
+    const std::vector<short int>& target() const {
+      return target_;
+    }
 
   };
 
@@ -284,7 +372,7 @@ namespace ajaj {
       
       //REQUIRE ONE NON OPTIONAL ARGUMENT, TREAT AS A FILENAME
       if (parse.nonOptionsCount()!=1 || std::string(parse.nonOption(0))==std::string("-")){
-	std::cout << "Incorrect number of command line arguments." << std::endl <<std::endl;
+	std::cout << "Incorrect command line arguments." << std::endl <<std::endl;
 	valid_=0;
       }
       else {
@@ -329,7 +417,7 @@ namespace ajaj {
     TEBD_Args(int argc, char* argv[]) : Base_Args(argc,argv,TEBD_usage), num_steps_(1), step_size_(0.1), trotter_order_(2), measurement_interval_(1),N_(0){
       
      if (parse.nonOptionsCount()!=2 || std::string(parse.nonOption(0))==std::string("-")){
-	std::cout << "Incorrect number of command line arguments." << std::endl <<std::endl;
+	std::cout << "Incorrect command line arguments." << std::endl <<std::endl;
 	valid_=0;
       }
       else {
@@ -420,7 +508,7 @@ namespace ajaj {
   public:
     Store_Args(int argc, char* argv[]) : Base_Args(argc,argv,store_usage){
       if (parse.nonOptionsCount()!=1 || std::string(parse.nonOption(0))==std::string("-")){
-	std::cout << "Incorrect number of command line arguments." << std::endl <<std::endl;
+	std::cout << "Incorrect command line arguments." << std::endl <<std::endl;
 	valid_=0;
       }
       print();

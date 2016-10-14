@@ -28,7 +28,6 @@ namespace ajaj{
 
   enum class BuiltinModels : std::size_t {
     cm_ising,
-    cm_ising_ns,
     cm_ff, 
     xxx,
     ll, 
@@ -47,9 +46,8 @@ namespace ajaj{
   };
 
   //recognised models, or user defined
-  static const NameGroup m_names[8] = {
+  static const NameGroup m_names[7] = {
     {BuiltinModels::cm_ising, {"continuum_Ising", "continuum_Ising", "continuum ising", "Continuum_Ising", "Continuum Ising", "CONTINUUM_ISING", "CONTINUUM ISING"},&continuumIsing::VertexGenerator,&continuumIsing::MakeHamiltonian},
-    {BuiltinModels::cm_ising_ns, {"CONTINUUM ISING NO SECTOR"},&continuumIsingNoSector::VertexGenerator,&continuumIsingNoSector::MakeHamiltonian},
     {BuiltinModels::cm_ff, {"continuum_free_fermion", "continuum free fermion", "Continuum_Free_Fermion", "Continuum Free Fermion", "CONTINUUM_FREE_FERMION","CONTINUUM FREE FERMION"},&continuumff::VertexGenerator,&continuumff::MakeHamiltonian},
     {BuiltinModels::xxx, {"OLD_XXX"},&oldxxx::VertexGenerator,&oldxxx::MakeHamiltonian},
     {BuiltinModels::ll, {"ll","LL","Luttinger_liquid","luttinger_liquid","Luttinger liquid", "luttinger liquid", "LUTTINGER_LIQUID","LUTTINGER LIQUID"},&ll::VertexGenerator,&ll::MakeHamiltonian},

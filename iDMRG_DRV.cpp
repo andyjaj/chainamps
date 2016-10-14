@@ -21,11 +21,12 @@
 int main(int argc, char** argv){
   ajaj::iDMRG_Args RuntimeArgs(argc,argv);
   if (RuntimeArgs.is_valid()){
+
     static double convergence_test=-0.0;
     const ajaj::Model myModel(ajaj::MakeModelFromArgs(RuntimeArgs));
 
-    ajaj::State TargetState(myModel.basis().getChargeRules());
-    ajaj::DataOutput results("Energies.dat","Index, Energy/vertex, Entropy, Truncation, Fidelity");
+    ajaj::State TargetState(myModel.make_target(RuntimeArgs.target()));
+    ajaj::DataOutput results(ajaj::OutputName(RuntimeArgs.filename(),"Energies.dat"),"Index, Energy/vertex, Entropy, Truncation, Fidelity");
     ajaj::iDMRG infvol(std::string("GroundState"),myModel.H_MPO,TargetState,results);
 
     ajaj::uMPXInt CHI(RuntimeArgs.chi());
@@ -44,7 +45,7 @@ int main(int argc, char** argv){
 
     std::vector<double> iDMRGEnergies;
 
-    ajaj::DataOutput infvolresults("iDMRGEnergies.dat","Index, Energy/vertex, Entropy");
+    ajaj::DataOutput infvolresults(ajaj::OutputName(RuntimeArgs.filename(),"iDMRGEnergies.dat"),"Index, Energy/vertex, Entropy");
 
     ajaj::uMPXInt VarCHI(CHI);
 

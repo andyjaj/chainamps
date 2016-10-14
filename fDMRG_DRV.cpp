@@ -42,9 +42,8 @@ int main(int argc, char** argv){
     //myvertex.Spectrum.print(); //print out spectrum
     //generate a Hamiltonian MPO using ./vertexdefs/vertex_generator.hpp file
     //const ajaj::MPO_matrix H(ajaj::MakeHamiltonian(myvertex,couplings));
-    ajaj::State TargetState(myModel.basis().getChargeRules()); //state with all charges=0
-    //ajaj::State TargetState(myvertex.Spectrum[0]); //target quantum numbers of the chain ground state
-    ajaj::DataOutput results("Energies.dat"); //open file for output
+    ajaj::State TargetState(myModel.make_target(RuntimeArgs.target()));
+    ajaj::DataOutput results(ajaj::OutputName(RuntimeArgs.filename(),"Energies.dat"),"Index, Energy/vertex, Entropy, Truncation, Fidelity"); //open file for output
     ajaj::iDMRG infvol(std::string("GroundState"),myModel.H_MPO,TargetState,results); //create an infinite sweep simulation object
     auto t1 = std::chrono::high_resolution_clock::now();
     infvol.run(number_of_vertices/2,-1.0,CHI,minS); //convergence criterion: not used if negative, number of vertices used instead

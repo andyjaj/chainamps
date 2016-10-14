@@ -226,7 +226,7 @@ namespace ajaj {
   MPX_matrix MakeDummyLeftBlock(const MPO_matrix& H, const State& TargetState);
   MPX_matrix MakeDummyRightBlock(const MPO_matrix& H, const State& TargetState);
   /** Solves the superblock Hamiltonian eigen problem, output requires SVD. */
-  MPX_matrix TwoVertexWavefunction(const MPX_matrix& LeftBlock, const MPO_matrix& H, const MPX_matrix& RightBlock, const std::vector<ProjectorBlocks>* ProjectorBlocksPtr, MPXInt NumVertices, Data& result, SparseMatrix* guessptr=NULL);
+  MPX_matrix TwoVertexWavefunction(const MPX_matrix& LeftBlock, const MPO_matrix& H, const MPX_matrix& RightBlock, const std::vector<ProjectorBlocks>* ProjectorBlocksPtr, MPXInt NumVertices, Data& result, SparseMatrix* guessptr=nullptr);
   /** checks overlap between prediction vector and new wavefunction */
   double CheckConvergence(const Prediction& guess,const std::vector<double>& Lambda);
 
@@ -249,6 +249,8 @@ namespace ajaj {
     std::vector<TensorWeightPair> ProjectorTensors;
 
     TwoVertexComponents(const MPX_matrix& L, const MPO_matrix& HMPO, const MPX_matrix& R, const std::vector<ProjectorBlocks>* P=nullptr, const State* StatePtr=nullptr);
+    //TwoVertexComponents(const MPX_matrix& L, const MPO_matrix& HMPO, const MPX_matrix& R, const State* StatePtr) : TwoVertexComponents(L,HMPO,R,nullptr,StatePtr) {}
+
 
     SparseHED HED(MPXInt numevals, char which[3],const SparseMatrix* initial=NULL) const;
     MPXInt length()const {return m_length;}

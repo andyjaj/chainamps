@@ -20,16 +20,43 @@ int main(int argc, char** argv){
   ajaj::Store_Args RuntimeArgs(argc,argv);
   if (RuntimeArgs.is_valid()){
 
-    std::string subname (RuntimeArgs.filename().find("/")!=std::string::npos ?  RuntimeArgs.filename().substr(RuntimeArgs.filename().rfind("/")+1,RuntimeArgs.filename().length()) : RuntimeArgs.filename());
+    //std::string subname (RuntimeArgs.filename().find("/")!=std::string::npos ?  RuntimeArgs.filename().substr(RuntimeArgs.filename().rfind("/")+1,RuntimeArgs.filename().length()) : RuntimeArgs.filename());
+
+
 
     const ajaj::Model myModel(ajaj::MakeModelFromArgs(RuntimeArgs));
 
+    std::string input_filename(ajaj::StripName(RuntimeArgs.filename()));
+    std::ostringstream bss;
+    bss << input_filename <<".BASIS";
+    std::ofstream basisfile;
+    basisfile.open(bss.str().c_str(),ios::out | ios::trunc);
+    if (basisfile.is_open()){
+      basisfile << "# Index";
+      if (myModel.basis().getChargeRules().size()) basisfile << " {";
+      for (auto c : myModel.basis().getChargeRules()){
+	std::ostringstream css;
+	css << " Z";
+	if (c>0){
+	  css << "_" << c;
+	}
+	basisfile << css.str(); 
+      }
+      if (myModel.basis().getChargeRules().size()) basisfile << " }";
+      basisfile << std::endl;
+      size_t i(0);
+      for (auto&& s :myModel.basis()){
+	basisfile << i++ << " "  << s <<std::endl;
+      }
+      basisfile.close();
+    }
+    else {
+      std::cout << "Couldn't open " << bss.str() << " for writing!" << std::endl;
+      return 0;
+    }
     for (auto&& O : myModel.vertex.Operators){
-
-
-
       std::ostringstream outss;
-      outss << subname <<"-"<<O.Name <<".SPARSEMATRIX";
+      outss << input_filename <<"-"<<O.Name <<".SPARSEMATRIX";
       std::string outfilename(outss.str());
       std::replace( outfilename.begin(), outfilename.end(), ' ', '_');
       std::ofstream outfile;

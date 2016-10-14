@@ -12,12 +12,15 @@
 namespace ajaj {
   State::State(const QNVector& CHARGE_RULES) : m_CHARGE_RULES(CHARGE_RULES),values(QNVector(m_CHARGE_RULES.size(),0)) {}; //fill with zeros
   State::State(const QNVector& CHARGE_RULES, QNVector v) : m_CHARGE_RULES(CHARGE_RULES),values(v) {
-    if (v.size()!= CHARGE_RULES.size()){std::cout << "Charge info doesn't match rules!" << std::endl; exit(1);}
-    for (size_t i=0;i<m_CHARGE_RULES.size();++i){
+    if (v.size()> CHARGE_RULES.size()){std::cout << "Charge info doesn't match rules!" << std::endl; exit(1);}
+    for (size_t i=0;i<v.size();++i){
       if (m_CHARGE_RULES[i]>0){
 	if (values[i]<0){std::cout << "Z_" << m_CHARGE_RULES[i] << " charges can't be negative! " << values[i] << " entry " << i << std::endl;exit(1);}
 	values[i]=v[i] % m_CHARGE_RULES[i];
       }
+    }
+    for (size_t i=v.size();i<m_CHARGE_RULES.size();++i){
+      values.push_back(0);
     }
   };
 
