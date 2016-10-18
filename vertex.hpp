@@ -17,6 +17,23 @@
 
 namespace ajaj{
 
+  struct ShiftedOperatorInfo{
+  public:
+    std::string Name;
+    size_t WhichCharge;
+    double Factor;
+
+    ShiftedOperatorInfo(const std::string& s){
+      size_t pos1=s.find("@");
+      size_t pos2=s.find("@",pos1+1);
+      if (pos1!=std::string::npos && pos2!=std::string::npos && pos2!=pos1+1 && pos2<s.length()-1){
+	Name=s.substr(0,pos1);
+	WhichCharge=stoul(s.substr(pos1+1,pos2));
+	Factor=stod(s.substr(pos2+1,s.length()));
+      }
+    } 
+  };
+
 /** Vertex Operator class contains the matrix elements and the name of an operator of the local (site or integrable chain) Hilbert space.
  *
  */
@@ -70,6 +87,13 @@ namespace ajaj{
       return Operators.at(Operators.size()).MatrixElements; //use at() to raise exception, by looking past end of vector
     }
 
+    bool operator_exists(const std::string& Name) const {
+       for (auto&& o : Operators){
+	if (Name==o.Name) return 1;
+      }
+      return 0;
+    }
+
     MPO_matrix make_one_site_operator(uMPXInt i) const{
       std::vector<MPXIndex> indices;
       StateArray dummy(1,State(basis().getChargeRules()));
@@ -87,7 +111,26 @@ namespace ajaj{
       indices.emplace_back(1,dummy);
       indices.emplace_back(0,basis());
       indices.emplace_back(0,dummy);
-      return MPO_matrix(basis(),indices,get_operator_matrix(Name));
+      if (operator_exists(Name)){
+	return MPO_matrix(basis(),indices,get_operator_matrix(Name));
+      }
+      else return MPO_matrix();
+    }
+
+    MPO_matrix make_one_site_operator(const ShiftedOperatorInfo& s) const{
+      std::vector<MPXIndex> indices;
+      StateArray dummy(1,State(basis().getChargeRules()));
+      indices.emplace_back(1,basis());
+      indices.emplace_back(1,dummy);
+      indices.emplace_back(0,basis());
+      indices.emplace_back(0,dummy);
+      if (operator_exists(s.Name)){
+	if (s.WhichCharge<basis().getChargeRules().size()){
+	  return UnitaryTransformMPO_matrix(basis(),indices,get_operator_matrix(s.Name),s.WhichCharge,s.Factor);
+	}
+	else {std::cout << "Requested quantum number outside bounds!" <<std::endl;}
+      }
+      return MPO_matrix();
     }
 
     const Basis& basis() const {return Spectrum;}

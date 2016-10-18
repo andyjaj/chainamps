@@ -11,6 +11,7 @@
 #include <complex>
 
 #include "command_line_input.hpp"
+#include "ajaj_common.hpp"
 #include "model.hpp"
 #include "vertex.hpp"
 #include "MPX.hpp"
@@ -219,8 +220,25 @@ namespace ajaj{
 	      UserModel.vertex.ChargeRules.push_back(static_cast<QuantumNumberInt>(readinteger));
 	    }
 	  }
+	  else if (word[0]=='#') {
+	    //format is Z_n or Z
+	    while (basis_iss >> word){
+	      int tempint(word.find("_")!=std::string::npos ?  stoi(word.substr(word.rfind("_")+1,word.length())) : 0);
+	      if (tempint< std::numeric_limits<short int>::max() && tempint > std::numeric_limits<short int>::min()){
+		UserModel.vertex.ChargeRules.push_back(static_cast<QuantumNumberInt>(tempint));
+	      }
+	      else {
+		std::cout << "Invalid charge definition!" <<std::endl;
+		UserModel=Model(); 
+		return UserModel;
+	      }
+	    }
+	
+	  }
 	  else { //no definition
 	    std::cout << "No definitions of n for Z_n charges!" <<std::endl;
+	    UserModel=Model(); 
+	    return UserModel;
 	  }
 	}
       }

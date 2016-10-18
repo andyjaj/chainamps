@@ -15,11 +15,6 @@ namespace ajaj {
 
   std::istream& operator>>(std::istream& is, std::vector<short>& v)
   {
-    char check;
-
-    // read c from stream
-    //format is CouplingName,(Op1Name,Op2Name):Value
-
     //drop initial whitespace
     is >> std::ws;
     std::vector<short> temp;
@@ -43,12 +38,45 @@ namespace ajaj {
 
     //getline fail?
 
-    std::cout << is.bad() << " " << is.fail() << " " << is.eof() << " " <<is.good() <<std::endl;
+    //std::cout << is.bad() << " " << is.fail() << " " << is.eof() << " " <<is.good() <<std::endl;
 
     if( failure )
       is.setstate(std::ios::failbit);
     else
       v=temp;
+
+    return is;
+  }
+
+  typedef std::vector<std::pair<std::string,unsigned long> > StringIndexPairs;
+
+  std::istream& operator>>(std::istream& is, StringIndexPairs& l)
+  {
+    //drop initial whitespace
+    is >> std::ws;
+    StringIndexPairs temp;
+    bool failure(0);
+    std::string s;
+
+    while (getline(is,s,',')){ //reads to comma, or until eof
+      //and get the next one too
+      unsigned long n(0);
+      std::string num;
+      if (getline(is,num,',')){
+	size_t i(0);
+	n=stoul(num);
+	temp.emplace_back(s,n);
+      }
+      else {
+	failure=1;
+	break;
+      }
+      if (is.eof()) break;
+    }
+    if( failure )
+      is.setstate(std::ios::failbit);
+    else
+      l=temp;
 
     return is;
   }
@@ -105,8 +133,8 @@ namespace ajaj {
     }
     static option::ArgStatus CommaSepShorts(const option::Option& option, bool msg)
     {
-      std::vector<short> testvec;
       if (option.arg != 0 && option.arg[0]){
+	std::vector<short> testvec;
 	std::istringstream ss(option.arg);
 	if (ss >> testvec)
 	  return option::ARG_OK;
@@ -125,9 +153,21 @@ namespace ajaj {
       if (msg) std::cout << "Option '" << std::string(option.name,option.namelen) << "' requires a positive numeric argument" <<std::endl;
       return option::ARG_ILLEGAL;
     }
+    static option::ArgStatus FiniteMeasurementInfo(const option::Option& option, bool msg)
+    {
+      if (option.arg != 0 && option.arg[0] && option.arg[0] != '-'){
+	StringIndexPairs check;
+	std::istringstream ss(option.arg);
+	ss >>check;
+	if (check.size()) return option::ARG_OK;
+      }
+
+      if (msg) std::cout << "Option '" << std::string(option.name,option.namelen) << "' requires a comma separated list of measurements (operator,position,operator,position,...)" <<std::endl;
+      return option::ARG_ILLEGAL;
+    }
   };
 
-  enum optionIndex {UNKNOWN,CHI,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET};
+  enum optionIndex {UNKNOWN,CHI,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET,FINITE_MEASUREMENT};
 
   const option::Descriptor store_usage[2] =
     {
@@ -181,9 +221,9 @@ namespace ajaj {
       { 0, 0, 0, 0, 0, 0 }
     };
 
-  const option::Descriptor TEBD_usage[8] =
+  const option::Descriptor TEBD_usage[9] =
     {
-      {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: TEBD_DRV.bin [-B <number> -n <number> -s <number> -O <number> -i <initial_state_name>] <model_filename> <number of vertices/chains> \n  <number of vertices/chains> must be EVEN.\n"},
+      {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: TEBD_DRV.bin [-B <number> -n <number> -s <number> -O <number> -i <initial_state_name>] <model_filename> <number of vertices(chains)> \n  <number of vertices/chains> must be EVEN.\n"},
       {CHI,0,"B","bond-dimension",Arg::PositiveNumeric,"  -B <number>, \t--bond-dimension=<number>"
        "  \tThe maximum bond dimension, >= 0. If 0, then ignored." },
       {NUMBER_OF_STEPS,0,"n","time-steps",Arg::PositiveNumeric,"  -n <number>, \t--time-steps=<number>"
@@ -196,6 +236,8 @@ namespace ajaj {
        "  \tMeasurement at every <number> steps. Default is 1 (measurement at every step)."},
       {INITIAL_STATE_NAME,0,"i","initial-state-name",Arg::NonEmpty,"  -i <initial_state_name>, \t--initial-state-name=<initial_state_name>"
        "  \tSpecify an initial state." },
+      {FINITE_MEASUREMENT,0,"M","finite-measurement",Arg::FiniteMeasurementInfo,"  -M <opfile1>,<vertex1>[,<opfile2>,<vertex2>], \t--finite-measurement=<opfile1>,<vertex1>[,<opfile2>,<vertex2>]"
+       "  \tSpecify a one or two point measurement."},
       { 0, 0, 0, 0, 0, 0 }
     };
 
@@ -412,6 +454,7 @@ namespace ajaj {
     unsigned long measurement_interval_;
     std::string initial_state_name_;
     unsigned int N_; //used by finite codes
+    std::vector<StringIndexPairs> finite_measurements_;
 
   public:
     TEBD_Args(int argc, char* argv[]) : Base_Args(argc,argv,TEBD_usage), num_steps_(1), step_size_(0.1), trotter_order_(2), measurement_interval_(1),N_(0){
@@ -441,6 +484,22 @@ namespace ajaj {
 	  step_size_=stod(options[STEP_SIZE].arg);
 	if (options[INITIAL_STATE_NAME])
 	  initial_state_name_=std::string(options[INITIAL_STATE_NAME].arg);
+	if (options[FINITE_MEASUREMENT]){
+	  for (option::Option* opt = options[FINITE_MEASUREMENT]; opt; opt = opt->next()){
+	    StringIndexPairs temp;
+	    std::istringstream ss(opt->arg);
+	    ss >> temp;
+	    //check all locations specified in temp
+	    for (auto&& l : temp){
+	      if (l.second < 1 || l.second >N_) {
+		std::cout << "Specified measurement vertex " << l.second << " is outside bounds 1:" <<N_<<std::endl<<std::endl;
+		valid_=0;
+	      }
+	    }
+	    if (valid_)
+	      finite_measurements_.emplace_back(temp);
+	  }
+	}
       }
       print();
     }
@@ -464,6 +523,9 @@ namespace ajaj {
       return initial_state_name_;
     }
 
+    const std::vector<StringIndexPairs>& finite_measurements() const {
+      return finite_measurements_;
+    }
   };
 
   class iMEAS_Args : public Base_Args{

@@ -20,10 +20,6 @@ int main(int argc, char** argv){
   ajaj::Store_Args RuntimeArgs(argc,argv);
   if (RuntimeArgs.is_valid()){
 
-    //std::string subname (RuntimeArgs.filename().find("/")!=std::string::npos ?  RuntimeArgs.filename().substr(RuntimeArgs.filename().rfind("/")+1,RuntimeArgs.filename().length()) : RuntimeArgs.filename());
-
-
-
     const ajaj::Model myModel(ajaj::MakeModelFromArgs(RuntimeArgs));
 
     std::string input_filename(ajaj::StripName(RuntimeArgs.filename()));

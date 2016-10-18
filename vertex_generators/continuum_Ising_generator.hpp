@@ -802,7 +802,7 @@ namespace continuumIsing {
     double sr=1.0;
     cout << "WARNING APPROXIMATING S(R) AS " << sr <<  endl;
 #endif
-    ModelVertex.Operators.push_back(ajaj::VertexOperator("Spin Operator",ModelVertex.Spectrum.size()));      
+    ModelVertex.Operators.push_back(ajaj::VertexOperator("Spin_Operator",ModelVertex.Spectrum.size()));      
     //off diagonal only
     for (size_t col=0;col<TempSpectrum.size();++col){
       size_t s_col=sort_keys[col].first;
@@ -818,7 +818,7 @@ namespace continuumIsing {
     ModelVertex.Operators.back().MatrixElements.finalise();
 
     //make total number operator
-    ModelVertex.Operators.push_back(ajaj::VertexOperator("Total Number",ModelVertex.Spectrum.size()));
+    ModelVertex.Operators.push_back(ajaj::VertexOperator("Total_Number",ModelVertex.Spectrum.size()));
     for (size_t j=0;j<ModelVertex.Spectrum.size();++j){
       ModelVertex.Operators.back().MatrixElements.entry(j,j,static_cast<complex<double> >(total_occupation[sort_keys[j].first]));
     }
@@ -827,7 +827,7 @@ namespace continuumIsing {
     //make number operators
     for (ajaj::MPXInt i=0;i<measured_occupations;++i){
       std::stringstream name;
-      name << "Mode Occupation " << i+1;
+      name << "Mode_Occupation_" << i+1;
       ModelVertex.Operators.push_back(ajaj::VertexOperator(name.str(),ModelVertex.Spectrum.size()));
       //ajaj::SparseMatrix occ_number(ModelVertex.Spectrum.size(),ModelVertex.Spectrum.size(),ModelVertex.Spectrum.size());
       for (size_t j=0;j<ModelVertex.Spectrum.size();++j){
@@ -842,15 +842,6 @@ namespace continuumIsing {
     }
 
     ModelVertex.Spectrum=std::move(TempSpectrum);
-       /*}
-    else { //don't conserve sector
-      //use temp spectrum
-      ModelVertex.ChargeRules[1]=1;
-      ModelVertex.Spectrum.clear();
-      for (ajaj::uMPXInt s=0;s<TempSpectrum.size();++s){
-	ModelVertex.Spectrum.push_back(ajaj::EigenState(TempSpectrum[s],TempSpectrum[s].en));
-      }
-      }*/
 
     //clean up workspace
     delete onechain_theta_ptr;

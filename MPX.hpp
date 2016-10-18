@@ -301,6 +301,9 @@ namespace ajaj {
     return MPO_matrix(spectrum,dummy,std::vector<complex<double> >(spectrum.size(),1.0));  //create diagonal matrix
   }
 
+  MPO_matrix UnitaryTransformMPO_matrix(const Basis&, const std::vector<MPXIndex>&, const SparseMatrix&, size_t, double);
+
+
   /** Inherited class from MPX_matrix. An MPX_matrix with two matrix indices and one physical index.*/
   class MPS_matrix : public MPX_matrix {
   private:

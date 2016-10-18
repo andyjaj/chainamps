@@ -42,13 +42,20 @@ namespace ajaj {
     void finish_chain_(const MPX_matrix& Lambda);
   public:
     MultiVertexMeasurement(uMPXInt start, const MPO_matrix* Op1Ptr, uMPXInt finish, const MPO_matrix* Op2Ptr) : VertexOperatorPtrs_({{meas_pair(start,Op1Ptr), meas_pair(finish,Op2Ptr)}}), T_(Op1Ptr->GetPhysicalSpectrum()),Result_(0.0) {
-      if (start>=finish || start<1){
+      if (start>finish || start<1){
 	std::cout << "Incorrectly defined MultiVertexMeasurement positions, start, finish: " << start << "," << finish <<std::endl;
 	std::cout << "start must be >=1 and < finish. finish must be <= Number of Vertices"<<std::endl;
 	exit(1);
       }
+      else if (start==finish && Op2Ptr!=nullptr){
+	//single vertex measurement means no second operator
+	std::cout << "Incorrectly defined MultiVertexMeasurement" << start << "," << finish <<std::endl;
+	std::cout << "If start==finish, no second operator should be defined."<<std::endl;
+	exit(1);
+      }
     }
-    //MultiVertexMeasurement(uMPXInt start, uMPXInt finish) : VertexOperatorPtrs_({{meas_pair(start,nullptr), meas_pair(finish,nullptr)}}), Result_(0.0) {}
+
+    MultiVertexMeasurement(uMPXInt start, const MPO_matrix* OpPtr) : VertexOperatorPtrs_({{meas_pair(start,OpPtr)}}), T_(OpPtr->basis()),Result_(0.0) {}
     //MultiVertexMeasurement() : VertexOperatorPtrs_({{meas_pair(0,nullptr), meas_pair(0,nullptr)}}), Result_(0.0) {}
     const meas_pair& operator[](uMPXInt i) const {return VertexOperatorPtrs_.at(i);}
     uMPXInt start() const {return VertexOperatorPtrs_.begin()->position();}
@@ -68,7 +75,9 @@ namespace ajaj {
 	}
 	if (v==finish()){
 	  //apply and finish off with lambda^2
-	  link_(VertexOperatorPtrs_.back().MPO_ptr(),D.ColumnMatrix);
+	  if (finish()!=start()) //one vertex measurement doesn't need this step
+	    link_(VertexOperatorPtrs_.back().MPO_ptr(),D.ColumnMatrix);
+	  
 	  finish_chain_(MPX_matrix(D.ColumnMatrix.GetPhysicalSpectrum(),D.ColumnMatrix.Index(2),D.Values));
 	}
 	else { //v<start() or v>finish()
