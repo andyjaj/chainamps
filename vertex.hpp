@@ -23,14 +23,14 @@ namespace ajaj{
     size_t WhichCharge;
     double Factor;
 
-    ShiftedOperatorInfo(const std::string& s){
+    ShiftedOperatorInfo(const std::string& s) : Name(s),WhichCharge(0),Factor(0.0){
       size_t pos1=s.find("@");
       size_t pos2=s.find("@",pos1+1);
       if (pos1!=std::string::npos && pos2!=std::string::npos && pos2!=pos1+1 && pos2<s.length()-1){
 	Name=s.substr(0,pos1);
 	WhichCharge=stoul(s.substr(pos1+1,pos2));
 	Factor=stod(s.substr(pos2+1,s.length()));
-      }
+      } 
     } 
   };
 

@@ -1232,12 +1232,14 @@ namespace ajaj {
     if (c>=b.getChargeRules().size()){std::cout <<"Error, requested quantum number outised bounds!" <<std::endl; return MPO_matrix();}
 
     SparseMatrix T(copy(s)); //make a copy (default constructor is private)
-    for (MPXInt col=0;col<T.cols();++col){
-      std::complex<double> Udagger(cos(b[col][c]*f),sin(-b[col][c]*f));
-      for (MPXInt p=T.get_p(col);p<T.get_p(col+1);++p){
-	MPXInt row(T.get_i(p));
-	std::complex<double> U(cos(b[row][c]*f),sin(b[row][c]*f));
-	T.put_x(p)=U*T.get_x(p)*Udagger;
+    if (f!=0.0){
+      for (MPXInt col=0;col<T.cols();++col){
+	std::complex<double> Udagger(cos(b[col][c]*f),sin(-b[col][c]*f));
+	for (MPXInt p=T.get_p(col);p<T.get_p(col+1);++p){
+	  MPXInt row(T.get_i(p));
+	  std::complex<double> U(cos(b[row][c]*f),sin(b[row][c]*f));
+	  T.put_x(p)=U*T.get_x(p)*Udagger;
+	}
       }
     }
     return MPO_matrix(b,idxs,std::move(T));

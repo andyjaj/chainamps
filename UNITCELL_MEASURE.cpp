@@ -35,22 +35,24 @@ int main(int argc, char** argv){
 
     if (RuntimeArgs.operator_filenames().size()) {
       for (auto&& opfn : RuntimeArgs.operator_filenames()){
-	std::string opname;
-	std::istringstream opss(opfn);
-	getline(opss,opname,'.');
+	
+	ajaj::ShiftedOperatorInfo opinfo(opfn);
 	std::ifstream is;
-	is.open(opfn.c_str(),std::ios::in);
+	is.open(opinfo.Name.c_str(),std::ios::in);
 	if (is.is_open()){
+	  std::istringstream opss(opinfo.Name);
+	  std::string opname;
+	  getline(opss,opname,'.');
 	  iMEAS_vertex.Operators.emplace_back(opname);
 	  
 	  iMEAS_vertex.Operators.back().MatrixElements=ajaj::load_SparseMatrix(is);
 	  if (iMEAS_vertex.Operators.back().MatrixElements.rows()!=iMEAS_vertex.Operators.back().MatrixElements.cols()){
-	    std::cout << "Malformed operator in " << opfn << std::endl;
+	    std::cout << "Malformed operator in " << opinfo.Name << std::endl;
 	    return 0;
 	  }
 	}
 	else {
-	  std::cout << "Couldn't open " << opfn << std::endl;
+	  std::cout << "Couldn't open " << opinfo.Name << std::endl;
 	  return 0;
 	}
       }
@@ -95,7 +97,7 @@ int main(int argc, char** argv){
       infile.open(f.c_str(),ios::in | ios::binary);
       if (infile.is_open()){
 	std::cout << "Loading " << f << std::endl;
-	ajaj::UnitCell AA(ajaj::load_UnitCell_binary(infile,iMEAS_vertex.ChargeRules,iMEAS_vertex.Spectrum));
+	ajaj::UnitCell AA(ajaj::load_UnitCell_binary(infile,iMEAS_vertex.ChargeRules,iMEAS_vertex.Spectrum));//populates basis
 	std::complex<double> overlap(ajaj::Overlap(AA,AA));
 	indexed_results.emplace_back(Index,ajaj::Data(abs(overlap)));
 
@@ -106,8 +108,11 @@ int main(int argc, char** argv){
 	  }
 	  //measure.... //how many operators, separation etc...
 	  if (!Operator_MPOs.size()){ //if haven't populated Operators yet, do it now
-	    for (size_t i=0;i<iMEAS_vertex.Operators.size();++i){
-	      Operator_MPOs.emplace_back(iMEAS_vertex.make_one_site_operator(i));
+	    for (auto&& f : RuntimeArgs.operator_filenames()){
+	      ajaj::ShiftedOperatorInfo opinfo(f);
+	      std::istringstream opss(opinfo.Name);
+	      getline(opss,opinfo.Name,'.');
+	      Operator_MPOs.emplace_back(iMEAS_vertex.make_one_site_operator(opinfo));
 	    }
 	  }
 
@@ -120,10 +125,7 @@ int main(int argc, char** argv){
 	  else if (iMEAS_vertex.Operators.size()==2){
 	    indexed_results.back().second.Complex_measurements.emplace_back(TwoVertexMeasurement(Operator_MPOs[0],Operator_MPOs[1],AA,RuntimeArgs.separation()));
 	  }
-
-
 	}
-
       }
       else {
 	std::cout << "Couldn't open " << f << std::endl;

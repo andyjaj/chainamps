@@ -27,8 +27,6 @@ public:
   NamedMPO_matrix(const std::string& n,ajaj::MPO_matrix&& m) : Name(n),Matrix(m) {}
 };
 
-
-
 int main(int argc, char** argv){
 
   ajaj::TEBD_Args RuntimeArgs(argc,argv);

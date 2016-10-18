@@ -537,25 +537,27 @@ namespace ajaj {
 
   public:
     iMEAS_Args(int argc, char* argv[]) : Base_Args(argc,argv,iMEAS_usage), separation_(0),use_filename_index_(1){
-      if (is_valid()){
-	for (size_t f=0;f<parse.nonOptionsCount();++f){
-	  files_.emplace_back(parse.nonOption(f));
-	}
-	if (options[SEPARATION])
-	  separation_=stoul(options[SEPARATION].arg);
-	if (options[NOINDEX])
-	  use_filename_index_=0;
-	if (options[OPERATORFILE])
-	  for (option::Option* opt = options[OPERATORFILE]; opt; opt = opt->next()){
-	    operator_filenames_.emplace_back(opt->arg);
+      if (valid_){
+	if (parse.nonOptionsCount()<1 || std::string(parse.nonOption(0))==std::string("-")) valid_=0;
+	else {
+	  for (size_t f=0;f<parse.nonOptionsCount();++f){
+	    files_.emplace_back(parse.nonOption(f));
 	  }
-
-	if (operator_filenames_.size()>1 && !options[SEPARATION]){
-	  std::cout << "Specifying more than one operator requires a separation to be defined!" <<std::endl<<std::endl;
-	  valid_=0;
+	  if (options[SEPARATION])
+	    separation_=stoul(options[SEPARATION].arg);
+	  if (options[NOINDEX])
+	    use_filename_index_=0;
+	  if (options[OPERATORFILE])
+	    for (option::Option* opt = options[OPERATORFILE]; opt; opt = opt->next()){
+	      operator_filenames_.emplace_back(opt->arg);
+	    }
+	  if (operator_filenames_.size()>1 && !options[SEPARATION]){
+	    std::cout << "Specifying more than one operator requires a separation to be defined!" <<std::endl<<std::endl;
+	    valid_=0;
+	  }
 	}
-
       }
+      else valid_=0;
       print();
     }
 
