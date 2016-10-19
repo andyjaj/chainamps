@@ -22,7 +22,7 @@ namespace ajaj {
   /** Type used for pairing indices. Lots of functions take a pair of MPX indices as arguments.*/
   typedef std::pair<MPXInt,MPXInt> MPXPair;
 
-  static const std::vector<MPXPair> contract00(1,MPXPair(0,0));
+  static const std::vector<MPXPair> contract00 {{MPXPair(0,0)}};
   static const std::vector<MPXPair> contract01(1,MPXPair(0,1));
   static const std::vector<MPXPair> contract10(1,MPXPair(1,0));
   static const std::vector<MPXPair> contract20(1,MPXPair(2,0));
@@ -38,10 +38,12 @@ namespace ajaj {
 
   static const std::vector<MPXPair> contract0011 {{MPXPair(0,0), MPXPair(1,1)}};
   static const std::vector<MPXPair> contract0013 {{MPXPair(0,0), MPXPair(1,3)}};
+  static const std::vector<MPXPair> contract0015 {{MPXPair(0,0), MPXPair(1,5)}};
   static const std::vector<MPXPair> contract0022 {{MPXPair(0,0), MPXPair(2,2)}};
   static const std::vector<MPXPair> contract0110 {{MPXPair(0,1), MPXPair(1,0)}};
   static const std::vector<MPXPair> contract0120 {{MPXPair(0,1), MPXPair(2,0)}};
   static const std::vector<MPXPair> contract0130 {{MPXPair(0,1), MPXPair(3,0)}};
+  static const std::vector<MPXPair> contract0150 {{MPXPair(0,1), MPXPair(5,0)}};
   static const std::vector<MPXPair> contract0210 {{MPXPair(0,2), MPXPair(1,0)}};
   static const std::vector<MPXPair> contract0241 {{MPXPair(0,2), MPXPair(4,1)}};
   static const std::vector<MPXPair> contract0310 {{MPXPair(0,3), MPXPair(1,0)}};

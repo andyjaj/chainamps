@@ -534,6 +534,7 @@ namespace ajaj {
 
     std::vector<std::string> operator_filenames_;
     std::vector<std::string> files_;
+    bool two_point_;
 
   public:
     iMEAS_Args(int argc, char* argv[]) : Base_Args(argc,argv,iMEAS_usage), separation_(0),use_filename_index_(1){
@@ -543,8 +544,10 @@ namespace ajaj {
 	  for (size_t f=0;f<parse.nonOptionsCount();++f){
 	    files_.emplace_back(parse.nonOption(f));
 	  }
-	  if (options[SEPARATION])
+	  if (options[SEPARATION]){
 	    separation_=stoul(options[SEPARATION].arg);
+	    two_point_=1;
+	  }
 	  if (options[NOINDEX])
 	    use_filename_index_=0;
 	  if (options[OPERATORFILE])
@@ -552,6 +555,7 @@ namespace ajaj {
 	      operator_filenames_.emplace_back(opt->arg);
 	    }
 	  if (operator_filenames_.size()>1 && !options[SEPARATION]){
+	    two_point_=1;
 	    std::cout << "Specifying more than one operator requires a separation to be defined!" <<std::endl<<std::endl;
 	    valid_=0;
 	  }
@@ -565,7 +569,7 @@ namespace ajaj {
     const std::vector<std::string>& files() const {return files_;}
     const std::vector<std::string>& operator_filenames() const {return operator_filenames_;}
     bool use_filename_index() const {return use_filename_index_;}
-
+    bool two_point() const {return two_point_;} //has a two point function been requested?
   };
 
   class Store_Args : public Base_Args{

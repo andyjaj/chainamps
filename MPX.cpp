@@ -692,7 +692,7 @@ namespace ajaj {
   }
 
   MPX_matrix& MPX_matrix::RemoveDummyIndices(std::vector<MPXInt> indices_for_removal){
-    if (indices_for_removal.size()>=m_Indices.size()){
+    if (indices_for_removal.size()>=m_Indices.size()-1){
       std::cout << "Too many indices for removal!" << std::endl;
 	*this=MPX_matrix();
 	return *this;
@@ -707,12 +707,18 @@ namespace ajaj {
       }
     }
 
+    MPXInt num_removed_row_indices(0); //how many of the removed indices are row indices?
+    for (auto i : indices_for_removal){
+      if (i<m_NumRowIndices) ++num_removed_row_indices; 
+    }
+
     std::vector<MPXInt> newindices(m_Indices.size());
     std::iota(newindices.begin(),newindices.end(),0); //0,1,2...,m_Indices.size()-1
+    auto nend(newindices.end());
     for (auto i : indices_for_removal){ //go through and move the ones we want to get rid of
-      *(std::remove(newindices.begin(),newindices.end(),i));
+      nend=std::remove(newindices.begin(),nend,i);
     }
-    newindices.erase(newindices.begin()+m_Indices.size()-indices_for_removal.size(),newindices.end()); //erase the ones we moved
+    newindices.erase(nend,newindices.end()); //erase the ones we moved
 
     std::vector<MPXIndex> new_m_Indices;
     for (auto n : newindices){
@@ -720,6 +726,8 @@ namespace ajaj {
     }
 
     swap(new_m_Indices,m_Indices);
+    m_NumRowIndices-=num_removed_row_indices;
+    //ned to update num row indices!!!
 
     return *this;
   }

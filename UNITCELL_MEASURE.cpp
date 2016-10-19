@@ -126,7 +126,7 @@ int main(int argc, char** argv){
 	  }
 
 	  if (OperatorMPOs.size()==1){
-	    if (RuntimeArgs.separation()==0) //single site
+	    if (RuntimeArgs.two_point()!=0) //single site
 	      indexed_results.back().second.Complex_measurements.emplace_back(OneVertexMeasurement(OperatorMPOs[0].Matrix,AA));
 	    else //same operator, with separation
 	      indexed_results.back().second.Complex_measurements.emplace_back(TwoVertexMeasurement(OperatorMPOs[0].Matrix,OperatorMPOs[0].Matrix,AA,RuntimeArgs.separation()));
@@ -155,7 +155,7 @@ int main(int argc, char** argv){
     std::ostringstream mss;
     if (OperatorMPOs.size()){
       mss << OperatorMPOs[0].Name;
-      if (RuntimeArgs.separation()) {
+      if (RuntimeArgs.two_point()) {
 	if (OperatorMPOs.size()>1)
 	  mss << "_" << OperatorMPOs[1].Name;
 	else
@@ -180,7 +180,7 @@ int main(int argc, char** argv){
 	opss << "(i)," << OperatorMPOs[1].Name;
 	opss << "(i+" << RuntimeArgs.separation() << ")";
       }
-      else if (RuntimeArgs.separation())
+      else if (RuntimeArgs.two_point())
 	opss << "(i)," << OperatorMPOs[0].Name << "(i+" << RuntimeArgs.separation() << ")";
       commentstream << ",Re(" << opss.str() <<"),Im(" << opss.str() << ")";
     }
