@@ -20,13 +20,6 @@
 #include "model.hpp"
 #include "make_model.hpp"
 
-struct NamedMPO_matrix {
-public:
-  std::string Name;
-  ajaj::MPO_matrix Matrix;
-  NamedMPO_matrix(const std::string& n,ajaj::MPO_matrix&& m) : Name(n),Matrix(m) {}
-};
-
 int main(int argc, char** argv){
 
   ajaj::TEBD_Args RuntimeArgs(argc,argv);
@@ -40,7 +33,7 @@ int main(int argc, char** argv){
     ajaj::uMPXInt measurement_interval(RuntimeArgs.measurement_interval());
     double time_step(RuntimeArgs.step_size());
 
-    std::vector<NamedMPO_matrix> generated_MPOs; //actual storage for MPOs
+    std::vector<ajaj::NamedMPO_matrix> generated_MPOs; //actual storage for MPOs
     typedef std::vector<std::vector<std::pair<size_t,ajaj::uMPXInt> > > MPOIndexVertexPairs;
     MPOIndexVertexPairs measurement_lookups;
     std::ostringstream measurednames;
@@ -119,7 +112,7 @@ int main(int argc, char** argv){
 	measurements.emplace_back(ajaj::MultiVertexMeasurement(m[0].second/*first measurement position*/,&(generated_MPOs[m[0].first].Matrix)));
       }
       else {
-	std::cout <<"Unsupported measurment!" <<std::endl;
+	std::cout <<"Unsupported measurement!" <<std::endl;
 	return 0;
       }
     }

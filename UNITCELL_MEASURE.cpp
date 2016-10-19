@@ -29,30 +29,35 @@ int main(int argc, char** argv){
     //operator_filenames() (can be 1 or 2 at the moment, indicates measurement at multiple locations, specified by distance).
     //use_filename_index(), strip and index from filename and use it to order results, default true
 
-    ajaj::Vertex iMEAS_vertex;
+    ajaj::Vertex iMEAS_vertex; // a dummy vertex
+    std::vector<ajaj::ShiftedOperatorInfo> opinfo;
 
     //read in (possible) operators    
 
     if (RuntimeArgs.operator_filenames().size()) {
       for (auto&& opfn : RuntimeArgs.operator_filenames()){
 	
-	ajaj::ShiftedOperatorInfo opinfo(opfn);
+	ajaj::ShiftedOperatorInfo this_opinfo(opfn);
 	std::ifstream is;
-	is.open(opinfo.Name.c_str(),std::ios::in);
+	is.open(this_opinfo.Name.c_str(),std::ios::in);
 	if (is.is_open()){
-	  std::istringstream opss(opinfo.Name);
+	  std::istringstream opss(this_opinfo.Name);
 	  std::string opname;
 	  getline(opss,opname,'.');
-	  iMEAS_vertex.Operators.emplace_back(opname);
+	  if (!iMEAS_vertex.operator_exists(opname)){
+	    iMEAS_vertex.Operators.emplace_back(opname);
 	  
-	  iMEAS_vertex.Operators.back().MatrixElements=ajaj::load_SparseMatrix(is);
-	  if (iMEAS_vertex.Operators.back().MatrixElements.rows()!=iMEAS_vertex.Operators.back().MatrixElements.cols()){
-	    std::cout << "Malformed operator in " << opinfo.Name << std::endl;
-	    return 0;
+	    iMEAS_vertex.Operators.back().MatrixElements=ajaj::load_SparseMatrix(is);
+	    if (iMEAS_vertex.Operators.back().MatrixElements.rows()!=iMEAS_vertex.Operators.back().MatrixElements.cols()){
+	      std::cout << "Malformed operator in " << this_opinfo.Name << std::endl;
+	      return 0;
+	    }
 	  }
+	  this_opinfo.Name=opname;
+	  opinfo.push_back(this_opinfo);
 	}
 	else {
-	  std::cout << "Couldn't open " << opinfo.Name << std::endl;
+	  std::cout << "Couldn't open " << this_opinfo.Name << std::endl;
 	  return 0;
 	}
       }
@@ -73,7 +78,8 @@ int main(int argc, char** argv){
     std::vector<std::pair<size_t,ajaj::Data> > indexed_results;
     size_t Index(0);
     std::regex ex("_([0-9]+)\\.UNITCELL$"); //regex to match number before filename only.
-    std::vector<ajaj::MPO_matrix> Operator_MPOs; //if defined
+
+    std::vector<ajaj::NamedMPO_matrix> OperatorMPOs; //if defined
     
     for (auto&& f : RuntimeArgs.files()){
       //get an index
@@ -107,23 +113,26 @@ int main(int argc, char** argv){
 	    return 0;
 	  }
 	  //measure.... //how many operators, separation etc...
-	  if (!Operator_MPOs.size()){ //if haven't populated Operators yet, do it now
-	    for (auto&& f : RuntimeArgs.operator_filenames()){
-	      ajaj::ShiftedOperatorInfo opinfo(f);
-	      std::istringstream opss(opinfo.Name);
-	      getline(opss,opinfo.Name,'.');
-	      Operator_MPOs.emplace_back(iMEAS_vertex.make_one_site_operator(opinfo));
+	  if (!OperatorMPOs.size()){ //if haven't populated Operators yet, do it now
+	    for (auto&& shiftedop : opinfo){
+	      //make name
+	      std::ostringstream mponame;
+	      mponame << shiftedop.Name;
+	      if (shiftedop.Factor!=0.0){
+		mponame << "@" << shiftedop.WhichCharge << "@" << shiftedop.Factor;
+ 	      }
+	      OperatorMPOs.emplace_back(mponame.str(),iMEAS_vertex.make_one_site_operator(shiftedop));
 	    }
 	  }
 
-	  if (iMEAS_vertex.Operators.size()==1){
-	    if (RuntimeArgs.separation()==0)
-	      indexed_results.back().second.Complex_measurements.emplace_back(OneVertexMeasurement(Operator_MPOs[0],AA));
-	    else
-	      indexed_results.back().second.Complex_measurements.emplace_back(TwoVertexMeasurement(Operator_MPOs[0],Operator_MPOs[0],AA,RuntimeArgs.separation()));
+	  if (OperatorMPOs.size()==1){
+	    if (RuntimeArgs.separation()==0) //single site
+	      indexed_results.back().second.Complex_measurements.emplace_back(OneVertexMeasurement(OperatorMPOs[0].Matrix,AA));
+	    else //same operator, with separation
+	      indexed_results.back().second.Complex_measurements.emplace_back(TwoVertexMeasurement(OperatorMPOs[0].Matrix,OperatorMPOs[0].Matrix,AA,RuntimeArgs.separation()));
 	  }
-	  else if (iMEAS_vertex.Operators.size()==2){
-	    indexed_results.back().second.Complex_measurements.emplace_back(TwoVertexMeasurement(Operator_MPOs[0],Operator_MPOs[1],AA,RuntimeArgs.separation()));
+	  else if (OperatorMPOs.size()==2){ //two (possibly different) operators
+	    indexed_results.back().second.Complex_measurements.emplace_back(TwoVertexMeasurement(OperatorMPOs[0].Matrix,OperatorMPOs[1].Matrix,AA,RuntimeArgs.separation()));
 	  }
 	}
       }
@@ -144,14 +153,13 @@ int main(int argc, char** argv){
 
 
     std::ostringstream mss;
-    if (iMEAS_vertex.Operators.size()){
-      mss << iMEAS_vertex.Operators[0].Name;
+    if (OperatorMPOs.size()){
+      mss << OperatorMPOs[0].Name;
       if (RuntimeArgs.separation()) {
-	if (iMEAS_vertex.Operators.size()>1){
-	  mss << "_" << iMEAS_vertex.Operators[1].Name;
-	}
+	if (OperatorMPOs.size()>1)
+	  mss << "_" << OperatorMPOs[1].Name;
 	else
-	  mss << "_" << iMEAS_vertex.Operators[0].Name;
+	  mss << "_" << OperatorMPOs[0].Name;
 
 	mss << "_" << RuntimeArgs.separation();
       }
@@ -165,15 +173,15 @@ int main(int argc, char** argv){
 
     std::ostringstream commentstream;
     commentstream << "Index,abs(Overlap)";
-    //commentstream<<"Index,abs(Overlap)";
-    if (iMEAS_vertex.Operators.size()) {
+    if (OperatorMPOs.size()) {
       std::ostringstream opss;
-      opss << iMEAS_vertex.Operators[0].Name;
-      if (iMEAS_vertex.Operators.size()>1){
-	opss << "(i)," << iMEAS_vertex.Operators[1].Name << "(i+" << RuntimeArgs.separation() << ")";
+      opss << OperatorMPOs[0].Name;
+      if (OperatorMPOs.size()>1){
+	opss << "(i)," << OperatorMPOs[1].Name;
+	opss << "(i+" << RuntimeArgs.separation() << ")";
       }
       else if (RuntimeArgs.separation())
-	opss << "(i)," << iMEAS_vertex.Operators[0].Name << "(i+" << RuntimeArgs.separation() << ")";
+	opss << "(i)," << OperatorMPOs[0].Name << "(i+" << RuntimeArgs.separation() << ")";
       commentstream << ",Re(" << opss.str() <<"),Im(" << opss.str() << ")";
     }
 

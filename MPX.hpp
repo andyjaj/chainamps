@@ -295,6 +295,13 @@ namespace ajaj {
 
   };
 
+  struct NamedMPO_matrix {
+  public:
+    std::string Name;
+    ajaj::MPO_matrix Matrix;
+    NamedMPO_matrix(const std::string& n,ajaj::MPO_matrix&& m) : Name(n),Matrix(m) {}
+  };
+
   /** Create an identity MPO_matrix. Corresponds to an identity operator.*/
   inline MPO_matrix IdentityMPO_matrix(const EigenStateArray& spectrum){
     MPXIndex dummy(1,ajaj::StateArray(1,spectrum[0]-spectrum[0]));
