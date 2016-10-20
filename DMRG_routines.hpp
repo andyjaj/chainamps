@@ -18,6 +18,10 @@
 #include "data.hpp"
 
 namespace ajaj {
+
+  //extern double formation_time_millisecs;
+  //extern size_t formations;
+
   struct Prediction;
   class BlocksStructure;
   class SuperBlock;
@@ -29,6 +33,8 @@ namespace ajaj {
   class TwoVertexComponents;
 
   typedef std::pair<MPX_matrix,double> TensorWeightPair;
+
+  void dmrg_print_time_info();
 
   /** Structure for state prediction vector. Used to speed up eigensolver.*/
   struct Prediction {

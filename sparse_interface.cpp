@@ -1771,7 +1771,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     SuiteSparse_long* w = U->p;  U->p=nullptr;
     U->nzmax=0;
     cs_cl_spfree(U); //have hung on to U->p.
-    //P->p should have been set already!!!!
+    //P->p should have been set already
     SuiteSparse_long offset=P->p[Pcol];
     for (SuiteSparse_long j = 0; j < n; j++){
       for (SuiteSparse_long p = UTp[j]; p < UTp[j+1]; p++){
@@ -1990,29 +1990,25 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     }
     else {
 #if defined(USETBB)
-      {      //try to predict whether TBB is useful here
-	//size_t chunksize= TBBNZ*rhs.cols()/col_ptrs[rhs.cols()];
-	//if (chunksize<rhs.cols()){
-	  //std::cout << "THREADED" <<std::endl;
-	  bool swap_and_transpose=NoSort ? 0 : (lhs.nz()+rhs.nz()<col_ptrs[rhs.cols()]);
-	  if (swap_and_transpose){
-	    cs_free(col_ptrs); //need the swapped transpose version...
-	    col_ptrs=nullptr;
-	    SparseMatrix lhsTrans(lhs.copy_transpose()); //temp transpose
-	    SparseMatrix rhsTrans(rhs.copy_transpose()); //temp transpose
-	    col_ptrs=allocate_nonzero_totals(rhsTrans.m_array,lhsTrans.m_array);
-	    reduce_sparse body(rhsTrans.m_array,lhsTrans.m_array,col_ptrs,1); //don't sort rows
-	    tbb::parallel_reduce(tbb::blocked_range<SuiteSparse_long>(0,lhsTrans.m_array->n),body);
-	    return std::move(SparseMatrix(body.ans_,1).transpose()); //return the transpose
-	  }
-	  else {
-	    reduce_sparse body(lhs.m_array,rhs.m_array,col_ptrs,NoSort);
-	    tbb::parallel_reduce(tbb::blocked_range<SuiteSparse_long>(0,rhs.m_array->n),body);
-	    return SparseMatrix(body.ans_,1);
-	  }
-	  //}
+      {
+	bool swap_and_transpose=NoSort ? 0 : (lhs.nz()+rhs.nz()<col_ptrs[rhs.cols()]);
+	if (swap_and_transpose){
+	  cs_free(col_ptrs); //need the swapped transpose version...
+	  col_ptrs=nullptr;
+	  SparseMatrix lhsTrans(lhs.copy_transpose()); //temp transpose
+	  SparseMatrix rhsTrans(rhs.copy_transpose()); //temp transpose
+	  col_ptrs=allocate_nonzero_totals(rhsTrans.m_array,lhsTrans.m_array);
+	  reduce_sparse body(rhsTrans.m_array,lhsTrans.m_array,col_ptrs,1); //don't sort rows
+	  tbb::parallel_reduce(tbb::blocked_range<SuiteSparse_long>(0,lhsTrans.m_array->n),body);
+	  return std::move(SparseMatrix(body.ans_,1).transpose()); //return the transpose
+	}
+	else {
+	  reduce_sparse body(lhs.m_array,rhs.m_array,col_ptrs,NoSort);
+	  tbb::parallel_reduce(tbb::blocked_range<SuiteSparse_long>(0,rhs.m_array->n),body);
+	  return SparseMatrix(body.ans_,1);
+	}
       }
-#elif
+#else
       {
 	//no TBB
 	//std::cout << "NOT THREADED" <<std::endl;

@@ -2,6 +2,8 @@
 #include <string>
 #include <sstream>
 #include <cstdlib>
+#include <chrono>
+#include <iomanip>
 
 #include "ajaj_common.hpp" //MPXInt MPXPair
 #include "sparse_interface.hpp" //SparseHED
@@ -11,6 +13,43 @@
 #include "data.hpp"
 
 namespace ajaj {
+
+  static double formation_time_millisecs (0.0);
+  static size_t formations (0);
+
+  static double decomp_time_millisecs (0.0);
+  static size_t decomps (0);
+
+  static double vec_time_millisecs (0.0);
+  static size_t vec_formations (0);
+
+  static double c1_time_ms (0.0);
+  static size_t c1_reps(0);
+
+  static double c2_time_ms (0.0);
+  static size_t c2_reps(0);
+
+  static double c3_time_ms (0.0);
+  static size_t c3_reps(0);
+
+  static double c4_time_ms (0.0);
+  static size_t c4_reps(0);
+
+  static size_t num_op_x(0);
+
+  void dmrg_print_time_info() {
+    std::cout << std::setprecision(8) << std::endl << "TIME INFO" <<std::endl;
+    std::cout << "AVERAGE LEFT AND RIGHT FORMATION TIME=" << formation_time_millisecs/formations << " ms" << std::endl;
+    std::cout << "AVERAGE VECTOR FORMATION TIME=" << vec_time_millisecs/vec_formations/1000.0 << " ms" << std::endl;
+    std::cout << "AVERAGE Contraction 1 TIME=" << c1_time_ms/c1_reps << " ms" << std::endl;
+    std::cout << "AVERAGE Contraction 2 TIME=" << c2_time_ms/c2_reps << " ms" << std::endl;
+    std::cout << "AVERAGE Reshape TIME=" << c3_time_ms/c3_reps/1000.0 << " ms" << std::endl;
+    std::cout << "AVERAGE Extract TIME=" << c4_time_ms/c4_reps/1000.0 << " ms" << std::endl;
+    std::cout << "NUM OP* x for this step=" << num_op_x <<std::endl;
+    std::cout << "AVERAGE DECOMP TIME=" << decomp_time_millisecs/decomps/1000.0 << " s" << std::endl;
+
+    std::cout <<std::endl;
+  }
 
   bool BlocksStructure::save_left_block(uMPXInt l){
     std::stringstream leftname;
@@ -661,9 +700,21 @@ namespace ajaj {
   MPX_matrix TwoVertexWavefunction(const MPX_matrix& LB, const MPO_matrix& H, const MPX_matrix& RB, const std::vector<ProjectorBlocks>* ProjectorBlocksPtr, MPXInt NumVertices, Data& result, SparseMatrix* guessptr){
     //Need to figure out 'length' then choose strategy appropriately.
     //form LeftPart, RightPart
+    num_op_x=0; //reset
+
+    auto t1 = std::chrono::high_resolution_clock::now();
     TwoVertexComponents stuff(LB,H,RB,ProjectorBlocksPtr);
+    auto t2 = std::chrono::high_resolution_clock::now();
+    formation_time_millisecs+=std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count();
+    formations++;
+
     MPXInt num_to_find = stuff.length() >= 5 ? 4 : 1;
+    auto tD1 = std::chrono::high_resolution_clock::now();
     SparseHED decomp(stuff.HED(num_to_find,SMALLESTREAL,guessptr));
+    auto tD2 = std::chrono::high_resolution_clock::now();
+    decomp_time_millisecs+=std::chrono::duration_cast<std::chrono::milliseconds>(tD2-tD1).count();
+    decomps++;
+
     std::cout << "Lowest energy/Number of Vertices: " << decomp.Values[0]/double(NumVertices) <<std::endl;
     if (num_to_find>1) {
       std::cout << "Next lowest eigenvalues/Number of Vertices: ";
@@ -797,11 +848,42 @@ namespace ajaj {
 
   void TwoVertexMPOMPSMultiply(const TwoVertexComponents* arraystuff, std::complex<double> *in, std::complex<double> *out){
     SparseMatrix V(arraystuff->vcols,arraystuff->vrows,arraystuff->vrows);//undocumented behaviour of SparseMatrix, using transposed rows and cols to avoid unnecessary row ordering...
+    auto vt1 = std::chrono::high_resolution_clock::now();
     for (struct {std::vector<std::array<MPXInt,2> >::const_iterator cit; MPXInt idx;} itstruct ={arraystuff->rows_and_cols.begin(), 0};itstruct.cit!=arraystuff->rows_and_cols.end();++itstruct.cit,++itstruct.idx){
       V.entry((*(itstruct.cit))[1],(*(itstruct.cit))[0],in[itstruct.idx]);
     }
     MPX_matrix Vector(arraystuff->LeftPart.GetPhysicalSpectrum(),arraystuff->indices,2,V.cheap_no_transpose_finalise());
-    DumbExtractWithZeros(reshape(contract_to_sparse(contract(arraystuff->LeftPart,0,Vector,0,contract1071),0,arraystuff->RightPart,0,contract116276),arraystuff->length()),arraystuff->allowed_indices,out);
+    auto vt2 = std::chrono::high_resolution_clock::now();
+    vec_time_millisecs+=std::chrono::duration_cast<std::chrono::microseconds>(vt2-vt1).count();
+    vec_formations++;
+
+    auto c1t1 = std::chrono::high_resolution_clock::now();
+    MPX_matrix M(contract(arraystuff->LeftPart,0,Vector,0,contract1071));
+    auto c1t2 = std::chrono::high_resolution_clock::now();
+    c1_time_ms+=std::chrono::duration_cast<std::chrono::milliseconds>(c1t2-c1t1).count();
+    c1_reps++;
+
+    auto c2t1 = std::chrono::high_resolution_clock::now();
+    SparseMatrix SM(contract_to_sparse(M,0,arraystuff->RightPart,0,contract116276));
+    auto c2t2 = std::chrono::high_resolution_clock::now();
+    c2_time_ms+=std::chrono::duration_cast<std::chrono::milliseconds>(c2t2-c2t1).count();
+    c2_reps++;
+
+    num_op_x++;
+
+    auto c3t1 = std::chrono::high_resolution_clock::now();
+    SM=std::move(reshape(SM,arraystuff->length()));
+    auto c3t2 = std::chrono::high_resolution_clock::now();
+    c3_time_ms+=std::chrono::duration_cast<std::chrono::microseconds>(c3t2-c3t1).count();
+    c3_reps++;
+
+    auto c4t1 = std::chrono::high_resolution_clock::now();
+    DumbExtractWithZeros(SM,arraystuff->allowed_indices,out);
+    auto c4t2 = std::chrono::high_resolution_clock::now();
+    c4_time_ms+=std::chrono::duration_cast<std::chrono::microseconds>(c4t2-c4t1).count();
+    c4_reps++;
+
+    //DumbExtractWithZeros(reshape(contract_to_sparse(contract(arraystuff->LeftPart,0,Vector,0,contract1071),0,arraystuff->RightPart,0,contract116276),arraystuff->length()),arraystuff->allowed_indices,out);
     //projector bits
     const std::vector<TensorWeightPair>& PTensors(arraystuff->ProjectorTensors);
     //loop through list
