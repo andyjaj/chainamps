@@ -103,6 +103,7 @@ namespace ajaj {
 
     SparseMatrix copy_transpose() const; //make a copy and transpose
     SparseMatrix copy_dagger() const; //make a copy and transpose conjugate
+    SparseMatrix copy_conjugate() const;
     //SparseMatrix copy() const {return SparseMatrix(*this);}
     Sparseint rows() const;
     Sparseint cols() const;

@@ -603,6 +603,17 @@ namespace ajaj {
     return SparseMatrix(cs_cl_transpose(m_array,1),1);
   }
 
+  SparseMatrix SparseMatrix::copy_conjugate() const{
+    if (!m_finalised){std::cout << "Not finalised! Probably you didn't mean to do this yet!" << std::endl; exit(1);}
+    //SparseType* temp_array=cs_cl_transpose(temp_array,1);
+    //return(SparseMatrix<std::complex<double> >(temp_array,1));
+    SparseMatrix ans(copy(*this));
+    for (Sparseint p=0;p<ans.nz();++p){
+      ans.m_array->x[p]=conj(ans.m_array->x[p]);
+    }
+    return ans;
+  }
+
   std::complex<double> SparseMatrix::trace() const{
     if (!m_finalised){std::cout << "Not finalised! Probably you didn't mean to do this yet!" << std::endl; exit(1);}
     if (m_array->m!=m_array->n) {std::cout << "NOT A SQUARE MATRIX" << std::endl; exit(1);}

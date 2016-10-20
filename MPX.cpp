@@ -132,6 +132,33 @@ namespace ajaj {
     for (std::vector<MPXPair >::const_iterator cit=contractidxs.begin();cit!=contractidxs.end();++cit){
       if (!match(A.m_Indices.at(cit->first),conjA,B.m_Indices.at(cit->second),conjB)){exit(1);}
     }
+
+    //what if the arrays are already suitably shaped?
+    bool readyA(1);
+    bool readyB(1);
+    for (auto&& ci : contractidxs){
+      if (ci.first<A.m_NumRowIndices)
+	readyA=0;
+      if(ci.second>=B.m_NumRowIndices)
+	readyB=0;
+
+      if (!readyA && !readyB) break;
+
+    }
+    if (readyA && readyB){
+      if (conjA) {
+	if (conjB)
+	  return A.m_Matrix.copy_conjugate() * B.m_Matrix.copy_conjugate();
+	else
+	  return A.m_Matrix.copy_conjugate() * B.m_Matrix;
+      }
+      else if (conjB)
+	return A.m_Matrix * B.m_Matrix.copy_conjugate();
+
+      else
+	return A.m_Matrix * B.m_Matrix;
+    }
+
     //entries in contract indices tell us which we need to make 'inner'
     //other order should be preserve
     //make list of old index order (0 to nA-1 and 0 to nB-1)
