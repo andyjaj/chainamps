@@ -386,7 +386,8 @@ namespace ajaj {
     else {
       MPX_matrix accumulator;
       if (separation % 2) //odd > 1
-	accumulator=contract(U.Matrices.at(1),1,contract(contract(W1,0,contract(U.Matrices.at(0),1,U.Matrices.at(0),0,contract11),0,contract0022).RemoveDummyIndices(std::vector<MPXInt>({{0,1}})),0,U.Matrices.at(1),0,contract11),0,contract0110);
+	//accumulator=contract(U.Matrices.at(1),1,contract(contract(W1,0,contract(U.Matrices.at(0),1,U.Matrices.at(0),0,contract11),0,contract0022).RemoveDummyIndices(std::vector<MPXInt>({{0,1}})),0,U.Matrices.at(1),0,contract11),0,contract0110);
+	accumulator=contract(U.Matrices.at(1),1,contract(contract(W1,0,contract(U.Matrices.at(0),1,U.Matrices.at(0),0,contract11),0,contract0022).RemoveDummyIndices(std::vector<MPXInt>({1})),0,U.Matrices.at(1),0,contract21).RemoveDummyIndices(std::vector<MPXInt>({0})),0,contract0110);
       else //even > 0
 	accumulator=contract(U.Matrices.at(1),1,contract(contract(contract(U.Matrices.at(0),1,U.Matrices.at(0),0,contract0011),0,U.Matrices.at(1),0,contract11),0,W1,0,contract12),0,contract0210).RemoveDummyIndices(std::vector<MPXInt>({{2,3}}));
 

@@ -52,7 +52,7 @@ int main(int argc, char** argv){
     for (ajaj::uMPXInt r=0;r< (steps>2 ? steps-2 : 0) ;++r){
       infvol.run(1,-0.0,VarCHI,minS);
       ajaj::UnitCell Ortho(Orthogonalise(infvol.getCentralDecomposition(),infvol.getPreviousLambda()));
-      Ortho.store("Ortho",r);
+      if(Ortho.size()) Ortho.store("Ortho",r); //don't store if the unitcell couldn't be formed
       iDMRGEnergies.push_back(real(ajaj::iTwoVertexEnergy(ColX,RowX,H1,Ortho)));
 
       std::cout << "iDMRG energy per vertex " << iDMRGEnergies.back() << std::endl;

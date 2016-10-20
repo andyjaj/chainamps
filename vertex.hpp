@@ -31,8 +31,17 @@ namespace ajaj{
 	WhichCharge=stoul(s.substr(pos1+1,pos2));
 	Factor=stod(s.substr(pos2+1,s.length()));
       } 
-    } 
+    }
+    friend std::ostream &operator<<(std::ostream &output, const ShiftedOperatorInfo &SOp);
   };
+
+  inline std::ostream &operator<<(std::ostream &output, const ShiftedOperatorInfo &SOp){
+    output << SOp.Name;
+    if (SOp.Factor!=0.0){
+      output << "@"<< SOp.WhichCharge << "@" << SOp.Factor;
+    }
+    return output;
+  }
 
 /** Vertex Operator class contains the matrix elements and the name of an operator of the local (site or integrable chain) Hilbert space.
  *

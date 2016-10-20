@@ -63,6 +63,13 @@ int main(int argc, char** argv){
       }
     }
 
+    std::cout << "Measuring " << (RuntimeArgs.two_point() ? 2 : 1) << "-point function" << std::endl;
+    std::cout << opinfo.front();
+    if (RuntimeArgs.two_point()){
+      std::cout << "(i) " << opinfo.back() << "(i+" << RuntimeArgs.separation() <<")";
+    }
+    std::cout <<std::endl;
+
     //check dims
     ajaj::MPXInt dim(iMEAS_vertex.Operators.size() ? iMEAS_vertex.Operators[0].MatrixElements.rows() : 0);
 
@@ -126,7 +133,7 @@ int main(int argc, char** argv){
 	  }
 
 	  if (OperatorMPOs.size()==1){
-	    if (RuntimeArgs.two_point()!=0) //single site
+	    if (RuntimeArgs.two_point()==0) //single site
 	      indexed_results.back().second.Complex_measurements.emplace_back(OneVertexMeasurement(OperatorMPOs[0].Matrix,AA));
 	    else //same operator, with separation
 	      indexed_results.back().second.Complex_measurements.emplace_back(TwoVertexMeasurement(OperatorMPOs[0].Matrix,OperatorMPOs[0].Matrix,AA,RuntimeArgs.separation()));
@@ -153,7 +160,14 @@ int main(int argc, char** argv){
 
 
     std::ostringstream mss;
-    if (OperatorMPOs.size()){
+    if (opinfo.size()){
+      mss << opinfo.front();
+      if (RuntimeArgs.two_point())
+	mss << "_" << opinfo.back() << "_" << RuntimeArgs.separation();
+      
+    }
+
+    /*if (OperatorMPOs.size()){
       mss << OperatorMPOs[0].Name;
       if (RuntimeArgs.two_point()) {
 	if (OperatorMPOs.size()>1)
@@ -163,7 +177,7 @@ int main(int argc, char** argv){
 
 	mss << "_" << RuntimeArgs.separation();
       }
-    }
+      }*/
 
     std::ostringstream outfilename;
     outfilename << "UNITCELL_Results";
@@ -173,15 +187,12 @@ int main(int argc, char** argv){
 
     std::ostringstream commentstream;
     commentstream << "Index,abs(Overlap)";
-    if (OperatorMPOs.size()) {
+    if (opinfo.size()) {
       std::ostringstream opss;
-      opss << OperatorMPOs[0].Name;
-      if (OperatorMPOs.size()>1){
-	opss << "(i)," << OperatorMPOs[1].Name;
-	opss << "(i+" << RuntimeArgs.separation() << ")";
+      opss << opinfo.front();
+      if (RuntimeArgs.two_point()){
+	opss << "(i)," << opinfo.back() << "(i+" << RuntimeArgs.separation() << ")";
       }
-      else if (RuntimeArgs.two_point())
-	opss << "(i)," << OperatorMPOs[0].Name << "(i+" << RuntimeArgs.separation() << ")";
       commentstream << ",Re(" << opss.str() <<"),Im(" << opss.str() << ")";
     }
 

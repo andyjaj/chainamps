@@ -247,7 +247,7 @@ namespace ajaj {
       {OPERATORFILE,0,"O","operator filename",Arg::NonEmpty,"  -O <filename>, \t--operator-file=<filename>"
        "  \tFile containing sparse matrix definition of operator." },
       {SEPARATION,0,"S","separation",Arg::PositiveDefiniteNumeric,"  -S <number>, \t--separation=<number>"
-       "  \tDistance (in integer units) between two vertex operator measurements: Op1(0),Op2(<number>)" },
+       "\tDistance (in integer units) between two vertex operator measurements: Op1(0),Op2(<number>). Specifying any separation, including 0, is interpreted as a two point measurement (possibly squaring an operator)." },
       {NOINDEX,0,"X","No index",Arg::None,"  -X, \t--no-index"
        "  \tDon't extract index from filenames." },
       { 0, 0, 0, 0, 0, 0 }
@@ -531,20 +531,20 @@ namespace ajaj {
   class iMEAS_Args : public Base_Args{
     unsigned long separation_;
     bool use_filename_index_;
+    bool two_point_;
 
     std::vector<std::string> operator_filenames_;
     std::vector<std::string> files_;
-    bool two_point_;
 
   public:
-    iMEAS_Args(int argc, char* argv[]) : Base_Args(argc,argv,iMEAS_usage), separation_(0),use_filename_index_(1){
+    iMEAS_Args(int argc, char* argv[]) : Base_Args(argc,argv,iMEAS_usage),separation_(0),use_filename_index_(1),two_point_(0){
       if (valid_){
 	if (parse.nonOptionsCount()<1 || std::string(parse.nonOption(0))==std::string("-")) valid_=0;
 	else {
 	  for (size_t f=0;f<parse.nonOptionsCount();++f){
 	    files_.emplace_back(parse.nonOption(f));
 	  }
-	  if (options[SEPARATION]){
+	  if (options[SEPARATION]){ //has any spearation been explicitly defined, even if zero? Then definitely a two point function
 	    separation_=stoul(options[SEPARATION].arg);
 	    two_point_=1;
 	  }
@@ -554,10 +554,8 @@ namespace ajaj {
 	    for (option::Option* opt = options[OPERATORFILE]; opt; opt = opt->next()){
 	      operator_filenames_.emplace_back(opt->arg);
 	    }
-	  if (operator_filenames_.size()>1 && !options[SEPARATION]){
+	  if (operator_filenames_.size()>1){//defined more than one op? then two point, on same vertex
 	    two_point_=1;
-	    std::cout << "Specifying more than one operator requires a separation to be defined!" <<std::endl<<std::endl;
-	    valid_=0;
 	  }
 	}
       }

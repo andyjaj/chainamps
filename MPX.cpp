@@ -692,6 +692,7 @@ namespace ajaj {
   }
 
   MPX_matrix& MPX_matrix::RemoveDummyIndices(std::vector<MPXInt> indices_for_removal){
+    // this->print_indices();
     if (indices_for_removal.size()>=m_Indices.size()-1){
       std::cout << "Too many indices for removal!" << std::endl;
 	*this=MPX_matrix();
@@ -709,7 +710,11 @@ namespace ajaj {
 
     MPXInt num_removed_row_indices(0); //how many of the removed indices are row indices?
     for (auto i : indices_for_removal){
-      if (i<m_NumRowIndices) ++num_removed_row_indices; 
+      if (i<m_NumRowIndices) ++num_removed_row_indices;
+    }
+    if (num_removed_row_indices==m_NumRowIndices){
+      std::cout <<"All row indices would be removed, requiring a reshape!"<<std::endl;
+      exit(1);
     }
 
     std::vector<MPXInt> newindices(m_Indices.size());
@@ -727,8 +732,8 @@ namespace ajaj {
 
     swap(new_m_Indices,m_Indices);
     m_NumRowIndices-=num_removed_row_indices;
-    //ned to update num row indices!!!
 
+    // this->print_indices();
     return *this;
   }
 
