@@ -428,29 +428,42 @@ namespace ajaj {
   }
 
 
-  void MultiVertexMeasurement::link_(const MPO_matrix* Op, const MPX_matrix& A) {
-    if (Op){
+  void MultiVertexMeasurement::link_(const std::vector<const MPO_matrix*>& ops /*const MPO_matrix* Op*/, const MPX_matrix& A) {
+    //if (Op){
+    if (ops.size()){
       //make sure to strip 'dummy' indices by contract to sparse and rebuild indices
       //we assume single site operators, so MPO _matrix_ indices are dummies...
       std::vector<MPXIndex> indices;
       indices.emplace_back(1,A.Index(2));
       indices.emplace_back(0,A.Index(2));
-      T_=std::move(MPX_matrix(A.GetPhysicalSpectrum(),indices,1,contract_to_sparse(A,1,contract(*Op,0,contract(T_,0,A,0,contract11),0,contract21),0,contract0013)));
+      T_=std::move(contract(*ops[0],0,contract(T_,0,A,0,contract11),0,contract21).RemoveDummyIndices(std::vector<MPXInt>({{1,2}})));
+      for (size_t o=1;o<ops.size();++o){
+	T_=std::move(contract(*ops[o],0,T_,0,contract20).RemoveDummyIndices(std::vector<MPXInt>({{1,2}})));
+      }
+      T_=std::move(contract(A,1,T_,0,contract0011));
+      //T_=std::move(MPX_matrix(A.GetPhysicalSpectrum(),indices,1,contract_to_sparse(A,1,contract(*Op,0,contract(T_,0,A,0,contract11),0,contract21),0,contract0013)));
     }
     else {
       T_=std::move(contract(A,1,contract(T_,0,A,0,contract11),0,contract0110));
     }
   }
   
-  void MultiVertexMeasurement::start_chain_(const MPO_matrix* Op, const MPX_matrix& A) {
-    if (Op){
+  void MultiVertexMeasurement::start_chain_(/*const MPO_matrix* Op,*/ const MPX_matrix& A) {
+    std::vector<const MPO_matrix*> ops(get_ops(start()));
+    // if (Op){
+    if (ops.size()){
       //make sure to strip 'dummy' indices by contract to sparse and rebuild indices
       //we assume single site operators, so MPO _matrix_ indices are dummies...
       std::vector<MPXIndex> indices;
       indices.emplace_back(1,A.Index(2));
-      //indices.emplace_back(0,Op->Index(3));
       indices.emplace_back(0,A.Index(2));
-      T_=std::move(MPX_matrix(A.GetPhysicalSpectrum(),indices,1,contract_to_sparse(A,1,contract(*Op,0,A,0,contract20),0,contract0013)));
+      //first special
+      T_=std::move(contract(*ops[0],0,A,0,contract20).RemoveDummyIndices(std::vector<MPXInt>({{1,2}})));
+      for (size_t o=1;o<ops.size();++o){
+	T_=std::move(contract(*ops[o],0,T_,0,contract20).RemoveDummyIndices(std::vector<MPXInt>({{1,2}}))); //get rid of the single vertex MPO indices.
+      }
+      T_=std::move(contract(A,1,T_,0,contract0011));
+      //T_=std::move(MPX_matrix(A.GetPhysicalSpectrum(),indices,1,contract_to_sparse(A,1,T_,0,contract0011)));
     }
     else {
       T_=std::move(contract(A,1,A,0,contract0011));
@@ -461,7 +474,6 @@ namespace ajaj {
     std::cout << "Finishing measurement contraction chain" << std::endl;
     Result_=contract_to_sparse(Lambda,0,contract(T_,0,Lambda,0,contract10),0,contract0110).trace();
     std::cout << "Done" << std::endl;
-
   }
 
   TransferMatrixComponents::TransferMatrixComponents(const std::vector<const MPS_matrix*>& KetPtrs, bool HV, const State* Target) : TransferMatrixComponents(KetPtrs,KetPtrs,HV,Target) {}

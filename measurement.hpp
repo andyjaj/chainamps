@@ -37,9 +37,20 @@ namespace ajaj {
     MPX_matrix T_;
     std::complex<double> Result_;
 
-    void link_(const MPO_matrix* Op, const MPX_matrix& A);
-    void start_chain_(const MPO_matrix* Op, const MPX_matrix& A);
+    void link_(const std::vector<const MPO_matrix*>& ops /*const MPO_matrix* Op*/, const MPX_matrix& A);
+    void start_chain_(/*const MPO_matrix* Op,*/ const MPX_matrix& A);
     void finish_chain_(const MPX_matrix& Lambda);
+
+    std::vector<const MPO_matrix*> get_ops(uMPXInt v){
+      std::vector<const MPO_matrix*> ans; 
+      for (auto&& vop : VertexOperatorPtrs_){
+	  if (vop.position()>v) break; //stop searching when we reach a point past v.
+	  if (v==vop.position()) {
+	    ans.emplace_back(vop.MPO_ptr());
+	  }	
+	}
+      return ans;
+    }
   public:
     MultiVertexMeasurement(uMPXInt start, const MPO_matrix* Op1Ptr, uMPXInt finish, const MPO_matrix* Op2Ptr) : VertexOperatorPtrs_({{meas_pair(start,Op1Ptr), meas_pair(finish,Op2Ptr)}}), T_(Op1Ptr->GetPhysicalSpectrum()),Result_(0.0) {
       if (start>finish || start<1){
@@ -47,12 +58,13 @@ namespace ajaj {
 	std::cout << "start must be >=1 and < finish. finish must be <= Number of Vertices"<<std::endl;
 	exit(1);
       }
-      else if (start==finish && Op2Ptr!=nullptr){
-	//single vertex measurement means no second operator
-	std::cout << "Incorrectly defined MultiVertexMeasurement" << start << "," << finish <<std::endl;
-	std::cout << "If start==finish, no second operator should be defined."<<std::endl;
+      /*else if (start==finish && Op2Ptr!=nullptr){ //2 operators on the same vertex
+	//std::cout << "Incorrectly defined MultiVertexMeasurement" << start << "," << finish <<std::endl;
+	//std::cout << "If start==finish, no second operator should be defined."<<std::endl;
+	std::cout <<"Measuring two point function on a single vertex" <<std::endl;
+	//make this a special single vertex measurement...
 	exit(1);
-      }
+	}*/
     }
 
     MultiVertexMeasurement(uMPXInt start, const MPO_matrix* OpPtr) : VertexOperatorPtrs_({{meas_pair(start,OpPtr)}}), T_(OpPtr->basis()),Result_(0.0) {}
@@ -62,21 +74,31 @@ namespace ajaj {
     uMPXInt finish() const {return VertexOperatorPtrs_.back().position();}
     void update(uMPXInt v, const MPXDecomposition& D) {
       if (v<finish() && v>start()){
-	const MPO_matrix* op_p=nullptr;
-	for (auto&& vop : VertexOperatorPtrs_){
-	  if (v==vop.position()) {op_p=vop.MPO_ptr(); break;}	
-	}
-	link_(op_p,D.ColumnMatrix);
+	/*const MPO_matrix* op_p=nullptr;
+	  for (auto&& vop : VertexOperatorPtrs_){
+	  if (vop.position()>v) break; //stop searching when we reach a point past v.
+	  if (v==vop.position()) {
+	    op_p=vop.MPO_ptr(); break;
+	  }
+	  }
+	  link_(op_p,D.ColumnMatrix);*/
+	link_(get_ops(v),D.ColumnMatrix);
+
       }
       else {
 	//depending on v, start measurement chain, or continue it
 	if (v==start()){
-	 start_chain_(VertexOperatorPtrs_.begin()->MPO_ptr(),D.ColumnMatrix); //contract first measurement etc.
+	  std::vector<const MPO_matrix*> ops(get_ops(v));
+	  //start_chain_(VertexOperatorPtrs_.begin()->MPO_ptr(),D.ColumnMatrix); //contract first measurement etc.
+	  start_chain_(D.ColumnMatrix); //contract first measurement etc.
+
 	}
 	if (v==finish()){
 	  //apply and finish off with lambda^2
-	  if (finish()!=start()) //one vertex measurement doesn't need this step
-	    link_(VertexOperatorPtrs_.back().MPO_ptr(),D.ColumnMatrix);
+	  if (finish()!=start()) {//one vertex measurement doesn't need this step
+	    //link_(VertexOperatorPtrs_.back().MPO_ptr(),D.ColumnMatrix);
+	    link_(get_ops(v),D.ColumnMatrix);
+	  }
 	  
 	  finish_chain_(MPX_matrix(D.ColumnMatrix.GetPhysicalSpectrum(),D.ColumnMatrix.Index(2),D.Values));
 	}

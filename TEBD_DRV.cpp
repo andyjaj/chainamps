@@ -53,7 +53,7 @@ int main(int argc, char** argv){
 	  }
 	}
 	if (!found){ //if not already generated
-	  if (myModel.vertex.operator_exists(op.first)){ //do matrix elements exist in vertex def?
+	  if (myModel.vertex.operator_exists(op.first)){ //do matrix elements already exist in vertex def?
 	    std::cout << "Operator " << op.first << " found in vertex definition." << std::endl;
 	    found=1;
 	    index=generated_MPOs.size();
@@ -81,7 +81,7 @@ int main(int argc, char** argv){
 	  temp_measurement_vec.emplace_back(index,op.second);
 	}
 	else {
-	  std::cout << "Measurement " << op.first << "couldn't be found." <<std::endl;
+	  std::cout << "Operator " << op.first << "couldn't be found or created from predefined matrix elements." <<std::endl;
 	  return 0;
 	} //not found
       }
