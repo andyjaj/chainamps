@@ -1984,7 +1984,11 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     //this is cleaner in terms of reallocations, but might be slower.
     //it should be easy to thread though as we are just accumulating (parallel reducing) nz
     //need an array for flagging whether an entry appears in ans or not.
-    assert(lhs.cols()==rhs.rows());
+    if (lhs.cols()!=rhs.rows()) {
+      std::cout << "Invalid dimensions for matrix multiplication"<< std::endl;
+      std::cout << lhs.cols() << " " << rhs.rows() <<std::endl;
+      //exit(1);
+    }
     //Threading is over cols of rhs, so that needs to be a decent size.
     //However if number of non zeros is really small, then that is probably not worth it either
 

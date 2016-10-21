@@ -6,7 +6,6 @@
 #include <iomanip>
 #include <utility>
 #include <numeric>
-#include <chrono>
 
 #include "ajaj_common.hpp"
 #include "vertex.hpp"
@@ -33,7 +32,6 @@ int main(int argc, char** argv){
     double minS(0.0);
     ajaj::uMPXInt steps(RuntimeArgs.number_of_steps());
 
-    auto t1 = std::chrono::high_resolution_clock::now();
     infvol.run(steps > 2 ? 2 : steps ,convergence_test,CHI,minS);
     //done for at least "steps" number of steps
     //now do orthogs and averaging
@@ -52,7 +50,9 @@ int main(int argc, char** argv){
     for (ajaj::uMPXInt r=0;r< (steps>2 ? steps-2 : 0) ;++r){
       infvol.run(1,-0.0,VarCHI,minS);
 
+#ifdef TIMING
       ajaj::dmrg_print_time_info();
+#endif
 
       ajaj::UnitCell Ortho(Orthogonalise(infvol.getCentralDecomposition(),infvol.getPreviousLambda()));
       if(Ortho.size()) Ortho.store("Ortho",r); //don't store if the unitcell couldn't be formed
@@ -64,15 +64,11 @@ int main(int argc, char** argv){
       Ortho.OutputOneVertexDensityMatrix("OneVertexRho",r);
     }
 
-    auto t2 = std::chrono::high_resolution_clock::now();
-
     std::cout << "SUMMARY of iDMRG thermodynamic energy per vertex" << std::endl;
     std::cout << std::setprecision(16);
     for (auto iE : iDMRGEnergies){
       std::cout << iE << std::endl;
-    }
-    std::cout << "Run took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() << " milliseconds" << std::endl;
-    
+    }    
     return 0;
   }
   return 1;

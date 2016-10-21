@@ -13,7 +13,7 @@
 #include "data.hpp"
 
 namespace ajaj {
-
+#ifdef TIMING
   static double formation_time_millisecs (0.0);
   static size_t formations (0);
 
@@ -50,6 +50,7 @@ namespace ajaj {
 
     std::cout <<std::endl;
   }
+#endif
 
   bool BlocksStructure::save_left_block(uMPXInt l){
     std::stringstream leftname;
@@ -700,20 +701,31 @@ namespace ajaj {
   MPX_matrix TwoVertexWavefunction(const MPX_matrix& LB, const MPO_matrix& H, const MPX_matrix& RB, const std::vector<ProjectorBlocks>* ProjectorBlocksPtr, MPXInt NumVertices, Data& result, SparseMatrix* guessptr){
     //Need to figure out 'length' then choose strategy appropriately.
     //form LeftPart, RightPart
+#ifdef TIMING
     num_op_x=0; //reset
-
     auto t1 = std::chrono::high_resolution_clock::now();
+#endif
+
     TwoVertexComponents stuff(LB,H,RB,ProjectorBlocksPtr);
+
+#ifdef TIMING
     auto t2 = std::chrono::high_resolution_clock::now();
     formation_time_millisecs+=std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count();
     formations++;
+#endif
+
 
     MPXInt num_to_find = stuff.length() >= 5 ? 4 : 1;
+#ifdef TIMING
     auto tD1 = std::chrono::high_resolution_clock::now();
+#endif
+
     SparseHED decomp(stuff.HED(num_to_find,SMALLESTREAL,guessptr));
+#ifdef TIMING
     auto tD2 = std::chrono::high_resolution_clock::now();
     decomp_time_millisecs+=std::chrono::duration_cast<std::chrono::milliseconds>(tD2-tD1).count();
     decomps++;
+#endif
 
     std::cout << "Lowest energy/Number of Vertices: " << decomp.Values[0]/double(NumVertices) <<std::endl;
     if (num_to_find>1) {
@@ -733,7 +745,7 @@ namespace ajaj {
     return 1.0-Sum((guess.LambdaR*SparseMatrix(PreviousLambda)).SVD());
   }
 
-  TwoVertexComponents::TwoVertexComponents(const MPX_matrix& L, const MPO_matrix& HMPO, const MPX_matrix& R, const std::vector<ProjectorBlocks>* P, const State* StatePtr) : LeftBlock(L),H(HMPO),RightBlock(R),ProjectorsPtr(P),TargetStatePtr(StatePtr),m_length(L.Index(5).size()*H.Index(2).size()*R.Index(4).size()*H.Index(2).size()),LeftPart(contract(H,0,LeftBlock,0,contract13)),RightPart(contract(H,0,RightBlock,0,contract32)) {
+  TwoVertexComponents::TwoVertexComponents(const MPX_matrix& L, const MPO_matrix& HMPO, const MPX_matrix& R, const std::vector<ProjectorBlocks>* P, const State* StatePtr) : LeftBlock(L),H(HMPO),RightBlock(R),ProjectorsPtr(P),TargetStatePtr(StatePtr),m_length(L.Index(5).size()*H.Index(2).size()*R.Index(4).size()*H.Index(2).size()),LeftPart(reorder(contract(H,0,LeftBlock,0,contract13).RemoveDummyIndices(std::vector<MPXInt>({{3,5,6}})),0,reorder03214,3)),RightPart(reorder(contract(H,0,RightBlock,0,contract32).RemoveDummyIndices(std::vector<MPXInt>({{4,5,7}})),0,reorder12403,3)) {
     
 #ifndef NDEBUG
     std::cout << "H MPO" << std::endl;
@@ -803,7 +815,6 @@ namespace ajaj {
     if (allowed_indices.size()<400){
       //just make the (dense) matrix and use lapack
       static std::pair<const std::vector<MPXInt>,const std::vector<MPXInt> > condition={{1,7},{2,6}};
-      //TranslationBlock<DenseMatrix> TB(contract_conditional<DenseMatrix>(LeftPart,0,RightPart,0,contract21,condition));
       TranslationBlock<DenseMatrix> TB(contract_conditional<DenseMatrix>(contract(H,0,LeftBlock,0,contract13),0,contract(H,0,RightBlock,0,contract32),0,contract21,condition));
       //use lapack
       DenseHED dense_ans(TB.Block.HED(numevals,which));
@@ -848,23 +859,30 @@ namespace ajaj {
 
   void TwoVertexMPOMPSMultiply(const TwoVertexComponents* arraystuff, std::complex<double> *in, std::complex<double> *out){
     SparseMatrix V(arraystuff->vcols,arraystuff->vrows,arraystuff->vrows);//undocumented behaviour of SparseMatrix, using transposed rows and cols to avoid unnecessary row ordering...
+#ifdef TIMING
     auto vt1 = std::chrono::high_resolution_clock::now();
+#endif
+
     for (struct {std::vector<std::array<MPXInt,2> >::const_iterator cit; MPXInt idx;} itstruct ={arraystuff->rows_and_cols.begin(), 0};itstruct.cit!=arraystuff->rows_and_cols.end();++itstruct.cit,++itstruct.idx){
       V.entry((*(itstruct.cit))[1],(*(itstruct.cit))[0],in[itstruct.idx]);
     }
     MPX_matrix Vector(arraystuff->LeftPart.GetPhysicalSpectrum(),arraystuff->indices,2,V.cheap_no_transpose_finalise());
+
+#ifdef TIMING
     auto vt2 = std::chrono::high_resolution_clock::now();
     vec_time_millisecs+=std::chrono::duration_cast<std::chrono::microseconds>(vt2-vt1).count();
     vec_formations++;
 
     auto c1t1 = std::chrono::high_resolution_clock::now();
-    MPX_matrix M(contract(arraystuff->LeftPart,0,Vector,0,contract1071));
+    //MPX_matrix M(contract(arraystuff->LeftPart,0,Vector,0,contract1071));
+    MPX_matrix M(std::move(contract(arraystuff->LeftPart,0,Vector,0,contract3041).ShiftNumRowIndices(2)));
     auto c1t2 = std::chrono::high_resolution_clock::now();
     c1_time_ms+=std::chrono::duration_cast<std::chrono::milliseconds>(c1t2-c1t1).count();
     c1_reps++;
 
     auto c2t1 = std::chrono::high_resolution_clock::now();
-    SparseMatrix SM(contract_to_sparse(M,0,arraystuff->RightPart,0,contract116276));
+    //SparseMatrix SM(contract_to_sparse(M,0,arraystuff->RightPart,0,contract116276));
+    SparseMatrix SM(contract_to_sparse(M,0,arraystuff->RightPart,0,contract203142));
     auto c2t2 = std::chrono::high_resolution_clock::now();
     c2_time_ms+=std::chrono::duration_cast<std::chrono::milliseconds>(c2t2-c2t1).count();
     c2_reps++;
@@ -882,8 +900,12 @@ namespace ajaj {
     auto c4t2 = std::chrono::high_resolution_clock::now();
     c4_time_ms+=std::chrono::duration_cast<std::chrono::microseconds>(c4t2-c4t1).count();
     c4_reps++;
+#else
+ 
+    DumbExtractWithZeros(reshape(contract_to_sparse(std::move(contract(arraystuff->LeftPart,0,Vector,0,contract3041).ShiftNumRowIndices(2)),0,arraystuff->RightPart,0,contract203142),arraystuff->length()),arraystuff->allowed_indices,out);
 
-    //DumbExtractWithZeros(reshape(contract_to_sparse(contract(arraystuff->LeftPart,0,Vector,0,contract1071),0,arraystuff->RightPart,0,contract116276),arraystuff->length()),arraystuff->allowed_indices,out);
+#endif
+
     //projector bits
     const std::vector<TensorWeightPair>& PTensors(arraystuff->ProjectorTensors);
     //loop through list

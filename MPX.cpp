@@ -139,20 +139,40 @@ namespace ajaj {
 
     if (A.m_Indices.size()-A.m_NumRowIndices!=contractidxs.size()) readyA=0;
     if (B.m_NumRowIndices!=contractidxs.size()) readyB=0;
-
-    for (auto&& ci : contractidxs){
-      if (!readyA && !readyB) break; //neither are correct shape
-
-      if (ci.first<A.m_NumRowIndices) //not a column index
-	readyA=0;
-      if(ci.second>=B.m_NumRowIndices) //not a row index
-	readyB=0;
-      if ((ci.first-A.m_NumRowIndices)!=ci.second) {//contraction indices don't appear in same order, so reshape at least one
-	(B.m_Matrix.nz() < A.m_Matrix.nz() ? readyB=0 : readyA=0);
+    
+    if (readyA){
+      MPXInt checkA=-1;
+      for (auto&& ci : contractidxs){
+	if (ci.first<A.m_NumRowIndices) {//not a column index
+	  readyA=0;
+	  break;
+	}
+	if (ci.first<checkA){ //not ordered!
+	  readyA=0;
+	  break;
+	}
+	else if (ci.first==checkA) {std::cout << "Illegal contraction, repeated indices!" <<std::endl; exit(1);}
+	checkA=ci.first;
       }
-
     }
 
+    if (readyB){
+      MPXInt checkB=-1;
+      for (auto&& ci : contractidxs){
+	if (ci.second>=B.m_NumRowIndices) {//not a column index
+	  readyB=0;
+	  break;
+	}
+	if (ci.second<checkB){ //not ordered!
+	  readyB=0;
+	  break;
+	}
+	else if (ci.second==checkB) {std::cout << "Illegal contraction, repeated indices!" <<std::endl; exit(1);}
+	checkB=ci.second;
+      }
+    }
+
+    //std::cout << "A" << readyA << "\t B" << readyB <<std::endl; 
     if (readyA && readyB){
       return conj_multiply(A.m_Matrix,conjA,B.m_Matrix,conjB);
     }
@@ -169,7 +189,7 @@ namespace ajaj {
       std::vector<Sparseint> neworderA(A.m_Indices.size());
       std::iota(neworderA.begin(),neworderA.end(),0);
       for (std::vector<MPXPair >::const_iterator cit=contractidxs.begin();cit!=contractidxs.end();++cit){
-	*(std::remove(neworderA.begin(),neworderA.end(),cit->second))=cit->second;
+	*(std::remove(neworderA.begin(),neworderA.end(),cit->first))=cit->first;
       }
       return conj_multiply(reshape(A.m_Matrix,A.m_NumRowIndices,A.m_Indices.size()-contractidxs.size(),A.dimsvector(),neworderA,conjA),0,B.m_Matrix,conjB);
     }
@@ -230,7 +250,7 @@ namespace ajaj {
       }
     }
 
-    /*if (Indices.size()!=A.m_Indices.size()+B.m_Indices.size()-2*contractidxs.size()){
+    if (Indices.size()!=A.m_Indices.size()+B.m_Indices.size()-2*contractidxs.size()){
       for (auto&& i : contractidxs){
 	std::cout << "(" << i.first << "," << i.second << ") "; 
       }
@@ -238,10 +258,10 @@ namespace ajaj {
 
       A.print_indices();
       B.print_indices();
-      std::cout <<"ERROR" <<std::endl; exit(1);
-    }*/
+      std::cout <<"ERROR assembling post contraction indices..." <<std::endl; exit(1);
+    }
 
-    return MPX_matrix(*(A.m_SpectrumPtr),Indices,new_num_row_indices,contract_to_sparse(A,conjA,B,conjB,contractidxs));
+    return MPX_matrix(A.basis(),Indices,new_num_row_indices,contract_to_sparse(A,conjA,B,conjB,contractidxs));
     
     /*
     //first check spectra match
