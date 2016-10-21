@@ -117,7 +117,7 @@ namespace ajaj {
   protected: //inherited objects need to be able to see these
     const EigenStateArray* m_SpectrumPtr; //shouldn't change. Using a ptr to a const means we can use the default equals provided by the compiler
     std::vector<MPXIndex> m_Indices;
-    Sparseint m_NumRowIndices;
+    MPXInt m_NumRowIndices;
     SparseMatrix m_Matrix;
   public:
     //1st arg is a ref to the vertex spectrum,

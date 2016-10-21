@@ -136,29 +136,44 @@ namespace ajaj {
     //what if the arrays are already suitably shaped?
     bool readyA(1);
     bool readyB(1);
+
+    if (A.m_Indices.size()-A.m_NumRowIndices!=contractidxs.size()) readyA=0;
+    if (B.m_NumRowIndices!=contractidxs.size()) readyB=0;
+
     for (auto&& ci : contractidxs){
-      if (ci.first<A.m_NumRowIndices)
+      if (!readyA && !readyB) break; //neither are correct shape
+
+      if (ci.first<A.m_NumRowIndices) //not a column index
 	readyA=0;
-      if(ci.second>=B.m_NumRowIndices)
+      if(ci.second>=B.m_NumRowIndices) //not a row index
 	readyB=0;
-
-      if (!readyA && !readyB) break;
-
-    }
-    if (readyA && readyB){
-      if (conjA) {
-	if (conjB)
-	  return A.m_Matrix.copy_conjugate() * B.m_Matrix.copy_conjugate();
-	else
-	  return A.m_Matrix.copy_conjugate() * B.m_Matrix;
+      if ((ci.first-A.m_NumRowIndices)!=ci.second) {//contraction indices don't appear in same order, so reshape at least one
+	(B.m_Matrix.nz() < A.m_Matrix.nz() ? readyB=0 : readyA=0);
       }
-      else if (conjB)
-	return A.m_Matrix * B.m_Matrix.copy_conjugate();
 
-      else
-	return A.m_Matrix * B.m_Matrix;
     }
 
+    if (readyA && readyB){
+      return conj_multiply(A.m_Matrix,conjA,B.m_Matrix,conjB);
+    }
+    else if (readyA){
+      std::vector<Sparseint> neworderB(B.m_Indices.size());
+      std::iota(neworderB.begin(),neworderB.end(),0);
+      for (std::vector<MPXPair >::const_iterator cit=contractidxs.begin();cit!=contractidxs.end();++cit){
+	*(std::remove(neworderB.begin(),neworderB.end(),cit->second))=cit->second;
+      }
+      std::rotate(neworderB.begin(),neworderB.end()-contractidxs.size(),neworderB.end());
+      return conj_multiply(A.m_Matrix,conjA,reshape(B.m_Matrix,B.m_NumRowIndices,contractidxs.size(),B.dimsvector(),neworderB,conjB),0);
+    }
+    else if (readyB){
+      std::vector<Sparseint> neworderA(A.m_Indices.size());
+      std::iota(neworderA.begin(),neworderA.end(),0);
+      for (std::vector<MPXPair >::const_iterator cit=contractidxs.begin();cit!=contractidxs.end();++cit){
+	*(std::remove(neworderA.begin(),neworderA.end(),cit->second))=cit->second;
+      }
+      return conj_multiply(reshape(A.m_Matrix,A.m_NumRowIndices,A.m_Indices.size()-contractidxs.size(),A.dimsvector(),neworderA,conjA),0,B.m_Matrix,conjB);
+    }
+    else { //neither are currently shaped correctly, and we can avoid a transpose by including it in the reshape...
     //entries in contract indices tell us which we need to make 'inner'
     //other order should be preserve
     //make list of old index order (0 to nA-1 and 0 to nB-1)
@@ -175,22 +190,60 @@ namespace ajaj {
       *(std::remove(neworderB.begin(),neworderB.end(),cit->second))=cit->second;
       //container size doesn't change!
     }
-    //confusingly we move the inner indices to the left of A and the right of B
-    //this is because we then only need one transpose to order the rows of the final sparsematrix
-    //Last contractidxs.size() elements of A need to become the first, without messing up their individual order!
-#if defined(USETBB)
+#if defined(USETBB) //no avoidance of extra transpose...
     std::rotate(neworderB.begin(),neworderB.end()-contractidxs.size(),neworderB.end());
     return std::move(reshape(A.m_Matrix,A.m_NumRowIndices,neworderA.size()-contractidxs.size(),A.dimsvector(),neworderA,conjA)*reshape(B.m_Matrix,B.m_NumRowIndices,contractidxs.size(),B.dimsvector(),neworderB,conjB));
 #else
+    //avoid extra transpose through reshape
     std::rotate(neworderA.begin(),neworderA.end()-contractidxs.size(),neworderA.end());
     return std::move(NoTransMultiply(reshape(B.m_Matrix,B.m_NumRowIndices,neworderB.size()-contractidxs.size(),B.dimsvector(),neworderB,conjB),reshape(A.m_Matrix,A.m_NumRowIndices,contractidxs.size(),A.dimsvector(),neworderA,conjA)).transpose());
 #endif
+    }
   }
 
-  MPX_matrix contract(const MPX_matrix& A, bool conjA,const MPX_matrix& B, bool conjB, const std::vector<MPXPair >&  contractidxs){
+  MPX_matrix contract(const MPX_matrix& A, bool conjA,const MPX_matrix& B, bool conjB, const std::vector<MPXPair>& contractidxs){
 #ifndef NDEBUG
     std::cout << "Contract" << std::endl;
 #endif
+    //figure out new indices
+    std::vector<MPXIndex> Indices;
+
+    for (size_t a=0;a<A.m_Indices.size();++a){
+      bool drop(0);
+      for (auto&& ci : contractidxs){
+	if (ci.first==a) {drop=1; break;}
+      }
+      if (!drop){ //if we are keeping this index
+	Indices.emplace_back(conjA ? A.m_Indices.at(a).flip() : A.m_Indices.at(a));
+      }
+    }
+
+    MPXInt new_num_row_indices(Indices.size());
+
+    for (size_t b=0;b<B.m_Indices.size();++b){
+      bool drop(0);
+      for (auto&& ci : contractidxs){
+	if (ci.second==b) {drop=1; break;}
+      }
+      if (!drop){
+	Indices.emplace_back(conjB ? B.m_Indices.at(b).flip() : B.m_Indices.at(b));
+      }
+    }
+
+    /*if (Indices.size()!=A.m_Indices.size()+B.m_Indices.size()-2*contractidxs.size()){
+      for (auto&& i : contractidxs){
+	std::cout << "(" << i.first << "," << i.second << ") "; 
+      }
+      std::cout << std::endl << new_num_row_indices << " " << Indices.size() <<std::endl;
+
+      A.print_indices();
+      B.print_indices();
+      std::cout <<"ERROR" <<std::endl; exit(1);
+    }*/
+
+    return MPX_matrix(*(A.m_SpectrumPtr),Indices,new_num_row_indices,contract_to_sparse(A,conjA,B,conjB,contractidxs));
+    
+    /*
     //first check spectra match
     if (A.m_SpectrumPtr!=B.m_SpectrumPtr){std::cout <<"Physical Indices don't match!" << std::endl;exit(1);}
     //next check contraction indices match sizes match!
@@ -226,8 +279,6 @@ namespace ajaj {
     }
     return MPX_matrix(*(A.m_SpectrumPtr),Indices,neworderA.size()-contractidxs.size(),std::move(reshape(A.m_Matrix,A.m_NumRowIndices,neworderA.size()-contractidxs.size(),A.dimsvector(),neworderA,conjA)*reshape(B.m_Matrix,B.m_NumRowIndices,contractidxs.size(),B.dimsvector(),neworderB,conjB)));
 
-    //return MPX_matrix(*(A.m_SpectrumPtr),Indices,neworderA.size()-contractidxs.size(),std::move(NoTransMultiply(reshape(A.m_Matrix,A.m_NumRowIndices,neworderA.size()-contractidxs.size(),A.dimsvector(),neworderA,conjA),reshape(B.m_Matrix,B.m_NumRowIndices,contractidxs.size(),B.dimsvector(),neworderB,conjB)).order_rows()));
-
 #else
     //confusingly we move the inner indices to the left of A and the right of B
     //this is because we then only need one transpose to order the rows of the final sparsematrix
@@ -244,7 +295,7 @@ namespace ajaj {
     }
     return MPX_matrix(*(A.m_SpectrumPtr),Indices,neworderA.size()-contractidxs.size(),std::move(NoTransMultiply(reshape(B.m_Matrix,B.m_NumRowIndices,neworderB.size()-contractidxs.size(),B.dimsvector(),neworderB,conjB),reshape(A.m_Matrix,A.m_NumRowIndices,contractidxs.size(),A.dimsvector(),neworderA,conjA)).transpose()));
 #endif
-
+    */
   }
 
   SparseMatrix reshape_to_vector(const MPX_matrix& A){
