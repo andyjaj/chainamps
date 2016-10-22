@@ -2,6 +2,12 @@ cmake_minimum_required(VERSION 2.6)
 project(ChainAMPS)
 
 option(TBB "Use tbb" ON)
+option(TIMING "Timings" ON)
+
+if(TIMING)
+  add_definitions( -DTIMING)
+endif(TIMING)
+
 
 #Requires c++11 compile flag
 set(CMAKE_CXX_FLAGS "-std=c++11")
