@@ -29,8 +29,8 @@ int main(int argc, char** argv){
     ajaj::uMPXInt trotter_order(RuntimeArgs.trotter_order());
     ajaj::uMPXInt measurement_interval(RuntimeArgs.measurement_interval());
     double time_step(RuntimeArgs.step_size());
-    std::vector<ajaj::MPO_matrix> measured_operators(1,myModel.vertex.make_one_site_operator(1)); //for Ising this is the fermion occupation number on a chain
-    ajaj::DataOutput results(ajaj::OutputName(RuntimeArgs.filename(),"Evolution.dat"),"Index, Time, Truncation, Entropy, abs(Overlap), Real(Overlap), Im(Overlap), Re(Op1), Im(Op1), ...");
+    std::vector<ajaj::MPO_matrix> measured_operators;// can insert runtime measurements here
+    ajaj::DataOutput results(ajaj::OutputName(RuntimeArgs.filename(),"Evolution.dat"),"Index, Time, Truncation, Entropy, abs(Overlap), Real(Overlap), Im(Overlap)");
 
     //symmetric superposition starting state
     /*ajaj::StateArray sa(1,myvertex.Spectrum[0]);

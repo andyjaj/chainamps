@@ -126,7 +126,7 @@ int main()
     for(int j=0;j<nstate;++j) {
       // <i|phase|j> 
       phase[i*nstate+j] = phase_me(Beta,i,j);
-      printf("%3.3f ",density_int[i*nstate+j]);
+      printf("%3.3f ",phase[i*nstate+j]);
     }
   }
 

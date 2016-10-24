@@ -83,7 +83,10 @@ namespace ll{
 
     ModelVertex.Operators.push_back(ajaj::VertexOperator("Psi",ModelVertex.Spectrum.size()));      
     ModelVertex.Operators.push_back(ajaj::VertexOperator("Psi_dagger",ModelVertex.Spectrum.size()));      
-    ModelVertex.Operators.push_back(ajaj::VertexOperator("Density",ModelVertex.Spectrum.size()));      
+    ModelVertex.Operators.push_back(ajaj::VertexOperator("Density",ModelVertex.Spectrum.size()));   
+    ModelVertex.Operators.push_back(ajaj::VertexOperator("Density_integrated",ModelVertex.Spectrum.size()));   
+    ModelVertex.Operators.push_back(ajaj::VertexOperator("Phase",ModelVertex.Spectrum.size()));   
+
 
     double factor=pow(tpi_R,Beta*Beta); //get this right!!!
 
@@ -92,6 +95,9 @@ namespace ll{
 	std::complex<double> M_E_=rmk::non_chir_psi(row,col)*factor;
 	std::complex<double> M_E_dagger_=rmk::non_chir_psi_dagger(row,col)*factor;
 	std::complex<double> density=-1.*rmk::density_me(Beta,row,col)/(2.0 *R*Beta);
+	std::complex<double> density_int=-1.*R*rmk::density_int_me(Beta,row,col)/(2.0 *R*Beta);
+	std::complex<double> phase=rmk::phase_me(Beta,row,col);
+
 	if (abs(M_E_)>SPARSETOL){
 	  ModelVertex.Operators.at(0).MatrixElements.entry(row,col,M_E_);
 	}
@@ -101,11 +107,19 @@ namespace ll{
 	if (abs(density)>SPARSETOL){
 	  ModelVertex.Operators.at(2).MatrixElements.entry(row,col,density);
 	}
+	if (abs(density_int)>SPARSETOL){
+	  ModelVertex.Operators.at(3).MatrixElements.entry(row,col,density_int);
+	}
+	if (abs(phase)>SPARSETOL){
+	  ModelVertex.Operators.at(4).MatrixElements.entry(row,col,phase);
+	}
       }
     }
 
     for (ajaj::uMPXInt nmode=1;nmode<rmk::UL;++nmode) {
-      ModelVertex.Operators.push_back(ajaj::VertexOperator("Mode",ModelVertex.Spectrum.size()));
+      std::ostringstream mn;
+      mn << "Mode_" << nmode;
+      ModelVertex.Operators.push_back(ajaj::VertexOperator(mn.str(),ModelVertex.Spectrum.size()));
       for (ajaj::uMPXInt i=0;i<ModelVertex.Spectrum.size();++i){
 	double occ=rmk::n_a(i,i,nmode);
 	if (occ!=0.0){
