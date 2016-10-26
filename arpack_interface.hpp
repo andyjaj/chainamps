@@ -183,12 +183,15 @@ namespace arpack {
   //need to be able to call recursively
   template <typename ArrayType, typename GuessType>
   inline void arpack_eigs<ArrayType,GuessType>::do_znaupd(){
+    size_t itnum=1;
     do {
       znaupd_(&m_workspace.ido, m_workspace.bmat, &m_workspace.n, m_workspace.which, &m_workspace.nev, &m_workspace.tol, resid, &m_workspace.ncv, m_workspace.v, &m_workspace.ldv, m_workspace.iparam, m_workspace.ipntr, m_workspace.workd, m_workspace.workl,&m_workspace.lworkl, m_workspace.rwork, &m_workspace.info);
       if ((m_workspace.ido==1)||(m_workspace.ido==-1)) m_MV(m_array_stuff,m_workspace.workd+m_workspace.ipntr[0]-1, m_workspace.workd+m_workspace.ipntr[1]-1);
+      std::cout << "." <<std::flush; 
     } while (m_workspace.ido==1 || m_workspace.ido==-1);
     //update total number of iterations
     m_cumulative_iterations+=m_workspace.iparam[2];
+    std::cout << std::endl;
   }
 
   template <typename ArrayType, typename GuessType>

@@ -21,10 +21,10 @@ message (STATUS "BLAS found:" ${BLAS_LIBRARIES})
 message (STATUS "LAPACK found:" ${LAPACK_LIBRARIES})
 
 get_filename_component(LIB_HINT ${BLAS_LIBRARIES} PATH)
-#message (STATUS "LIBRARIES_DIR:" ${LIB_HINT})
+#message (STATUS "LIBRARIES_DIR HINT:" ${LIB_HINT})
 
 set(INCLUDE_HINT "${LIB_HINT}/../include")
-#message (STATUS "INCLUDE_DIR:" ${INCLUDE_HINT})
+#message (STATUS "INCLUDE_DIR HINT:" ${INCLUDE_HINT})
 
 find_library(ARPACK_LIBRARIES NAMES arpack HINTS ${LIB_HINT} PATHS /usr/lib64/ /usr/local/ /opt/local/)
 message (STATUS "ARPACK found:" ${ARPACK_LIBRARIES})
@@ -59,7 +59,7 @@ endif(TBB)
 add_library(DMRG STATIC DMRG_routines.cpp measurement.cpp MPX.cpp sparse_interface.cpp dense_interface.cpp arpack_interface.cpp dense_matrix_functions.cpp states.cpp)
 add_library(TIME STATIC TEBD_routines.cpp measurement.cpp MPX.cpp sparse_interface.cpp dense_interface.cpp arpack_interface.cpp dense_matrix_functions.cpp states.cpp)
 add_library(MEAS STATIC measurement.cpp MPX.cpp sparse_interface.cpp dense_interface.cpp arpack_interface.cpp dense_matrix_functions.cpp states.cpp)
-add_library(STORE STATIC STORE_MODEL.cpp MPX.cpp sparse_interface.cpp dense_interface.cpp arpack_interface.cpp dense_matrix_functions.cpp states.cpp)
+add_library(STORE STATIC MPX.cpp sparse_interface.cpp dense_interface.cpp arpack_interface.cpp dense_matrix_functions.cpp states.cpp)
 
 add_executable(iDMRG_DRV.bin iDMRG_DRV.cpp)
 target_link_libraries(iDMRG_DRV.bin DMRG ${EXTERNAL_LIBS})

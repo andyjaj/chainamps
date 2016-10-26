@@ -112,6 +112,15 @@ int main()
     }
   }
 
+  for(int i=0;i<nstate;++i) {
+    for(int j=0;j<nstate;++j) {
+      if (fabs(density[i*nstate+j]-density[j*nstate+i])>0.000001){
+	printf("Warning: Hermiticity broken: %d %d %3.8f %3.8f\n",i,j,density[i*nstate+j],density[j*nstate+i]);
+	exit(1);
+      }
+    }
+  }
+
   /*compute integrated density matrix elements*/
   for(int i=0;i<nstate;++i) {
     for(int j=0;j<nstate;++j) {

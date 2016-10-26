@@ -145,11 +145,10 @@ namespace ajaj {
     }
     static option::ArgStatus PositiveDouble(const option::Option& option, bool msg)
     {
-      char* endptr = nullptr;
-      if (option.arg != 0 && stod(option.arg)>0){};
-      if (endptr != option.arg && *endptr == 0)
-	return option::ARG_OK;
-
+      size_t pos(0);
+      if (option.arg != nullptr && stod(option.arg,&pos)>0.0){
+	  return option::ARG_OK;
+      }
       if (msg) std::cout << "Option '" << std::string(option.name,option.namelen) << "' requires a positive numeric argument" <<std::endl;
       return option::ARG_ILLEGAL;
     }
@@ -333,7 +332,7 @@ namespace ajaj {
       }
       if (is_valid()){
 	if (options[NUMBER_OF_STEPS])
-	  num_steps_=stoul(options[NUMBER_OF_STEPS].arg);\
+	  num_steps_=stoul(options[NUMBER_OF_STEPS].arg);
 	if (options[TARGET]){
 	  std::istringstream tss(options[TARGET].arg);
 	  tss >> target_;
@@ -426,7 +425,7 @@ namespace ajaj {
 	if (options[TROTTER_ORDER])
 	  trotter_order_=stoul(options[TROTTER_ORDER].arg);
 	if (options[MEASUREMENT_INTERVAL])
-	  measurement_interval_=stod(options[MEASUREMENT_INTERVAL].arg);
+	  measurement_interval_=stoul(options[MEASUREMENT_INTERVAL].arg);
 	if (options[STEP_SIZE])
 	  step_size_=stod(options[STEP_SIZE].arg);
       }
