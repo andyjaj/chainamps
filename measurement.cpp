@@ -355,7 +355,12 @@ namespace ajaj {
   }
 
   std::complex<double> Overlap(const UnitCell& bra, const UnitCell& ket){
-    return MakeLTransferMatrix(bra,ket).LeftEigs(1,LARGESTMAGNITUDE).Values.at(0);
+    return Overlap(bra,ket,1).at(0);
+  }
+
+  std::vector<std::complex<double> > Overlap(const UnitCell& bra, const UnitCell& ket, uMPXInt nev){
+    
+    return MakeLTransferMatrix(bra,ket).LeftEigs(nev,LARGESTMAGNITUDE).Values;
   }
 
   std::complex<double> TwoVertexMeasurement(const MPO_matrix& W1, const MPO_matrix& W2, const MPS_matrix& A1, const MPS_matrix& A2, const MPX_matrix& Lambda){

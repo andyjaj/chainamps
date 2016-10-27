@@ -156,6 +156,7 @@ namespace ajaj {
   void ShiftLTransferMatrixToR(MPX_matrix& LTransferMatrix);
 
   std::complex<double> Overlap(const UnitCell& bra, const UnitCell& ket);
+  std::vector<std::complex<double> > Overlap(const UnitCell& bra, const UnitCell& ket, uMPXInt nev);
 
   /** Measure an operator that spans only two vertices. */
   std::complex<double> TwoVertexMeasurement(const MPO_matrix& W1, const MPO_matrix& W2, const MPS_matrix& A1ket, const MPS_matrix& A2ket, const MPX_matrix& Lambda);

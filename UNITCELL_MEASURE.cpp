@@ -63,8 +63,10 @@ int main(int argc, char** argv){
       }
     }
 
+    if (RuntimeArgs.nev()>1) std::cout << "Number of transfer matrix eigenvalues requested: " << RuntimeArgs.nev() << std::endl;
     std::cout << "Measuring " << (RuntimeArgs.two_point() ? 2 : 1) << "-point function" << std::endl;
-    std::cout << opinfo.front();
+    if (opinfo.size())
+      std::cout << opinfo.front();
     if (RuntimeArgs.two_point()){
       std::cout << "(i) " << opinfo.back() << "(i+" << RuntimeArgs.separation() <<")";
     }
@@ -111,9 +113,11 @@ int main(int argc, char** argv){
       if (infile.is_open()){
 	std::cout << "Loading " << f << std::endl;
 	ajaj::UnitCell AA(ajaj::load_UnitCell_binary(infile,iMEAS_vertex.ChargeRules,iMEAS_vertex.Spectrum));//populates basis
-	std::complex<double> overlap(ajaj::Overlap(AA,AA));
-	indexed_results.emplace_back(Index,ajaj::Data(abs(overlap)));
-
+	std::vector<std::complex<double> > Transfer_eigs(ajaj::Overlap(AA,AA,RuntimeArgs.nev()));
+	indexed_results.emplace_back(Index,ajaj::Data());
+	for (auto&& eig : Transfer_eigs) {
+	  indexed_results.back().second.Real_measurements.emplace_back(abs(eig));
+	}
 	if (iMEAS_vertex.Operators.size()){
 	  if (iMEAS_vertex.Spectrum.size()!=dim){
 	    std::cout << "UnitCell Basis size doesn't match operator dimensions! " << iMEAS_vertex.Spectrum.size() << " " << dim << std::endl;
@@ -158,7 +162,6 @@ int main(int argc, char** argv){
 	});
     }
 
-
     std::ostringstream mss;
     if (opinfo.size()){
       mss << opinfo.front();
@@ -167,18 +170,6 @@ int main(int argc, char** argv){
       
     }
 
-    /*if (OperatorMPOs.size()){
-      mss << OperatorMPOs[0].Name;
-      if (RuntimeArgs.two_point()) {
-	if (OperatorMPOs.size()>1)
-	  mss << "_" << OperatorMPOs[1].Name;
-	else
-	  mss << "_" << OperatorMPOs[0].Name;
-
-	mss << "_" << RuntimeArgs.separation();
-      }
-      }*/
-
     std::ostringstream outfilename;
     outfilename << "UNITCELL_Results";
     if (!mss.str().empty())
@@ -186,10 +177,13 @@ int main(int argc, char** argv){
     outfilename << ".dat";
 
     std::ostringstream commentstream;
-    commentstream << "Index,abs(Overlap)";
+    commentstream << "Index";
+    for (size_t l=0; l<RuntimeArgs.nev();++l){
+      commentstream << ",abs(Lambda_" << l+1 << ")";
+    }
     if (opinfo.size()) {
       std::ostringstream opss;
-      opss << opinfo.front();
+      opss << "," << opinfo.front();
       if (RuntimeArgs.two_point()){
 	opss << "(i)," << opinfo.back() << "(i+" << RuntimeArgs.separation() << ")";
       }

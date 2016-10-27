@@ -307,7 +307,7 @@ namespace ajaj {
     //~SparseHED(){};
   };
 
-  class SparseED :public SparseDecompositionBase<complex<double> > {
+  class SparseED :public SparseDecompositionBase<std::complex<double> > {
   private:
     const Sparseint m_dim;
   public:

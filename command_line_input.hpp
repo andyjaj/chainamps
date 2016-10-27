@@ -166,7 +166,7 @@ namespace ajaj {
     }
   };
 
-  enum optionIndex {UNKNOWN,CHI,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET,FINITE_MEASUREMENT};
+  enum optionIndex {UNKNOWN,CHI,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET,FINITE_MEASUREMENT,NEV};
 
   const option::Descriptor store_usage[2] =
     {
@@ -240,7 +240,7 @@ namespace ajaj {
       { 0, 0, 0, 0, 0, 0 }
     };
 
-  const option::Descriptor iMEAS_usage[5] =
+  const option::Descriptor iMEAS_usage[6] =
     {
       {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: UNITCELL_MEASURE.bin [-D <number>] <unitcell_filename1> ... \n"},
       {OPERATORFILE,0,"O","operator filename",Arg::NonEmpty,"  -O <filename>, \t--operator-file=<filename>"
@@ -249,6 +249,8 @@ namespace ajaj {
        "\tDistance (in integer units) between two vertex operator measurements: Op1(0),Op2(<number>). Specifying any separation, including 0, is interpreted as a two point measurement (possibly squaring an operator)." },
       {NOINDEX,0,"X","No index",Arg::None,"  -X, \t--no-index"
        "  \tDon't extract index from filenames." },
+      {NEV,0,"N","Number of eigenvalues",Arg::PositiveDefiniteNumeric,"  -N, \t--number-of-eigenvalues=<number>"
+       "  \tNumber of transfer matrix eigenvalues to calculate." },
       { 0, 0, 0, 0, 0, 0 }
     };
 
@@ -529,6 +531,7 @@ namespace ajaj {
 
   class iMEAS_Args : public Base_Args{
     unsigned long separation_;
+    unsigned long nev_;
     bool use_filename_index_;
     bool two_point_;
 
@@ -536,7 +539,7 @@ namespace ajaj {
     std::vector<std::string> files_;
 
   public:
-    iMEAS_Args(int argc, char* argv[]) : Base_Args(argc,argv,iMEAS_usage),separation_(0),use_filename_index_(1),two_point_(0){
+    iMEAS_Args(int argc, char* argv[]) : Base_Args(argc,argv,iMEAS_usage),separation_(0),nev_(1),use_filename_index_(1),two_point_(0){
       if (valid_){
 	if (parse.nonOptionsCount()<1 || std::string(parse.nonOption(0))==std::string("-")) valid_=0;
 	else {
@@ -547,6 +550,8 @@ namespace ajaj {
 	    separation_=stoul(options[SEPARATION].arg);
 	    two_point_=1;
 	  }
+	  if (options[NEV])
+	    nev_=stoul(options[NEV].arg);
 	  if (options[NOINDEX])
 	    use_filename_index_=0;
 	  if (options[OPERATORFILE])
@@ -567,6 +572,7 @@ namespace ajaj {
     const std::vector<std::string>& operator_filenames() const {return operator_filenames_;}
     bool use_filename_index() const {return use_filename_index_;}
     bool two_point() const {return two_point_;} //has a two point function been requested?
+    unsigned long nev() const {return nev_;}
   };
 
   class Store_Args : public Base_Args{
