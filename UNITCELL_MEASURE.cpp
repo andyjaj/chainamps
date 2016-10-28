@@ -64,14 +64,14 @@ int main(int argc, char** argv){
     }
 
     if (RuntimeArgs.nev()>1) std::cout << "Number of transfer matrix eigenvalues requested: " << RuntimeArgs.nev() << std::endl;
-    std::cout << "Measuring " << (RuntimeArgs.two_point() ? 2 : 1) << "-point function" << std::endl;
-    if (opinfo.size())
+    if (opinfo.size()){
+      std::cout << "Measuring " << (RuntimeArgs.two_point() ? 2 : 1) << "-point function" << std::endl;
       std::cout << opinfo.front();
-    if (RuntimeArgs.two_point()){
-      std::cout << "(i) " << opinfo.back() << "(i+" << RuntimeArgs.separation() <<")";
+      if (RuntimeArgs.two_point()){
+	std::cout << "(i) " << opinfo.back() << "(i+" << RuntimeArgs.separation() <<")";
+      }
+      std::cout <<std::endl;
     }
-    std::cout <<std::endl;
-
     //check dims
     ajaj::MPXInt dim(iMEAS_vertex.Operators.size() ? iMEAS_vertex.Operators[0].MatrixElements.rows() : 0);
 
