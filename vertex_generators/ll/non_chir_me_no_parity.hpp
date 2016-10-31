@@ -87,10 +87,10 @@ double density_me(double Beta, int k, int l)
   lr = state_chiral[1][l];
 
   /*check if states k,l are identical*/
-  if ((kl==ll) && (kr==lr)) 
+  if (k==l) 
     return(2.*Beta*state_Z[0][k]);
   /*if not this, check if states have identical N,M quantum numbers but different oscillator modes*/
-  else if ((state_Z[0][k]==state_Z[0][l]) && (state_Z[1][k]==state_Z[1][l]) && ((kl!=ll) || (kr!=lr))) {
+  else if ((state_Z[0][k]==state_Z[0][l]) && (state_Z[1][k]==state_Z[1][l])) {
     if (kl==ll) /*chiral parts of states are the same*/
       return(me_den_creation[kr][lr]+me_den_destruction[kr][lr]);
     if (kr==lr) /*anti-chiral parts of states are the same*/
@@ -117,7 +117,7 @@ double density_int_me(double Beta, int k, int l)
   /*check for momentum conservation*/
   if (state_Z[2][k]==state_Z[2][l]) { 
     /*check if states k,l are identical*/
-    if ((kl==ll) && (kr==lr))
+    if (k==l)
       return(2.*Beta*state_Z[0][k]);
     /*if not this, check if states have identical N,M quantum numbers but different oscillator modes*/
     else if ((state_Z[0][k]==state_Z[0][l]) && (state_Z[1][k]==state_Z[1][l]) && ((kl!=ll) || (kr!=lr))) {

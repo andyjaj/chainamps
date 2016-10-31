@@ -1297,15 +1297,30 @@ namespace ajaj {
     return MPS_matrix(std::move(load_MPX_matrix_binary(filename,spectrum)));
   }
 
-  MPS_matrix MakeProductState(const EigenStateArray& spectrum, uMPXInt state_index){
-    std::vector<MPXIndex> indices;
-    indices.emplace_back(1,spectrum);
-    indices.emplace_back(1,StateArray(1,State(spectrum.at(0).getChargeRules())));
-    indices.emplace_back(0,StateArray(1,State(spectrum.at(state_index))));
-    SparseMatrix array(spectrum.size(),1,1);
-    array.entry(state_index,0,1.0);
-    array.cheap_finalise();
-    return MPS_matrix(spectrum,indices,array);
+  MPS_matrix MakeProductState(const Basis& spectrum, const std::vector<std::pair<uMPXInt,double > >& state_index_vec){
+    if (state_index_vec.size()){
+      std::vector<MPXIndex> indices;
+      indices.emplace_back(1,spectrum);
+      State matrix_index(spectrum.at(0).getChargeRules());
+      indices.emplace_back(1,StateArray(1,matrix_index));
+      indices.emplace_back(0,StateArray(1,matrix_index));
+      SparseMatrix array(spectrum.size(),1,state_index_vec.size());
+      for (auto&& s :state_index_vec){
+	if (spectrum[s.first]==matrix_index)
+	  array.entry(s.first,0,s.second);
+	else {
+	  std::cout << "Charges not consistent for initial state!" << std::endl;
+	  return MPS_matrix(spectrum);
+	}
+      }
+      array.finalise();
+      return MPS_matrix(spectrum,indices,array);
+    }
+    else return MPS_matrix(spectrum);
+  }
+
+  MPS_matrix MakeProductState(const Basis& spectrum, uMPXInt state_index){
+    return MakeProductState(spectrum,std::vector<std::pair <uMPXInt,double> >(1,std::pair<uMPXInt,double> (state_index,1.0)));
   }
 
   UnitCell load_UnitCell_binary(std::ifstream& infile, QNVector& charge_rules, Basis& basis){

@@ -13,10 +13,14 @@
 
 namespace ajaj{
 
-
-  UnitCell MakeProductStateUnitCell(const Basis& b,uMPXInt state_index, uMPXInt length){
-    return UnitCell(b,MakeProductState(b,state_index),std::vector<double>(1,1.0),2);
+  UnitCell MakeProductStateUnitCell(const Basis& basis, const std::vector<std::pair<uMPXInt,double> >& state_index_vec, const std::vector<double>& lambda_vec, uMPXInt length){
+    return UnitCell(basis,MakeProductState(basis,state_index_vec),lambda_vec,2);
   }
+
+  UnitCell MakeProductStateUnitCell(const Basis& basis, uMPXInt state_index, uMPXInt length){
+    return MakeProductStateUnitCell(basis,std::vector<std::pair<uMPXInt,double> >({{state_index,1.0}}),std::vector<double>(1,1.0),length);
+  }
+
 
   TrotterDecomposition::TrotterDecomposition(const MPO_matrix& H,double time_step_size,uMPXInt order) : m_H_ptr(&H), m_time_step_size(time_step_size), m_order(order){
 //make bond operator

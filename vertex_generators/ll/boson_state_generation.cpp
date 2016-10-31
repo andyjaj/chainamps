@@ -54,7 +54,7 @@ int main()
 
   double Beta= 1.; /*inverse of compactification radius; Beta^2 = 1/(4K) where K is Luttinger parameter of Eqn. 114 in
 			     arXiv:1101.5337*/
-  double en_cutoff = 8.; /*energy cutoff on states*/
+  double en_cutoff = 3.; /*energy cutoff on states*/
 
   /*compute chiral states: this routine computes the possible ways to form
    chiral states up to a certain level, i.e. states of the form a_{n_1} \cdots a_{n_N}|N,M>*/ 
@@ -104,29 +104,40 @@ int main()
   }
 
   /*compute density matrix elements*/
+  printf("\n density op\n");
   for(int i=0;i<nstate;++i) {
     for(int j=0;j<nstate;++j) {
       // <i|rho|j> 
       density[i*nstate+j] = -1.*density_me(Beta,i,j)*tpi_R/(4.*pi*Beta);
       printf("%3.3f ",density[i*nstate+j]);
     }
+    printf("\n");
   }
 
+  /*checking for hermiticity*/
   for(int i=0;i<nstate;++i) {
     for(int j=0;j<nstate;++j) {
-      if (fabs(density[i*nstate+j]-density[j*nstate+i])>0.000001){
-	printf("Warning: Hermiticity broken: %d %d %3.8f %3.8f\n",i,j,density[i*nstate+j],density[j*nstate+i]);
-	exit(1);
-      }
+      if (fabs(density[i*nstate+j]-density[j*nstate+i])>0.000001)
+	printf("Warning: Hermiticity broken for density op: %d %d %3.8f %3.8f\n",i,j,density[i*nstate+j],density[j*nstate+i]);
     }
+
   }
 
   /*compute integrated density matrix elements*/
+  printf("\nintegrated density op\n");
   for(int i=0;i<nstate;++i) {
     for(int j=0;j<nstate;++j) {
       // <i|rho|j> 
       density_int[i*nstate+j] = -1.*R*density_int_me(Beta,i,j)*tpi_R/(4.*pi*Beta);
       printf("%3.3f ",density_int[i*nstate+j]);
+    }
+    printf("\n");
+  }
+  /*checking for hermiticity*/
+  for(int i=0;i<nstate;++i) {
+    for(int j=0;j<nstate;++j) {
+      if (fabs(density_int[i*nstate+j]-density_int[j*nstate+i])>0.000001)
+	printf("Warning: Hermiticity broken for integrated density op: %d %d %3.8f %3.8f\n",i,j,density_int[i*nstate+j],density_int[j*nstate+i]);
     }
   }
 
@@ -135,7 +146,7 @@ int main()
     for(int j=0;j<nstate;++j) {
       // <i|phase|j> 
       phase[i*nstate+j] = phase_me(Beta,i,j);
-      printf("%3.3f ",phase[i*nstate+j]);
+      //printf("%3.3f ",phase[i*nstate+j]);
     }
   }
 
