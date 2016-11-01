@@ -13,12 +13,20 @@
 
 namespace ajaj{
 
-  UnitCell MakeProductStateUnitCell(const Basis& basis, const std::vector<std::pair<uMPXInt,double> >& state_index_vec, const std::vector<double>& lambda_vec, uMPXInt length){
-    return UnitCell(basis,MakeProductState(basis,state_index_vec),lambda_vec,2);
+  UnitCell MakeProductStateUnitCell(const Basis& basis, const std::vector<std::pair<uMPXInt,double> >& state_index_vec, State leftstate, uMPXInt length){
+    UnitCell ans(basis);
+    if (state_index_vec.size()){
+      for (uMPXInt u=0;u<length;++u){
+	ans.Matrices.emplace_back(MakeProductState(basis,state_index_vec,leftstate));
+	ans.Lambdas.emplace_back(std::vector<double>(1,1.0));
+	leftstate+=basis[state_index_vec.back().first];
+      }
+    }
+    return ans;
   }
 
-  UnitCell MakeProductStateUnitCell(const Basis& basis, uMPXInt state_index, uMPXInt length){
-    return MakeProductStateUnitCell(basis,std::vector<std::pair<uMPXInt,double> >({{state_index,1.0}}),std::vector<double>(1,1.0),length);
+  UnitCell MakeProductStateUnitCell(const Basis& basis, uMPXInt state_index, State leftstate, uMPXInt length){
+    return MakeProductStateUnitCell(basis,std::vector<std::pair<uMPXInt,double> >({{state_index,1.0}}),leftstate,length);
   }
 
 

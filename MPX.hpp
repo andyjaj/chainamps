@@ -516,8 +516,8 @@ namespace ajaj {
   MPO_matrix load_MPO_matrix(const std::string& filename,const EigenStateArray& spectrum);
   MPS_matrix load_MPS_matrix(const std::string& filename,const EigenStateArray& spectrum);
   UnitCell load_UnitCell_binary(std::ifstream& infile, QNVector& charge_rules, Basis& basis);
-  MPS_matrix MakeProductState(const EigenStateArray& spectrum, const std::vector<std::pair<uMPXInt,double> >& state_index_vec);
-  MPS_matrix MakeProductState(const EigenStateArray& spectrum, uMPXInt state_index);
+  MPS_matrix MakeProductState(const EigenStateArray& spectrum, const std::vector<std::pair<uMPXInt,double> >& state_index_vec,State leftstate);
+  MPS_matrix MakeProductState(const EigenStateArray& spectrum, uMPXInt state_index,State leftstate);
 }
 
 #endif

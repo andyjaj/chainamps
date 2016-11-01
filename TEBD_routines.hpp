@@ -101,8 +101,8 @@ namespace ajaj {
     void right_info();
 
   };
-  UnitCell MakeProductStateUnitCell(const Basis& basis, const std::vector<std::pair<uMPXInt,double> >& state_index_vec, const std::vector<double>& lambda_vec, uMPXInt length=2);
-  UnitCell MakeProductStateUnitCell(const Basis& basis, uMPXInt state_index, uMPXInt length=2);
+  UnitCell MakeProductStateUnitCell(const Basis& basis, const std::vector<std::pair<uMPXInt,double> >& state_index_vec, const std::vector<double>& lambda_vec, State leftstate, uMPXInt length=2);
+  UnitCell MakeProductStateUnitCell(const Basis& basis, uMPXInt state_index, State leftstate, uMPXInt length=2);
 
 
   MPX_matrix MakeBondHamiltonian(const MPO_matrix& H); //Returns part of hamiltonian that refers to a single bond (no double counting of vertex part).

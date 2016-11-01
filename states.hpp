@@ -18,6 +18,8 @@ namespace ajaj {
   class EigenState;
   typedef std::vector<QuantumNumberInt> QNVector; /**< Container type for quantum numbers. Uses std::vector interface. */
   void swap(State& A, State& B);
+  std::istream &operator>>(std::istream &input, State &S);
+  std::ostream &operator<<(std::ostream &output, const State &S);
   //////////////////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////////
   /** State is a container for some good quantum numbers, and the rules used to combine them.
