@@ -52,7 +52,7 @@ namespace ll{
   {
     //initialise vertex object
     ajaj::Vertex ModelVertex(inputs);
-    ModelVertex.ChargeRules.push_back(0); //a hyper index that has the form of a single momentum like quantum number
+    ModelVertex.ChargeRules=ajaj::QNVector({{0,0,0}}); //three Z like quantum numbers, take the first as LL momentum, next as N the M
 
     const ajaj::QNVector& ChargeRules=ModelVertex.ChargeRules;
 
@@ -70,8 +70,8 @@ namespace ll{
 
     //populate spectrum
     for (ajaj::uMPXInt n=0;n<nstates;++n){
-      ajaj::QuantumNumberInt hyperindex=rmk::state_metaZ[n];
-      ModelVertex.Spectrum.push_back(ajaj::EigenState(ChargeRules,ajaj::QNVector(1,hyperindex),rmk::state_en[n]));
+      //ajaj::QuantumNumberInt hyperindex=rmk::state_metaZ[n];
+      ModelVertex.Spectrum.push_back(ajaj::EigenState(ChargeRules,ajaj::QNVector({{ajaj::QuantumNumberInt(rmk::state_Z[2][n]),ajaj::QuantumNumberInt(rmk::state_Z[0][n]),ajaj::QuantumNumberInt(rmk::state_Z[1][n])}}),rmk::state_en[n]));
     }
 
     if (ModelVertex.Spectrum.size()!=nstates){
@@ -86,7 +86,6 @@ namespace ll{
     ModelVertex.Operators.push_back(ajaj::VertexOperator("Density",ModelVertex.Spectrum.size()));   
     ModelVertex.Operators.push_back(ajaj::VertexOperator("Density_integrated",ModelVertex.Spectrum.size()));   
     ModelVertex.Operators.push_back(ajaj::VertexOperator("Phase",ModelVertex.Spectrum.size()));   
-
 
     double factor=pow(tpi_R,Beta*Beta); //get this right!!!
 
