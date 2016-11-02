@@ -80,7 +80,7 @@ namespace ajaj{
     }
   }
 
-  iTEBD::iTEBD(const MPO_matrix& H,const UnitCell& C, double time_step_size, DataOutput& results, uMPXInt order) : TimeBase(time_step_size,results),m_EvolutionOperators(TrotterDecomposition(H,time_step_size,order)),m_initial_unit(C),m_unit(C) {
+  iTEBD::iTEBD(const MPO_matrix& H,const UnitCell& C, double time_step_size, DataOutput& results, const std::string& Name, uMPXInt order) : TimeBase(time_step_size,results),m_EvolutionOperators(TrotterDecomposition(H,time_step_size,order)),m_initial_unit(C),m_unit(C),Name_(Name) {
     std::ofstream DensityFileStream_;
     //std::stringstream dnamestream;
     //dnamestream << "iTEBD_One_Vertex_Densities.dat";
@@ -124,7 +124,7 @@ namespace ajaj{
 	if (m_current_time_step % measurement_interval==0) /*make measurement*/ {
 	  UnitCell ortho(OrthogonaliseInversionSymmetric(m_unit));
 	  ortho.OutputOneVertexDensityMatrix("OneVertexRho",m_current_time_step);
-	  ortho.store("Ortho",m_current_time_step);
+	  ortho.store(Name_,m_current_time_step);
 	  this->do_measurements(ortho,measuredMPOs);
 	}
       }
@@ -144,7 +144,7 @@ namespace ajaj{
 	  m_unit.swap(0,1);
 	  //measure etc.
 	  m_unit=std::move(OrthogonaliseInversionSymmetric(m_unit));
-	  m_unit.store("Ortho",m_current_time_step);
+	  m_unit.store(Name_,m_current_time_step);
 	  m_unit.OutputOneVertexDensityMatrix("OneVertexRho",m_current_time_step);
 	  this->do_measurements(m_unit,measuredMPOs);
 

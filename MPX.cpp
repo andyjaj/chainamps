@@ -1353,6 +1353,53 @@ namespace ajaj {
     }
   }
 
+  UnitCell load_UnitCell_binary(std::ifstream& infile, const QNVector& charge_rules, const Basis& basis){
+    UnitCell ans(basis);
+    if (infile.is_open()){
+      //load in basis form file and see if it is consistent...
+      Basis l_basis;
+      QNVector l_charge_rules;
+      load_Basis_binary(infile,l_charge_rules,l_basis);
+      //test Basis
+      bool basis_good=1;
+      if (l_basis.size()==basis.size()){
+	for (size_t b=0; b< l_basis.size();++b){
+	  if (l_basis[b]!=basis[b]) {basis_good=0; break;}
+	}
+      }
+      else {
+	basis_good=0;
+      }
+
+      if (!basis_good){
+	std::cout << "Loaded basis doesn't match model!" <<std::endl;
+	return ans;							
+      }
+
+      //read in size of unitcell
+      size_t num_in_cell(0);
+      infile.read(reinterpret_cast<char*>(&num_in_cell),sizeof(size_t));
+      for (size_t n=0;n<num_in_cell;++n){
+	ans.Matrices.emplace_back(MPS_matrix(load_MPX_matrix_binary(infile,basis)));
+      }
+      for (size_t n=0;n<num_in_cell;++n){
+	std::vector<double> lambda;
+	size_t num_in_lambda(0);
+	infile.read(reinterpret_cast<char*>(&num_in_lambda),sizeof(size_t));
+	for (size_t l=0;l<num_in_lambda;++l){
+	  double val(0.0);
+	  infile.read(reinterpret_cast<char*>(&val),sizeof(double));
+	  lambda.push_back(val);
+	}
+	ans.Lambdas.emplace_back(std::move(lambda));
+      }
+      return ans;
+    }
+    else {
+      return ans;
+    }
+  }
+
   MPO_matrix UnitaryTransformMPO_matrix(const Basis& b, const std::vector<MPXIndex>& idxs, const SparseMatrix& s, size_t c, double f){
     if (c>=b.getChargeRules().size()){std::cout <<"Error, requested quantum number outised bounds!" <<std::endl; return MPO_matrix();}
 

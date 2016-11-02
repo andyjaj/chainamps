@@ -492,6 +492,14 @@ namespace ajaj {
     }
 
     void swap(uMPXInt i, uMPXInt j){MPS_swap(Matrices.at(i),Matrices.at(j));std::swap(Lambdas.at(i),Lambdas.at(j));}
+    
+    /*UnitCell& operator=(UnitCell&& other){
+      basis_ptr_=other.basis_ptr_;
+      Matrices=std::move(other.Matrices);
+      Lambdas=std::move(other.Lambdas);
+      return *this;
+      }*/
+
     uMPXInt size() const {return Matrices.size();}
     const MPS_matrix& GetMatrix(size_t i) {return Matrices.at(i);}
     const std::vector<double>& GetLambda(size_t i) {return Lambdas.at(i);}
@@ -516,6 +524,7 @@ namespace ajaj {
   MPO_matrix load_MPO_matrix(const std::string& filename,const EigenStateArray& spectrum);
   MPS_matrix load_MPS_matrix(const std::string& filename,const EigenStateArray& spectrum);
   UnitCell load_UnitCell_binary(std::ifstream& infile, QNVector& charge_rules, Basis& basis);
+  UnitCell load_UnitCell_binary(std::ifstream& infile, const QNVector& charge_rules, const Basis& basis);
   MPS_matrix MakeProductState(const EigenStateArray& spectrum, const std::vector<std::pair<uMPXInt,double> >& state_index_vec,State leftstate);
   MPS_matrix MakeProductState(const EigenStateArray& spectrum, uMPXInt state_index,State leftstate);
 }

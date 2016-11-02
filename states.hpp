@@ -17,6 +17,7 @@ namespace ajaj {
   class State;
   class EigenState;
   typedef std::vector<QuantumNumberInt> QNVector; /**< Container type for quantum numbers. Uses std::vector interface. */
+
   void swap(State& A, State& B);
   std::istream &operator>>(std::istream &input, State &S);
   std::ostream &operator<<(std::ostream &output, const State &S);
@@ -142,7 +143,7 @@ namespace ajaj {
 
   inline bool operator==(const State& st1, const State& st2){
     bool flag=1;
-    if (&(st1.m_CHARGE_RULES)!=&(st2.m_CHARGE_RULES)){std::cout << "Different charge rules!" << std::endl; exit(1);}
+    if (st1.m_CHARGE_RULES!=st2.m_CHARGE_RULES){std::cout << "Different charge rules!" << std::endl; exit(1);}
     for (size_t i=0;i<st1.m_CHARGE_RULES.size();++i){
       if (st1.values[i] !=st2.values[i]) {flag=0; break;}
     }
@@ -151,7 +152,7 @@ namespace ajaj {
 
   inline bool operator==(const State& st1, const EigenState& est2){
     bool flag=1;
-    if (&(st1.m_CHARGE_RULES)!=&(est2.m_CHARGE_RULES)){std::cout << "Different charge rules!" << std::endl; exit(1);}
+    if (st1.m_CHARGE_RULES!=est2.m_CHARGE_RULES){std::cout << "Different charge rules!" << std::endl; exit(1);}
     for (size_t i=0;i<st1.m_CHARGE_RULES.size();++i){
       if (st1.values[i] !=est2.values[i]) {flag=0; break;}
     } 

@@ -70,10 +70,11 @@ namespace ajaj {
     const TrotterDecomposition m_EvolutionOperators;
     const UnitCell& m_initial_unit;
     UnitCell m_unit;
+    std::string Name_;
     const UnitCell& apply_and_decompose(const MPX_matrix& BondOp,uMPXInt  bond_dimension, double minS);
     void do_measurements(const UnitCell& ortho, const std::vector<MPO_matrix>& measuredMPOs);
   public:
-    iTEBD(const MPO_matrix& H,const UnitCell& C, double time_step_size, DataOutput& results, uMPXInt order=1);
+    iTEBD(const MPO_matrix& H,const UnitCell& C, double time_step_size, DataOutput& results, const std::string& Name, uMPXInt order=1);
     const UnitCell& evolve(uMPXInt num_steps, const std::vector<MPO_matrix>& measuredMPOs, uMPXInt bond_dimension=0, double minS=0.0, uMPXInt measurement_interval=1);
     uMPXInt order() const {return m_EvolutionOperators.order();}
   };

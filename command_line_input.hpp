@@ -204,7 +204,7 @@ namespace ajaj {
       { 0, 0, 0, 0, 0, 0 }
     };
 
-  const option::Descriptor iTEBD_usage[7] =
+  const option::Descriptor iTEBD_usage[8] =
     {
       {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: iTEBD_DRV.bin [-B <number> -n <number> -s <number> -O <number>] <model_filename>"},
       {CHI,0,"B","bond-dimension",Arg::PositiveNumeric,"  -B <number>, \t--bond-dimension=<number>"
@@ -217,6 +217,8 @@ namespace ajaj {
        "  \tThe Trotter order (currently 1 or 2). Second order (2) is default." },
       {MEASUREMENT_INTERVAL,0,"m","measurement-interval",Arg::PositiveNumeric,"  -m <number>, \t--measurement-interval=<number>"
        "  \tMeasurement at every <number> steps. Default is 1 (measurement at every step)."},
+      {INITIAL_STATE_NAME,0,"i","initial-unit-cell",Arg::NonEmpty,"  -i <initial_unit_cell>, \t--initial-unit-cell<initial_unit_cell>"
+       "  \tSpecify an initial unit cell." },
       { 0, 0, 0, 0, 0, 0 }
     };
 
@@ -409,6 +411,7 @@ namespace ajaj {
     double step_size_;
     unsigned long trotter_order_;
     unsigned long measurement_interval_;
+    std::string initial_unit_cell_;
 
   public:
     iTEBD_Args(int argc, char* argv[]) : Base_Args(argc,argv,iTEBD_usage), num_steps_(1), step_size_(0.1), trotter_order_(2), measurement_interval_(1){
@@ -430,6 +433,8 @@ namespace ajaj {
 	  measurement_interval_=stoul(options[MEASUREMENT_INTERVAL].arg);
 	if (options[STEP_SIZE])
 	  step_size_=stod(options[STEP_SIZE].arg);
+	if (options[INITIAL_STATE_NAME])
+	  initial_unit_cell_=std::string(options[INITIAL_STATE_NAME].arg);
       }
       print();
     }
@@ -445,6 +450,9 @@ namespace ajaj {
     }
     unsigned long measurement_interval() const {
       return measurement_interval_;
+    }
+    const std::string& initial_unit_cell() const {
+      return initial_unit_cell_;
     }
   };
 
