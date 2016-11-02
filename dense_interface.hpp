@@ -26,20 +26,20 @@ namespace ajaj {
   //////////////////////////////////////////////////////////////////////////
   class DenseMatrix {
   private:
-    std::complex<double>* m_array; //default
     Denseint nrows;
     Denseint ncols;
-    void clear() {delete[] m_array;m_array=0;nrows=0;ncols=0;}
+    std::complex<double>* m_array; //default
+    void clear() {delete[] m_array;m_array=nullptr;nrows=0;ncols=0;}
 
   public:
     //When first formed matrix is allocated as transpose! When finalised it is transposed again, which orders the rows.
-    DenseMatrix(const Denseint& param_rows,const Denseint& param_cols); //create array without initialising entries...
-    DenseMatrix(const Denseint& param_rows,const Denseint& param_cols, const std::complex<double>& val ); //initialise entries
-    DenseMatrix(const Denseint& param_rows,const Denseint& param_cols, std::complex<double>** array_ptr ); //initialise entries
+    DenseMatrix(Denseint param_rows, Denseint param_cols); //create array without initialising entries...
+    DenseMatrix(Denseint param_rows, Denseint param_cols, std::complex<double> val ); //initialise entries
+    DenseMatrix(Denseint param_rows, Denseint param_cols, std::complex<double>** array_ptr ); //initialise entries
+    DenseMatrix(Denseint param_rows,Denseint param_cols, const std::complex<double>* array );
     DenseMatrix(const DenseMatrix& other); //copy constructor, must DEEP copy
     DenseMatrix(DenseMatrix&& other) noexcept;//move
-    DenseMatrix() : m_array(0), nrows(0),ncols(0) {};//useful when creating an instance that needs to be replaced later
-    DenseMatrix(const Denseint& param_rows,const Denseint& param_cols, const std::complex<double>* array );
+    DenseMatrix() : m_array(nullptr), nrows(0), ncols(0) {};//useful when creating an instance that needs to be replaced later
     ~DenseMatrix();
 
     inline Denseint rows() const {return nrows;}
@@ -54,7 +54,9 @@ namespace ajaj {
     void entry(Denseint i, Denseint j, std::complex<double> value); //insert a value into the array
     void finalise(){};
     DenseMatrix inverse(); //returns inverse, or fails spectacularly if singular
+    //DenseMatrix& operator=(DenseMatrix other);
     DenseMatrix& operator=(DenseMatrix other);
+
     DenseMatrix& operator*=(const DenseMatrix& rhs);
     //SparseMatrix sparse(const double& RELATIVETOL); //make a sparse version by dropping elements that are small relative to the largest element.
     friend void swap(DenseMatrix& first, DenseMatrix& second); //useful for copy-swap
@@ -88,7 +90,12 @@ namespace ajaj {
     }
     }*/
 
-  inline DenseMatrix& DenseMatrix::operator=(DenseMatrix other){
+  /*inline DenseMatrix& DenseMatrix::operator=(DenseMatrix other){
+    swap(*this, other);
+    return *this;
+    }*/
+
+  inline DenseMatrix& DenseMatrix::operator=(DenseMatrix other){ //makes copy?
     swap(*this, other);
     return *this;
   }
@@ -161,9 +168,9 @@ namespace ajaj {
     DenseMatrix U;
     DenseMatrix Vdagger;
     ~DenseSVD(){};
-    DenseSVD(Denseint M, Denseint N) : DenseDecompositionBase<double>(M>N ? N : M),leftdim(M),rightdim(N) {
-      U=DenseMatrix(M,M);
-      Vdagger=DenseMatrix(N,N);
+    DenseSVD(Denseint M, Denseint N) : DenseDecompositionBase<double>(M>N ? N : M),leftdim(M),rightdim(N),U(DenseMatrix(M,M)),Vdagger(DenseMatrix(N,N)) {
+      //U=DenseMatrix(M,M);
+      //Vdagger=DenseMatrix(N,N);
     };
   };
   //////////////////////////////////////////////////////////////////////////

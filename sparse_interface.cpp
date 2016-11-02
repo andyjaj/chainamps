@@ -1292,6 +1292,10 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     UnsortedValues.reserve(this->rows() >this->cols() ? this->cols() : this->rows());
     double total_weight(0.0);
     double tolerance=min_s_val < 0.0 ? 0.0 : min_s_val*min_s_val;
+
+    //would like to avoid numerous allocations
+    //what is the largest block?
+
 #ifndef NDEBUG
     std::cout << "Looping over " << B.size() << " blocks" << std::endl;
 #endif
@@ -1311,7 +1315,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
       } //skip block
       std::vector<Sparseint> cols;
 #ifndef NDEBUG
-      std::cout << "Getting block columns" << std::endl;
+      std::cout << "Getting non empty block columns" << std::endl;
 #endif
       for (std::vector<Sparseint>::const_iterator col_it=cit->begin();col_it!=cit->end();++col_it){
   	if (this->get_p(*col_it)!=this->get_p(*col_it+1)){
@@ -1328,7 +1332,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 #ifndef NDEBUG
       std::cout << "Performing Dense SVD" << std::endl;
 #endif
-      DenseSVD Blockans(TB.Block.SVD()); //do svd on block (which will destroy the original block)
+DenseSVD Blockans(TB.Block.SVD()); //do svd on block (which will destroy the original block)
       // now read through block answer and feed back into sparse
 #ifndef NDEBUG
       std::cout << "Reading back into Sparse" << std::endl;

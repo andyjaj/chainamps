@@ -9,17 +9,22 @@
 
 namespace ajaj {
 
-  DenseMatrix::DenseMatrix(const Denseint& param_rows,const Denseint& param_cols) : nrows(param_rows), ncols(param_cols){
-    m_array= (nrows*ncols>0) ? new std::complex<double>[nrows*ncols] : 0;
+  DenseMatrix::DenseMatrix(Denseint param_rows,Denseint param_cols) : nrows(param_rows), ncols(param_cols), m_array((nrows > 0 && ncols>0) ? new std::complex<double>[nrows*ncols] : nullptr){
+    /*if (nrows > 0 && ncols>0){
+      m_array=new std::complex<double>[nrows*ncols];
+    }
+    else {
+      m_array=nullptr;
+      }*/
   }
-  DenseMatrix::DenseMatrix(const Denseint& param_rows,const Denseint& param_cols,const std::complex<double>& val ) : nrows(param_rows), ncols(param_cols){
-    m_array= (nrows*ncols>0) ? new std::complex<double>[nrows*ncols] : 0;
+  DenseMatrix::DenseMatrix(Denseint param_rows, Denseint param_cols,std::complex<double> val ) : nrows(param_rows), ncols(param_cols){
+    m_array= (nrows > 0 && ncols>0) ? new std::complex<double>[nrows*ncols] : 0;
     for (Denseint i=0;i<nrows*ncols;++i){
       m_array[i]=val;
     }
   }
 
-  DenseMatrix::DenseMatrix(const Denseint& param_rows,const Denseint& param_cols, std::complex<double>** array_ptr ) : nrows(param_rows), ncols(param_cols), m_array(NULL){
+  DenseMatrix::DenseMatrix(Denseint param_rows,Denseint param_cols, std::complex<double>** array_ptr ) : nrows(param_rows), ncols(param_cols), m_array(nullptr){
     std::swap(m_array,*array_ptr);
   }
 
@@ -34,21 +39,17 @@ namespace ajaj {
     }
   }
 
-  DenseMatrix::DenseMatrix(DenseMatrix&& other) noexcept : m_array(NULL) {std::cout<<"Dense MOVE constructor"<<std::endl;swap(*this,other);}//move
+  DenseMatrix::DenseMatrix(DenseMatrix&& other) noexcept : m_array(nullptr) {std::cout<<"Dense MOVE constructor"<<std::endl;swap(*this,other);}//move
 
 
-  DenseMatrix::DenseMatrix(const Denseint& param_rows,const Denseint& param_cols, const std::complex<double>* array ) : nrows(param_rows), ncols(param_cols){
-    m_array= (nrows*ncols>0) ? new std::complex<double>[nrows*ncols] : 0;
+  DenseMatrix::DenseMatrix(Denseint param_rows,Denseint param_cols, const std::complex<double>* array ) : nrows(param_rows), ncols(param_cols){
+    m_array= (nrows > 0 && ncols>0) ? new std::complex<double>[nrows*ncols] : 0;
     std::copy(array,array+(nrows*ncols),m_array);
     /*for (Denseint d=0;d<nrows*ncols;++d){
       m_array[d]=array[d];
       }*/
   }
 
-
-  /*DenseMatrix::DenseMatrix(DenseMatrix&& other) noexcept : DenseMatrix(){ //move constructor
-    swap(*this,other);
-    }*/
   DenseMatrix::~DenseMatrix(){
     delete[] m_array;
   }
@@ -113,7 +114,7 @@ namespace ajaj {
     DenseDecompositionBase<std::complex<double> > ans(nrows);
     densefuncs::diagonalise_with_lapack_nh(nrows, m_array,ans.Values);
     //trashes the original array
-    clear();
+    //clear();
     return ans;
   }
 
@@ -124,7 +125,7 @@ namespace ajaj {
     DenseHED ans(nrows);
     densefuncs::diagonalise_with_lapack(nrows, m_array, ans.EigenVectors.m_array,ans.Values,1,nrows);
     //zheevr trashes the original array
-    clear();
+    //clear();
     return ans;
   }
 
@@ -144,7 +145,7 @@ namespace ajaj {
     else {
       std::cout << "Incorrect argument to LAPACK " << std::endl; exit(1);
     }
-    clear();
+    //clear();
     return ans;
   }
 
@@ -155,7 +156,7 @@ namespace ajaj {
     DenseNHED ans(nrows);
     densefuncs::diagonalise_with_lapack_nh(nrows, m_array, ans.RightEigenVectors.m_array,ans.Values);
     //trashes the original array
-    clear();
+    //clear();
     return ans;
   }
 
@@ -163,7 +164,7 @@ namespace ajaj {
   DenseSVD DenseMatrix::SVD(){
     DenseSVD ans(nrows,ncols);
     densefuncs::svd_with_lapack(nrows, ncols,m_array, ans.U.m_array,ans.Vdagger.m_array,ans.Values);
-    clear(); //dump original array as it has probably been trashed
+    //clear(); //dump original array as it has probably been trashed
     return ans;
   }
 
@@ -171,7 +172,7 @@ namespace ajaj {
     DenseDecompositionBase<double> svals(nrows > ncols ? ncols : nrows);
     std::vector<double> ans(nrows > ncols ? ncols : nrows);
     densefuncs::svd_with_lapack(nrows,ncols,m_array,svals.Values);
-    clear(); //dump trash
+    //clear(); //dump trash
     std::copy(svals.Values,svals.Values+svals.ValuesSize(),ans.begin());
     return ans;
   }

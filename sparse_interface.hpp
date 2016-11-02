@@ -348,16 +348,17 @@ namespace ajaj {
   template <typename T>
   class TranslationBlock{
   protected:
-    //const SparseMatrix& S;
-    const Sparseint orig_rows;
-    const Sparseint orig_cols;
-    //void FromSparse(SparseMatrix& M);
+
+    Sparseint orig_rows;
+    Sparseint orig_cols;
+
     void FromSparse(SparseMatrix&& M);
 
   public:
     T Block;
     std::vector<Sparseint> RowLookups; //for telling us which row of the original sparse matrix it corresponds to
     std::vector<Sparseint> ColLookups; //gets copied in by constructor
+
     TranslationBlock(const SparseMatrix& sp, const std::vector<Sparseint>& sparsecols) : orig_rows(sp.rows()), orig_cols(sp.cols()),ColLookups(sparsecols) {
       SparseMatrix temp(std::move(sp.ExtractColumns(ColLookups).transpose()));
       //temp.transpose();
