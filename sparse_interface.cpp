@@ -1332,7 +1332,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 #ifndef NDEBUG
       std::cout << "Performing Dense SVD" << std::endl;
 #endif
-DenseSVD Blockans(TB.Block.SVD()); //do svd on block (which will destroy the original block)
+      DenseSVD Blockans(std::move(TB.Block.SVD())); //do svd on block (which will destroy the original block)
       // now read through block answer and feed back into sparse
 #ifndef NDEBUG
       std::cout << "Reading back into Sparse" << std::endl;

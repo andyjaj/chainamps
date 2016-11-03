@@ -9,41 +9,32 @@
 
 namespace ajaj {
 
-  DenseMatrix::DenseMatrix(Denseint param_rows,Denseint param_cols) : nrows(param_rows), ncols(param_cols), m_array((nrows > 0 && ncols>0) ? new std::complex<double>[nrows*ncols] : nullptr){
-    /*if (nrows > 0 && ncols>0){
-      m_array=new std::complex<double>[nrows*ncols];
-    }
-    else {
-      m_array=nullptr;
-      }*/
-  }
-  DenseMatrix::DenseMatrix(Denseint param_rows, Denseint param_cols,std::complex<double> val ) : nrows(param_rows), ncols(param_cols){
-    m_array= (nrows > 0 && ncols>0) ? new std::complex<double>[nrows*ncols] : 0;
-    for (Denseint i=0;i<nrows*ncols;++i){
+  DenseMatrix::DenseMatrix(Denseint param_rows,Denseint param_cols) : size_(param_rows*param_cols), nrows(param_rows), ncols(param_cols), m_array(size_>0 ? new std::complex<double>[size_] : nullptr){}
+  
+  DenseMatrix::DenseMatrix(Denseint param_rows, Denseint param_cols,std::complex<double> val ) : size_(param_rows*param_cols), nrows(param_rows), ncols(param_cols),    m_array((size_) ? new std::complex<double>[size_] : nullptr){
+    for (Denseint i=0;i<size_;++i){
       m_array[i]=val;
     }
   }
 
-  DenseMatrix::DenseMatrix(Denseint param_rows,Denseint param_cols, std::complex<double>** array_ptr ) : nrows(param_rows), ncols(param_cols), m_array(nullptr){
+  DenseMatrix::DenseMatrix(Denseint param_rows,Denseint param_cols, std::complex<double>** array_ptr ) : size_(param_rows*param_cols), nrows(param_rows), ncols(param_cols), m_array(nullptr){
     std::swap(m_array,*array_ptr);
   }
 
+  //rare that this should be needed?
+  /*DenseMatrix::DenseMatrix(const DenseMatrix& other) : nrows(other.nrows),ncols(other.ncols),m_array(nrows >0 && ncols > 0 ? new std::complex<double>[other.nrows*other.ncols] : nullptr){ //COPY constructor, does a DEEP copy
+    std::copy(other.m_array,other.m_array+(nrows*ncols),m_array);
 
-  DenseMatrix::DenseMatrix(const DenseMatrix& other){ //COPY constructor, does a DEEP copy
-    std::cout<<"Dense COPY constructor"<<std::endl;
-    this->nrows=other.nrows;
-    this->ncols=other.ncols;
-    this->m_array=new std::complex<double>[other.nrows*other.ncols]; 
-    for (Denseint i=0;i<other.nrows*other.ncols;++i){
-      this->m_array[i]=other.m_array[i];
-    }
+  }*/
+
+  DenseMatrix::DenseMatrix(DenseMatrix&& other) noexcept : m_array(nullptr) {swap(*this,other);}//move
+
+  DenseMatrix& DenseMatrix::operator=(DenseMatrix&& other) {
+    swap(*this,other);
+    return *this;
   }
 
-  DenseMatrix::DenseMatrix(DenseMatrix&& other) noexcept : m_array(nullptr) {std::cout<<"Dense MOVE constructor"<<std::endl;swap(*this,other);}//move
-
-
-  DenseMatrix::DenseMatrix(Denseint param_rows,Denseint param_cols, const std::complex<double>* array ) : nrows(param_rows), ncols(param_cols){
-    m_array= (nrows > 0 && ncols>0) ? new std::complex<double>[nrows*ncols] : 0;
+  DenseMatrix::DenseMatrix(Denseint param_rows,Denseint param_cols, const std::complex<double>* array ) : size_(param_rows*param_cols),nrows(param_rows), ncols(param_cols), m_array(size_>0 ? new std::complex<double>[nrows*ncols] : nullptr){
     std::copy(array,array+(nrows*ncols),m_array);
     /*for (Denseint d=0;d<nrows*ncols;++d){
       m_array[d]=array[d];
@@ -98,6 +89,7 @@ namespace ajaj {
   {
     using std::swap;
     swap(first.m_array,second.m_array);
+    swap(first.size_,second.size_);
     swap(first.nrows,second.nrows);
     swap(first.ncols,second.ncols);
   }
@@ -164,7 +156,6 @@ namespace ajaj {
   DenseSVD DenseMatrix::SVD(){
     DenseSVD ans(nrows,ncols);
     densefuncs::svd_with_lapack(nrows, ncols,m_array, ans.U.m_array,ans.Vdagger.m_array,ans.Values);
-    //clear(); //dump original array as it has probably been trashed
     return ans;
   }
 
@@ -176,5 +167,15 @@ namespace ajaj {
     std::copy(svals.Values,svals.Values+svals.ValuesSize(),ans.begin());
     return ans;
   }
+
+  DenseHED::DenseHED(Denseint L) : DenseDecompositionBase<double>(L),EigenVectors(L,L) {}     
+  DenseHED::DenseHED(Denseint L,Denseint numevals) : DenseDecompositionBase<double>(numevals),EigenVectors(L,numevals) {
+    if (numevals>L){std::cout << "Error, too many evals requested" << std::endl; exit(1);}
+  }
+
+  DenseNHED::DenseNHED(Denseint L) : DenseDecompositionBase<std::complex<double> >(L),RightEigenVectors(L,L) {}
+
+  DenseSVD::DenseSVD(Denseint M, Denseint N) : DenseDecompositionBase<double>(M>N ? N : M),leftdim(M),rightdim(N),U(M,lineardim),Vdagger(lineardim,N) {}
+
 
 }

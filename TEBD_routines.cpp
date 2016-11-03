@@ -494,6 +494,8 @@ namespace ajaj{
 	std::cout << "Time " << current_time() << std::endl;
 	//this is the first half of the time step....
 	apply_to_odd_bonds(EvolutionOps_.getU(0),EvolutionOps_.getUbar(0));
+	right_canonise(minS);
+	left_canonise(bond_dimension,minS);
 	apply_to_even_bonds(EvolutionOps_.getU(0),EvolutionOps_.getUbar(0));
 	right_canonise(minS);
 	if (m_current_time_step % measurement_interval==0) /*make measurement*/ {

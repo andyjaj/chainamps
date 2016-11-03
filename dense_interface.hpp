@@ -26,10 +26,10 @@ namespace ajaj {
   //////////////////////////////////////////////////////////////////////////
   class DenseMatrix {
   private:
+    Denseint size_;
     Denseint nrows;
     Denseint ncols;
     std::complex<double>* m_array; //default
-    void clear() {delete[] m_array;m_array=nullptr;nrows=0;ncols=0;}
 
   public:
     //When first formed matrix is allocated as transpose! When finalised it is transposed again, which orders the rows.
@@ -37,7 +37,7 @@ namespace ajaj {
     DenseMatrix(Denseint param_rows, Denseint param_cols, std::complex<double> val ); //initialise entries
     DenseMatrix(Denseint param_rows, Denseint param_cols, std::complex<double>** array_ptr ); //initialise entries
     DenseMatrix(Denseint param_rows,Denseint param_cols, const std::complex<double>* array );
-    DenseMatrix(const DenseMatrix& other); //copy constructor, must DEEP copy
+    DenseMatrix(const DenseMatrix& other) =delete; //copy constructor, must DEEP copy
     DenseMatrix(DenseMatrix&& other) noexcept;//move
     DenseMatrix() : m_array(nullptr), nrows(0), ncols(0) {};//useful when creating an instance that needs to be replaced later
     ~DenseMatrix();
@@ -55,7 +55,7 @@ namespace ajaj {
     void finalise(){};
     DenseMatrix inverse(); //returns inverse, or fails spectacularly if singular
     //DenseMatrix& operator=(DenseMatrix other);
-    DenseMatrix& operator=(DenseMatrix other);
+    DenseMatrix& operator=(DenseMatrix&& other);
 
     DenseMatrix& operator*=(const DenseMatrix& rhs);
     //SparseMatrix sparse(const double& RELATIVETOL); //make a sparse version by dropping elements that are small relative to the largest element.
@@ -71,7 +71,7 @@ namespace ajaj {
     DenseDecompositionBase<std::complex<double> > NHEigenvalues();
   };
 
-  inline complex<double> DenseMatrix::Value(Denseint i, Denseint j) const {
+  inline std::complex<double> DenseMatrix::Value(Denseint i, Denseint j) const {
     return m_array[i+nrows*j];
   }
 
@@ -81,7 +81,6 @@ namespace ajaj {
 
   inline void move_to_dumb_array(DenseMatrix& dm, std::complex<double>* array){
     std::copy(dm.m_array,dm.m_array+dm.nrows*dm.ncols,array);
-    dm.clear();
   }
 
   /*inline void DenseMatrix::zero(){
@@ -95,10 +94,10 @@ namespace ajaj {
     return *this;
     }*/
 
-  inline DenseMatrix& DenseMatrix::operator=(DenseMatrix other){ //makes copy?
+  /*inline DenseMatrix& DenseMatrix::operator=(DenseMatrix other){ //makes copy?
     swap(*this, other);
     return *this;
-  }
+  }*/
 
   inline void DenseMatrixToDumbArray(DenseMatrix* dmvec, std::complex<double>* array){
     //requires that all allowed entries are nonzero!!!
@@ -110,68 +109,60 @@ namespace ajaj {
   ////////////////////////////////////////////////////////// 
   template <typename T>
   class DenseDecompositionBase {
-  private:
-    const Denseint lineardim;
+  protected:
+    Denseint lineardim;
   public:
     T* Values;
-    Denseint ValuesSize() const {return lineardim;}
-    /*DenseDecompositionBase() : lineardim(0){
-      Values=0;
-      }*/
+    
     DenseDecompositionBase(Denseint L) : lineardim(L){
       Values=new T[L];
     }
-
-    DenseDecompositionBase(const DenseDecompositionBase& other) : lineardim(other.lineardim){
-      Values=new T[lineardim];
+    DenseDecompositionBase(const DenseDecompositionBase& other) : lineardim(other.lineardim),Values(lineardim > 0 ? new T[lineardim] : nullptr){
+      /*Values=new T[lineardim];
       for (Denseint i=0;i<lineardim;++i){
 	Values[i]=other.Values[i];
-      }
+      }*/
+      std::copy(other.Values,other.Values+lineardim,Values);
     }
-
-    ~DenseDecompositionBase(){
-      delete[] Values;
+    DenseDecompositionBase(DenseDecompositionBase&& other) : lineardim(other.lineardim),Values(other.Values){
+      other.lineardim=0;
+      other.Values=nullptr;
     }
+    ~DenseDecompositionBase(){delete[] Values;}
     void printValues() const {for (Denseint i=0;i<lineardim;++i){std::cout << Values[i] << " ";} std::cout << std::endl;}
+    size_t ValuesSize() const {return lineardim;}
   };
   //////////////////////////////////////////////////////////////////////////
   class DenseHED : public DenseDecompositionBase<double>{
   public:
     DenseMatrix EigenVectors;
-    //DenseHED(){};
     ~DenseHED(){};
-    DenseHED(Denseint L) : DenseDecompositionBase<double>(L) {
-      EigenVectors=DenseMatrix(L,L);
-    };
-    DenseHED(Denseint L,Denseint numevals) : DenseDecompositionBase<double>(numevals) {
-      if (numevals>L){std::cout << "Error, too many evals requested" << std::endl; exit(1);}
-      EigenVectors=DenseMatrix(L,numevals);
-    };
-
+    DenseHED(Denseint L);
+    DenseHED(Denseint L,Denseint numevals);
+    DenseHED(DenseHED&&)=default;
   };
   //////////////////////////////////////////////////////////////////////////
   class DenseNHED : public DenseDecompositionBase<std::complex<double> >{
   public:
     DenseMatrix RightEigenVectors;
-    //DenseNHED(){};
     ~DenseNHED(){};
-    DenseNHED(Denseint L) : DenseDecompositionBase<std::complex<double> >(L) {
-      RightEigenVectors=DenseMatrix(L,L);
-    };
+    DenseNHED(Denseint L);
+    DenseNHED(DenseNHED&&)=default;
+
   };
   //////////////////////////////////////////////////////////////////////////
   class DenseSVD :public DenseDecompositionBase<double> {
   private:
-    const Denseint leftdim;
-    const Denseint rightdim;
+    Denseint leftdim;
+    Denseint rightdim;
   public:
     DenseMatrix U;
     DenseMatrix Vdagger;
+    DenseSVD(Denseint M, Denseint N);
+    DenseSVD(DenseSVD&&)=default;
+
     ~DenseSVD(){};
-    DenseSVD(Denseint M, Denseint N) : DenseDecompositionBase<double>(M>N ? N : M),leftdim(M),rightdim(N),U(DenseMatrix(M,M)),Vdagger(DenseMatrix(N,N)) {
-      //U=DenseMatrix(M,M);
-      //Vdagger=DenseMatrix(N,N);
-    };
+
   };
   //////////////////////////////////////////////////////////////////////////
 

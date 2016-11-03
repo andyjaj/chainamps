@@ -259,7 +259,9 @@ void diagonalise_with_lapack_nh(dense_int lineardim, complex<double> *matrixin, 
 
 //complex overload
 void svd_with_lapack(const dense_int rows, const dense_int cols, complex<double> *original_matrix, complex<double> *u, complex<double> *vt, double *svals){
-  dense_int m = rows, n = cols, lda =rows, ldu = rows, ldvt = cols;
+  dense_int min = MIN(rows,cols);
+  dense_int max = MAX(rows,cols);
+  dense_int m = rows, n = cols, lda =rows, ldu = rows, ldvt = min;
   dense_int info=0;
   //cout << "Doing SVD" << endl;
   //figure workspace
@@ -271,33 +273,34 @@ void svd_with_lapack(const dense_int rows, const dense_int cols, complex<double>
 #if defined(__APPLE__) && defined(__MACH__)
   dense_int lwork;
   complex<double> wkopt = complex<double> (0.0,0.0);
-  char a[]={'A','L','L','\0'};
-  dense_int min,max;
-  rows >= cols ? min=cols : min=rows;
-  rows >= cols ? max=rows : max=cols; 
-  double* rwork =new double[MIN(m,n)*MAX(5*MIN(m,n)+7,2*MAX(m,n)+2*MIN(m,n)+1)];
-  //double* rwork =new double[5*MIN(rows,cols)*MIN(rows,cols)+7*MIN(rows,cols)+1];
-  dense_int* iwork =new dense_int[8*MIN(m,n)]; 
+  //char JOB[]={'A','L','L','\0'};
+  char JOB[]={'S','\0'};
+  
+  //double* rwork =new double[MIN(m,n)*MAX(5*MIN(m,n)+7,2*MAX(m,n)+2*MIN(m,n)+1)];
+  double* rwork =new double[min*MAX(5*min+7,2*max+2*min+1)];
+
+  dense_int* iwork =new dense_int[8*min]; 
   lwork = -1;
   if (rows==0) {std::cout<< "zero rows!" << std::endl; exit(1);}
-  zgesdd_( a, &m, &n, reinterpret_cast<__CLPK_doublecomplex*>(matrix), &lda, svals, reinterpret_cast<__CLPK_doublecomplex*>(u), &ldu, reinterpret_cast<__CLPK_doublecomplex*>(vt), &ldvt, reinterpret_cast<__CLPK_doublecomplex*>(&wkopt),&lwork, rwork, iwork, &info );
+  zgesdd_( JOB, &m, &n, reinterpret_cast<__CLPK_doublecomplex*>(matrix), &lda, svals, reinterpret_cast<__CLPK_doublecomplex*>(u), &ldu, reinterpret_cast<__CLPK_doublecomplex*>(vt), &ldvt, reinterpret_cast<__CLPK_doublecomplex*>(&wkopt),&lwork, rwork, iwork, &info );
   if (info==0){
     lwork = (dense_int)real(wkopt);
     complex<double>* work = new complex<double>[lwork];
-    zgesdd_( a, &m, &n, reinterpret_cast<__CLPK_doublecomplex*>(matrix), &lda, svals, reinterpret_cast<__CLPK_doublecomplex*>(u), &ldu, reinterpret_cast<__CLPK_doublecomplex*>(vt), &ldvt, reinterpret_cast<__CLPK_doublecomplex*>(work), &lwork, rwork, iwork, &info );
+    zgesdd_( JOB, &m, &n, reinterpret_cast<__CLPK_doublecomplex*>(matrix), &lda, svals, reinterpret_cast<__CLPK_doublecomplex*>(u), &ldu, reinterpret_cast<__CLPK_doublecomplex*>(vt), &ldvt, reinterpret_cast<__CLPK_doublecomplex*>(work), &lwork, rwork, iwork, &info );
     //delete workspace
     delete[] work;
   }
   delete[] rwork;
   delete[] iwork;
 #elif defined(__linux__)
-  char A='A';
+  //  char JOB='A';
+  char JOB='S';
   set_num_threads(max_num_threads_to_use);
 #ifndef NDEBUG
   std::cout << "Calling LAPACKE_zgesdd" << std::endl;
   std::cout<< m  << " " << n << " " << lda << " " << ldu << std::endl;
 #endif
-  info=LAPACKE_zgesdd(LAPACK_COL_MAJOR,A, m, n, reinterpret_cast<lapack_complex_double*>(matrix), lda, svals, reinterpret_cast<lapack_complex_double*>(u), ldu, reinterpret_cast<lapack_complex_double*>(vt), ldvt);
+  info=LAPACKE_zgesdd(LAPACK_COL_MAJOR,JOB, m, n, reinterpret_cast<lapack_complex_double*>(matrix), lda, svals, reinterpret_cast<lapack_complex_double*>(u), ldu, reinterpret_cast<lapack_complex_double*>(vt), ldvt);
 #else
 #error Platform not supported
   exit(1);
@@ -319,23 +322,23 @@ void svd_with_lapack(const dense_int rows, const dense_int cols, complex<double>
 }
 
 void svd_with_lapack_fallback(const dense_int rows, const dense_int cols, complex<double> *matrix, complex<double> *u, complex<double> *vt, double *svals){
-  dense_int m = rows, n = cols, lda =rows, ldu = rows, ldvt = cols;
+  dense_int min=MIN(rows,cols);
+  dense_int max=MAX(rows,cols);
+  dense_int m = rows, n = cols, lda =rows, ldu = rows, ldvt = min;
   dense_int info=0;
   //figure workspace
 #if defined(__APPLE__) && defined(__MACH__)
   dense_int lwork;
   complex<double> wkopt = complex<double> (0.0,0.0);
-  char a[]={'A','\0'};
-  dense_int min,max;
-  rows >= cols ? min=cols : min=rows;
-  rows >= cols ? max=rows : max=cols; 
-  double* rwork =new double[5*MIN(m,n)];
+  //char a[]={'A','\0'};
+  char JOB[]={'S','\0'};
+  double* rwork =new double[5*min];
   lwork = -1;
-  zgesvd_(a,a, &m, &n,reinterpret_cast<__CLPK_doublecomplex*>(matrix), &lda, svals, reinterpret_cast<__CLPK_doublecomplex*>(u), &ldu, reinterpret_cast<__CLPK_doublecomplex*>(vt), &ldvt,reinterpret_cast<__CLPK_doublecomplex*>(&wkopt),&lwork,rwork,&info);
+  zgesvd_(JOB,JOB, &m, &n,reinterpret_cast<__CLPK_doublecomplex*>(matrix), &lda, svals, reinterpret_cast<__CLPK_doublecomplex*>(u), &ldu, reinterpret_cast<__CLPK_doublecomplex*>(vt), &ldvt,reinterpret_cast<__CLPK_doublecomplex*>(&wkopt),&lwork,rwork,&info);
   if (info==0){
     lwork = (dense_int)real(wkopt);
     complex<double>*  work = new complex<double>[lwork];
-    zgesvd_(a,a, &m, &n,reinterpret_cast<__CLPK_doublecomplex*>(matrix), &lda, svals, reinterpret_cast<__CLPK_doublecomplex*>(u), &ldu, reinterpret_cast<__CLPK_doublecomplex*>(vt), &ldvt, reinterpret_cast<__CLPK_doublecomplex*>(work),&lwork,rwork,&info);
+    zgesvd_(JOB,JOB, &m, &n,reinterpret_cast<__CLPK_doublecomplex*>(matrix), &lda, svals, reinterpret_cast<__CLPK_doublecomplex*>(u), &ldu, reinterpret_cast<__CLPK_doublecomplex*>(vt), &ldvt, reinterpret_cast<__CLPK_doublecomplex*>(work),&lwork,rwork,&info);
     delete[] work;
     if (info < 0){cout << "Illegal argument to zgesvd, " << abs(info) << endl; delete[] rwork; exit(1);}
     else if( info > 0 ) {cout << "Still failed... " << info << endl; delete[] rwork; exit(1);}
@@ -343,9 +346,10 @@ void svd_with_lapack_fallback(const dense_int rows, const dense_int cols, comple
   delete[] rwork;
 #elif defined(__linux__)
   set_num_threads(max_num_threads_to_use);
-  char A='A';
+  //char A='A';
+  char JOB='S';
   double superb[5*min(m,n)];
-  info=LAPACKE_zgesvd(LAPACK_COL_MAJOR,A,A,m,n,reinterpret_cast<lapack_complex_double*>(matrix),lda,svals,reinterpret_cast<lapack_complex_double*>(u),ldu,reinterpret_cast<lapack_complex_double*>(vt),ldvt,superb);
+  info=LAPACKE_zgesvd(LAPACK_COL_MAJOR,JOB,JOB,m,n,reinterpret_cast<lapack_complex_double*>(matrix),lda,svals,reinterpret_cast<lapack_complex_double*>(u),ldu,reinterpret_cast<lapack_complex_double*>(vt),ldvt,superb);
 #else     
 #error Platform not supported
   exit(1);
