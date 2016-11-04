@@ -348,7 +348,7 @@ void svd_with_lapack_fallback(const dense_int rows, const dense_int cols, comple
   set_num_threads(max_num_threads_to_use);
   //char A='A';
   char JOB='S';
-  double superb[5*min(m,n)];
+  double superb[5*min];
   info=LAPACKE_zgesvd(LAPACK_COL_MAJOR,JOB,JOB,m,n,reinterpret_cast<lapack_complex_double*>(matrix),lda,svals,reinterpret_cast<lapack_complex_double*>(u),ldu,reinterpret_cast<lapack_complex_double*>(vt),ldvt,superb);
 #else     
 #error Platform not supported
