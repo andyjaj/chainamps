@@ -76,14 +76,14 @@ namespace ajaj {
     if (a.Ingoing()!=b.Ingoing()){ //different directions...
       for (auto&& b_it : Ref_to_b_states){
 	for (auto&& a_it : Ref_to_a_states){
-	  S.push_back(a_it-b_it);
+	  S.emplace_back(a_it-b_it);
 	}
       }
     }
     else {
       for (auto&& b_it : Ref_to_b_states){
 	for (auto&& a_it : Ref_to_a_states){
-	  S.push_back(a_it+b_it);
+	  S.emplace_back(a_it+b_it);
 	}
       }
     }

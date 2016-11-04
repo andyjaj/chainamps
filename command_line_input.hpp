@@ -547,7 +547,7 @@ namespace ajaj {
     std::vector<std::string> files_;
 
   public:
-    iMEAS_Args(int argc, char* argv[]) : Base_Args(argc,argv,iMEAS_usage),separation_(0),nev_(1),use_filename_index_(1),two_point_(0){
+    iMEAS_Args(int argc, char* argv[]) : Base_Args(argc,argv,iMEAS_usage),separation_(0),nev_(0),use_filename_index_(1),two_point_(0){
       if (valid_){
 	if (parse.nonOptionsCount()<1 || std::string(parse.nonOption(0))==std::string("-")) valid_=0;
 	else {

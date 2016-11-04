@@ -79,7 +79,7 @@ namespace continuumIsing {
     den = 10./num;
     for(i=-num;i<num;++i) {
       th = i*den;
-      term += (1./cosh(t-th)*log((1.-exp(-1.*DR*cosh(th)))/(1.+exp(-1.*DR*cosh(th)))));
+      term +=log((1.-exp(-1.*DR*cosh(th)))/(1.+exp(-1.*DR*cosh(th))))/cosh(t-th);
     }
     return(term*den/(2.0*M_PI));
   }
@@ -87,7 +87,7 @@ namespace continuumIsing {
   inline double S(const double DR)
   {
     double term, den, t1, t2, err,jterm;
-    double ct1,st1,ct2,st2,ft12,sdc1;
+    double ct1,st1,drct2,st2,hft12,sdc1;
     int i, j, num;
 
     err = .0000001;
@@ -103,10 +103,10 @@ namespace continuumIsing {
       jterm=0.;
       for(j=-num;j<num;++j) {
 	t2 = j*den;
-	ct2=cosh(t2);
+	drct2=DR*cosh(t2);
 	st2=sinh(t2);
-	ft12=abs(t1-t2);
-	jterm -= (st2/sinh(DR*ct2))*log(tanh(err+.5*ft12));
+	hft12=0.5*abs(t1-t2)+err;
+	jterm -= (st2)*log(tanh(hft12))/sinh(drct2);
       }
       term +=sdc1*jterm;
     }

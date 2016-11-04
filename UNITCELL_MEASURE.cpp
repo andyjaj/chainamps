@@ -113,12 +113,15 @@ int main(int argc, char** argv){
       if (infile.is_open()){
 	std::cout << "Loading " << f << std::endl;
 	ajaj::UnitCell AA(ajaj::load_UnitCell_binary(infile,iMEAS_vertex.ChargeRules,iMEAS_vertex.Spectrum));//populates basis
-	std::vector<std::complex<double> > Transfer_eigs(ajaj::TransferMatrixEigs(AA,RuntimeArgs.nev()));
-	//std::vector<std::complex<double> > Transfer_eigs(ajaj::Overlap(AA,AA,RuntimeArgs.nev()));
-
+	for (auto&& m : AA.Matrices){
+	  m.print_sparse_info();
+	}
 	indexed_results.emplace_back(Index,ajaj::Data());
-	for (auto&& eig : Transfer_eigs) {
-	  indexed_results.back().second.Real_measurements.emplace_back(abs(eig));
+	if (RuntimeArgs.nev()){
+	  std::vector<std::complex<double> > Transfer_eigs(ajaj::TransferMatrixEigs(AA,RuntimeArgs.nev()));
+	  for (auto&& eig : Transfer_eigs) {
+	    indexed_results.back().second.Real_measurements.emplace_back(abs(eig));
+	  }
 	}
 	if (iMEAS_vertex.Operators.size()){
 	  if (iMEAS_vertex.Spectrum.size()!=dim){
