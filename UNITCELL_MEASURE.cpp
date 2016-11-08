@@ -117,6 +117,12 @@ int main(int argc, char** argv){
 	  m.print_sparse_info();
 	}
 	indexed_results.emplace_back(Index,ajaj::Data());
+	if (RuntimeArgs.calc_entanglement()){
+	  indexed_results.back().second.Real_measurements.emplace_back(AA.Entropy());
+	}
+	if (RuntimeArgs.vert_entanglement()){
+	  indexed_results.back().second.Real_measurements.emplace_back(MultiVertexEntropy(AA,RuntimeArgs.vert_entanglement()));
+	}
 	if (RuntimeArgs.nev()){
 	  std::vector<std::complex<double> > Transfer_eigs(ajaj::TransferMatrixEigs(AA,RuntimeArgs.nev()));
 	  for (auto&& eig : Transfer_eigs) {
@@ -183,6 +189,12 @@ int main(int argc, char** argv){
 
     std::ostringstream commentstream;
     commentstream << "Index";
+    if (RuntimeArgs.calc_entanglement()){
+      commentstream << ",S_E";
+    }
+    if (RuntimeArgs.vert_entanglement()){
+      commentstream << "," << RuntimeArgs.vert_entanglement() <<" vertex S_E";
+    }
     for (size_t l=0; l<RuntimeArgs.nev();++l){
       commentstream << ",abs(Lambda_" << l+1 << ")";
     }

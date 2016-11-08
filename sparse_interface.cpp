@@ -71,6 +71,9 @@ namespace ajaj {
   }
 
   double entropy(const std::vector<double>& Values){
+
+    // std::cout << "Sq sum = " << SquareSum(Values) << std::endl;    
+
     double ans=0.0;
     for (std::vector<double>::const_iterator cit=Values.begin();cit!=Values.end();++cit){
       ans-=(*cit)*(*cit)*log((*cit)*(*cit));

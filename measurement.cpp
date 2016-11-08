@@ -148,17 +148,6 @@ namespace ajaj {
     MPX_matrix PreviousLambdaInverse(basis,MPSD.RightMatrix.Index(2),PreviousLambda,1);
     MPX_matrix CurrentLambda(basis,MPSD.LeftMatrix.Index(2),MPSD.Values);
 
-    //note rightmatrix is stored as a_i-1 sigma_i a_i format...
-    //std::vector<MPXPair> contractL({{MPXPair(MPSD.RightMatrix.InwardMatrixIndexNumber(),1)}});
-    //MPS_matrix NL(contract(contract(MPSD.RightMatrix,0,CurrentLambda,0,contractL),0,PreviousLambdaInverse,0,contract10));
-    //std::vector<MPXPair> contractL({{MPXPair(1,MPSD.RightMatrix.InwardMatrixIndexNumber())}});
-    //MPS_matrix NL(MPS_matrix(contract(CurrentLambda,0,contract(MPSD.RightMatrix,0,PreviousLambdaInverse,0,contract20),0,contractL)).left_shape());
-
-    //std::vector<MPXPair> contractR({{MPXPair(MPSD.LeftMatrix.InwardMatrixIndexNumber(),1)}});
-    //MPS_matrix NR=(contract(contract(MPSD.LeftMatrix,0,PreviousLambdaInverse,0,contractR),0,CurrentLambda,0,contract10));
-    //std::vector<MPXPair> contractR({{MPXPair(1,MPSD.LeftMatrix.InwardMatrixIndexNumber())}});
-    //MPS_matrix NR=(contract(PreviousLambdaInverse,0,contract(MPSD.LeftMatrix,0,CurrentLambda,0,contract20),0,std::vector<MPXPair>({{1,MPSD.LeftMatrix.InwardMatrixIndexNumber()}})));
-
     std::vector<MPXPair> contractL({{MPXPair(1,MPSD.RightMatrix.InwardMatrixIndexNumber())}});
     MPXDecomposition L(MPS_matrix(contract(CurrentLambda,0,MPSD.RightMatrix,0,contractL)).left_shape().SVD());
     //MPS_matrix A2(std::move(L.ColumnMatrix));
@@ -217,8 +206,6 @@ namespace ajaj {
 
     ans.Matrices.emplace_back(reorder(contract(contract(XLYDecomp.ColumnMatrix,1,contract(MPX_matrix(basis,X.Index(0),scalevecX),0,X,0,contract10),0,contract00),0,MPSD.LeftMatrix,0,contract11),0,reorder102,2));
     ans.Matrices.emplace_back(contract(NL,0,contract(Xinv,0,XLYDecomp.ColumnMatrix,0,contract10),0,contract20));
-
-    //ans.Matrices.emplace_back(contract(contract(contract(MPSD.RightMatrix,0,CurrentLambda,0,contractL),0,contract(Y,0,XLYDecomp.RowMatrix,1,contract11),0,contract10),0,MPX_matrix(basis,XLYDecomp.RowMatrix.Index(1),XLYDecomp.Values,1),0,contract20));
 
     ans.Lambdas.emplace_back(XLYDecomp.Values);
     ans.Lambdas.emplace_back(MPSD.Values);
@@ -682,5 +669,30 @@ namespace ajaj {
 
   }
 
+  double MultiVertexEntropy(const UnitCell& U,uMPXInt v /* number of vertices */){
+    //contract together and include the correct lambda at end
+    if (!U.Matrices.size() || !U.Lambdas.size() || v<1 || v>2) return -1.0; //error!
+    MPX_matrix acc(U.Matrices.back().basis(),U.Matrices.back().Index(2),U.Lambdas.at(0));
+
+    if (v==1){
+      MPXDecomposition U1D(U.Matrices.at(0).SVD());
+      return entropy(contract(contract(U.Matrices.at(1),0,contract(MPX_matrix(U1D.RowMatrix.basis(),U1D.RowMatrix.Index(0),U1D.Values),0,U1D.RowMatrix,0,contract10),0,contract11),0,acc,0,contract10).ShiftNumRowIndices(1).SVD().Values);
+    }
+
+    acc=std::move(contract(U.Matrices.back(),0,acc,0,contract20));
+
+    for (size_t m=1; m<v; ++m){
+      //normal contraction
+      acc=std::move(contract(U.Matrices.at(U.Matrices.size()-m-1),0,acc,0,contract21));
+
+    }
+    return entropy(reorder(acc,0,reorder0213,2).SVD().Values);
+
+    //reshape so that physical indices are rows, matrix indices are cols
+    
+    //svd
+
+    //get entropy
+  }
 
 }

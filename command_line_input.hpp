@@ -166,7 +166,7 @@ namespace ajaj {
     }
   };
 
-  enum optionIndex {UNKNOWN,CHI,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET,FINITE_MEASUREMENT,NEV};
+  enum optionIndex {UNKNOWN,CHI,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET,FINITE_MEASUREMENT,NEV,ENTANGLEMENT,VERTEX_ENTANGLEMENT};
 
   const option::Descriptor store_usage[2] =
     {
@@ -242,7 +242,7 @@ namespace ajaj {
       { 0, 0, 0, 0, 0, 0 }
     };
 
-  const option::Descriptor iMEAS_usage[6] =
+  const option::Descriptor iMEAS_usage[8] =
     {
       {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: UNITCELL_MEASURE.bin [-D <number>] <unitcell_filename1> ... \n"},
       {OPERATORFILE,0,"O","operator filename",Arg::NonEmpty,"  -O <filename>, \t--operator-file=<filename>"
@@ -253,6 +253,10 @@ namespace ajaj {
        "  \tDon't extract index from filenames." },
       {NEV,0,"N","Number of eigenvalues",Arg::PositiveDefiniteNumeric,"  -N, \t--number-of-eigenvalues=<number>"
        "  \tNumber of transfer matrix eigenvalues to calculate." },
+      {ENTANGLEMENT,0,"E","Entanglement Entropy",Arg::None,"  -E, \t--entanglement-entropy"
+       "  \tCalculate the bipartite entanglement for the infinite system."},
+      {VERTEX_ENTANGLEMENT,0,"V","Multi Vertex Entanglement",Arg::PositiveDefiniteNumeric,"  -V <number>, \t--vertex-entanglement=<number>"
+       "  \tCalculate the entanglement entropy for <number> consecutive vertices in the infinite system."},
       { 0, 0, 0, 0, 0, 0 }
     };
 
@@ -542,14 +546,16 @@ namespace ajaj {
     unsigned long nev_;
     bool use_filename_index_;
     bool two_point_;
+    bool calc_entanglement_;
+    unsigned long vert_entanglement_;
 
     std::vector<std::string> operator_filenames_;
     std::vector<std::string> files_;
 
   public:
-    iMEAS_Args(int argc, char* argv[]) : Base_Args(argc,argv,iMEAS_usage),separation_(0),nev_(0),use_filename_index_(1),two_point_(0){
+    iMEAS_Args(int argc, char* argv[]) : Base_Args(argc,argv,iMEAS_usage),separation_(0),nev_(0),use_filename_index_(1),two_point_(0),calc_entanglement_(0),vert_entanglement_(0){
       if (valid_){
-	if (parse.nonOptionsCount()<1 || std::string(parse.nonOption(0))==std::string("-")) valid_=0;
+	if (parse.nonOptionsCount()<1 || std::string(parse.nonOption(0))==std::string("-")) {std::cout << "No files to process?" << std::endl<<std::endl; valid_=0;}
 	else {
 	  for (size_t f=0;f<parse.nonOptionsCount();++f){
 	    files_.emplace_back(parse.nonOption(f));
@@ -569,6 +575,10 @@ namespace ajaj {
 	  if (operator_filenames_.size()>1){//defined more than one op? then two point, on same vertex
 	    two_point_=1;
 	  }
+	  if (options[ENTANGLEMENT])
+	    calc_entanglement_=1;
+	  if (options[VERTEX_ENTANGLEMENT])
+	    vert_entanglement_=stoul(options[VERTEX_ENTANGLEMENT].arg);
 	}
       }
       else valid_=0;
@@ -581,6 +591,8 @@ namespace ajaj {
     bool use_filename_index() const {return use_filename_index_;}
     bool two_point() const {return two_point_;} //has a two point function been requested?
     unsigned long nev() const {return nev_;}
+    bool calc_entanglement() const {return calc_entanglement_;}
+    unsigned long vert_entanglement() const {return vert_entanglement_;}
   };
 
   class Store_Args : public Base_Args{

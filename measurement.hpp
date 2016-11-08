@@ -213,6 +213,9 @@ namespace ajaj {
   void LeftComponentsMultiply(const TransferMatrixComponents* stuff, std::complex<double> *in, std::complex<double> *out);
   void RightComponentsMultiply(const TransferMatrixComponents* stuff, std::complex<double> *in, std::complex<double> *out);
 
+  double MultiVertexEntropy(const UnitCell& U,uMPXInt v=1);
+
+
 }
 
 #endif
