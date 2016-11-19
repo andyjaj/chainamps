@@ -212,6 +212,53 @@ namespace ajaj {
     return ans;
   }
 
+  UnitCell OrthogonaliseInversionSymmetric(const UnitCell& C){
+    std::cout << "Orthogonalising..." << std::endl;
+    const Basis& basis(C.Matrices.front().basis());
+
+    //transfer matrix components with these flags enforces hermiticity of the (reshaped) left eigenvector
+    SparseED LeftTdecomp(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&C.Matrices.at(0),&C.Matrices.at(1)}}),1).LeftED(1,LARGESTMAGNITUDE));
+    std::cout << "Leading left eigenvalue of left transfer matrix: " << LeftTdecomp.Values.at(0) << std::endl; //will need to rescale by this
+    if (abs(imag(LeftTdecomp.Values.at(0)))>=IMAGTOL*abs(real(LeftTdecomp.Values.at(0)))) {
+      std::cout << "Eigenvalue has non negligible imaginary part, numerical error in transfer matrix contraction?" << std::endl;
+      return UnitCell(basis);
+    }
+
+    //decompose into Xdagger X form
+    std::vector<MPXIndex> VLIndices;
+    VLIndices.emplace_back(1,C.Matrices.front().getInwardMatrixIndex());
+    VLIndices.emplace_back(0,C.Matrices.front().getInwardMatrixIndex());
+    //decompose it into Xdagger X form
+    std::pair<std::vector<double>,MPX_matrix> VLDecomp(SqrtDR(MPX_matrix(basis,VLIndices,1,reshape(LeftTdecomp.EigenVectors/*.ExtractColumns(std::vector<MPXInt>({0}))*/,C.Matrices.front().getInwardMatrixIndex().size()))));
+    //If failure, return dummy
+    if (!VLDecomp.first.size()) return UnitCell(basis);
+
+    MPX_matrix X(contract(MPX_matrix(basis,VLDecomp.second.Index(0),VLDecomp.first),0,VLDecomp.second,0,contract10));
+    MPX_matrix Xinv(contract(reorder(VLDecomp.second,1,reorder10,1),0,MPX_matrix(basis,VLDecomp.second.Index(0),VLDecomp.first,1),0,contract10));
+    
+    std::vector<MPXIndex> VRIndices;
+    VRIndices.emplace_back(1,C.Matrices.back().getOutwardMatrixIndex());
+    VRIndices.emplace_back(0,C.Matrices.back().getOutwardMatrixIndex());
+    std::pair<std::vector<double>,MPX_matrix> VRDecomp(SqrtDR(MPX_matrix(basis,VRIndices,1,reshape(LeftTdecomp.EigenVectors,C.Matrices.back().getOutwardMatrixIndex().size()))));
+    //If failure, return dummy
+    if (!VRDecomp.first.size()) return UnitCell(basis);
+
+    MPX_matrix Y(contract(reorder(VRDecomp.second,1,reorder10,1),0,MPX_matrix(basis,VRDecomp.second.Index(0),VRDecomp.first),0,contract10));
+    MPXDecomposition XLYDecomp(contract(contract(X,0,MPX_matrix(basis,C.Matrices.back().getOutwardMatrixIndex(),C.Lambdas.front()),0,contract10),0,Y,0,contract10).SVD());
+
+    SquareSumRescale(XLYDecomp.Values,1.0);//rescale here to set normalisation
+    std::cout << "Entropy: " << entropy(XLYDecomp.Values) <<", Bond dimension: " << XLYDecomp.Values.size() << std::endl;
+
+    UnitCell ans(basis);
+    std::vector<double> scalevecX(C.Matrices.front().getInwardMatrixIndex().size(),1.0/sqrt(LeftTdecomp.Values.at(0).real()));
+
+    ans.Matrices.emplace_back(reorder(contract(contract(XLYDecomp.ColumnMatrix,1,contract(MPX_matrix(basis,X.Index(0),scalevecX),0,X,0,contract10),0,contract00),0,C.Matrices.front(),0,contract11),0,reorder102,2));
+    ans.Matrices.emplace_back(contract(C.Matrices.back(),0,contract(Xinv,0,XLYDecomp.ColumnMatrix,0,contract10),0,contract20));
+    ans.Lambdas.emplace_back(XLYDecomp.Values);
+    ans.Lambdas.emplace_back(C.Lambdas.back());
+    return ans;
+  }
+
   UnitCell Orthogonalise(const UnitCell& C){
     std::cout << "Orthogonalising..." << std::endl;
     const EigenStateArray& spectrum(C.Matrices.at(0).GetPhysicalSpectrum());
@@ -254,48 +301,48 @@ namespace ajaj {
     return ans;
   }
 
-  UnitCell OrthogonaliseInversionSymmetric(const UnitCell& C){
-    std::cout << "Orthogonalising..." << std::endl;
-    const EigenStateArray& spectrum(C.Matrices.at(0).GetPhysicalSpectrum());
-    SparseED LeftTdecomp(TransferMatrixParts(C).LeftED(1,LARGESTMAGNITUDE));
-    std::cout << "Leading left eigenvalue of left transfer matrix: " << LeftTdecomp.Values.at(0) << std::endl; //will need to rescale by this
+  // UnitCell OrthogonaliseInversionSymmetric(const UnitCell& C){
+  //   std::cout << "Orthogonalising..." << std::endl;
+  //   const EigenStateArray& spectrum(C.Matrices.at(0).GetPhysicalSpectrum());
+  //   SparseED LeftTdecomp(TransferMatrixParts(C).LeftED(1,LARGESTMAGNITUDE));
+  //   std::cout << "Leading left eigenvalue of left transfer matrix: " << LeftTdecomp.Values.at(0) << std::endl; //will need to rescale by this
 
-    if (abs(imag(LeftTdecomp.Values.at(0)))>=1.0e-14) {
-      std::cout << "Eigenvalue has non negligible imaginary part, numerical error in transfer matrix contraction?" << std::endl;
-      exit(1);
-    }
-    //make it into an MPX_matrix
-    std::vector<double> scalevecX(C.Matrices.at(0).Index(1).size(),1.0/sqrt(LeftTdecomp.Values.at(0).real()));
-    std::vector<MPXIndex> VLIndices;
-    VLIndices.emplace_back(1,C.Matrices.at(0).Index(1));
-    VLIndices.emplace_back(0,C.Matrices.at(0).Index(1));
-    //decompose it into Xdagger X form
-    //std::cout << "XDagger X"<< std::endl;
-    std::pair<std::vector<double>,MPX_matrix> VLDecomp(SqrtDR(MPX_matrix(spectrum,VLIndices,1,reshape(LeftTdecomp.EigenVectors,C.Matrices.at(0).Index(1).size()).massage())));
-    MPX_matrix X(contract(MPX_matrix(spectrum,VLDecomp.second.Index(0),VLDecomp.first),0,VLDecomp.second,0,contract10));
-    MPX_matrix Xinv(contract(reorder(VLDecomp.second,1,reorder10,1),0,MPX_matrix(spectrum,VLDecomp.second.Index(0),VLDecomp.first,1),0,contract10));
-    //now need to make Y
-    //if we have inversion symmetry, then we shouldn't need to worry about solving again
-    std::vector<MPXIndex> VRIndices;
-    VRIndices.emplace_back(1,C.Matrices.back().Index(2));
-    VRIndices.emplace_back(0,C.Matrices.back().Index(2));
-    //std::cout << "Y YDagger"<< std::endl; //will need to rescale by this
-    std::pair<std::vector<double>,MPX_matrix> VRDecomp(SqrtDR(MPX_matrix(spectrum,VRIndices,1,reshape(LeftTdecomp.EigenVectors,C.Matrices.back().Index(2).size()).massage())));
-    //to make Y we need to reorder and conjugate VRDecomp.second()
-    MPX_matrix Y(contract(reorder(VRDecomp.second,1,reorder10,1),0,MPX_matrix(spectrum,VRDecomp.second.Index(0),VRDecomp.first),0,contract10));
-    //need to form and svd  new lambda
-    MPXDecomposition XLYDecomp(contract(contract(X,0,MPX_matrix(spectrum,C.Matrices.back().Index(2),C.Lambdas.at(0)),0,contract10),0,Y,0,contract10).SVD());
-    //Udagger X A
-    //new lambda will need to be scaled to correct normalisation
-    SquareSumRescale(XLYDecomp.Values,1.0);
-    std::cout << "Entropy: " << entropy(XLYDecomp.Values) <<", Bond dimension: " << XLYDecomp.Values.size() << std::endl;
-    UnitCell ans(spectrum);
-    ans.Matrices.emplace_back(reorder(contract(contract(XLYDecomp.ColumnMatrix,1,contract(MPX_matrix(spectrum,X.Index(0),scalevecX),0,X,0,contract10),0,contract00),0,C.Matrices.at(0),0,contract11),0,reorder102,2));
-    ans.Matrices.emplace_back(contract(C.Matrices.back(),0,contract(Xinv,0,XLYDecomp.ColumnMatrix,0,contract10),0,contract20));
-    ans.Lambdas.emplace_back(XLYDecomp.Values);
-    ans.Lambdas.emplace_back(C.Lambdas.back());
-    return ans;
-  }
+  //   if (abs(imag(LeftTdecomp.Values.at(0)))>=1.0e-14) {
+  //     std::cout << "Eigenvalue has non negligible imaginary part, numerical error in transfer matrix contraction?" << std::endl;
+  //     exit(1);
+  //   }
+  //   //make it into an MPX_matrix
+  //   std::vector<double> scalevecX(C.Matrices.at(0).Index(1).size(),1.0/sqrt(LeftTdecomp.Values.at(0).real()));
+  //   std::vector<MPXIndex> VLIndices;
+  //   VLIndices.emplace_back(1,C.Matrices.at(0).Index(1));
+  //   VLIndices.emplace_back(0,C.Matrices.at(0).Index(1));
+  //   //decompose it into Xdagger X form
+  //   //std::cout << "XDagger X"<< std::endl;
+  //   std::pair<std::vector<double>,MPX_matrix> VLDecomp(SqrtDR(MPX_matrix(spectrum,VLIndices,1,reshape(LeftTdecomp.EigenVectors,C.Matrices.at(0).Index(1).size()).massage())));
+  //   MPX_matrix X(contract(MPX_matrix(spectrum,VLDecomp.second.Index(0),VLDecomp.first),0,VLDecomp.second,0,contract10));
+  //   MPX_matrix Xinv(contract(reorder(VLDecomp.second,1,reorder10,1),0,MPX_matrix(spectrum,VLDecomp.second.Index(0),VLDecomp.first,1),0,contract10));
+  //   //now need to make Y
+  //   //if we have inversion symmetry, then we shouldn't need to worry about solving again
+  //   std::vector<MPXIndex> VRIndices;
+  //   VRIndices.emplace_back(1,C.Matrices.back().Index(2));
+  //   VRIndices.emplace_back(0,C.Matrices.back().Index(2));
+  //   //std::cout << "Y YDagger"<< std::endl; //will need to rescale by this
+  //   std::pair<std::vector<double>,MPX_matrix> VRDecomp(SqrtDR(MPX_matrix(spectrum,VRIndices,1,reshape(LeftTdecomp.EigenVectors,C.Matrices.back().Index(2).size()).massage())));
+  //   //to make Y we need to reorder and conjugate VRDecomp.second()
+  //   MPX_matrix Y(contract(reorder(VRDecomp.second,1,reorder10,1),0,MPX_matrix(spectrum,VRDecomp.second.Index(0),VRDecomp.first),0,contract10));
+  //   //need to form and svd  new lambda
+  //   MPXDecomposition XLYDecomp(contract(contract(X,0,MPX_matrix(spectrum,C.Matrices.back().Index(2),C.Lambdas.at(0)),0,contract10),0,Y,0,contract10).SVD());
+  //   //Udagger X A
+  //   //new lambda will need to be scaled to correct normalisation
+  //   SquareSumRescale(XLYDecomp.Values,1.0);
+  //   std::cout << "Entropy: " << entropy(XLYDecomp.Values) <<", Bond dimension: " << XLYDecomp.Values.size() << std::endl;
+  //   UnitCell ans(spectrum);
+  //   ans.Matrices.emplace_back(reorder(contract(contract(XLYDecomp.ColumnMatrix,1,contract(MPX_matrix(spectrum,X.Index(0),scalevecX),0,X,0,contract10),0,contract00),0,C.Matrices.at(0),0,contract11),0,reorder102,2));
+  //   ans.Matrices.emplace_back(contract(C.Matrices.back(),0,contract(Xinv,0,XLYDecomp.ColumnMatrix,0,contract10),0,contract20));
+  //   ans.Lambdas.emplace_back(XLYDecomp.Values);
+  //   ans.Lambdas.emplace_back(C.Lambdas.back());
+  //   return ans;
+  // }
 
   UnitCell OrthogonaliseInversionSymmetric(const MPSDecomposition& MPSD,const std::vector<double>& PreviousLambda){
     //makes a copy, in order to preserve the A Lambda B decomposition

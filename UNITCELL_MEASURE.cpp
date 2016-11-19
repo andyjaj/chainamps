@@ -163,7 +163,6 @@ int main(int argc, char** argv){
 	return 0;
       }
     }
-
     //sort
 
     if (RuntimeArgs.use_filename_index()){
@@ -178,7 +177,6 @@ int main(int argc, char** argv){
       mss << opinfo.front();
       if (RuntimeArgs.two_point())
 	mss << "_" << opinfo.back() << "_" << RuntimeArgs.separation();
-      
     }
 
     std::ostringstream outfilename;
