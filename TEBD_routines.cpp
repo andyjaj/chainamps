@@ -124,8 +124,11 @@ namespace ajaj{
 	if (m_current_time_step % measurement_interval==0) /*make measurement*/ {
 	  UnitCell ortho(OrthogonaliseInversionSymmetric(m_unit));
 	  ortho.OutputOneVertexDensityMatrix("OneVertexRho",m_current_time_step);
-	  ortho.store(Name_,m_current_time_step);
-	  this->do_measurements(ortho,measuredMPOs);
+	  if (ortho.size()){ //only if unitcell isn't empty
+	    ortho.store(Name_,m_current_time_step);
+	    this->do_measurements(ortho,measuredMPOs);
+	  }
+	  m_unit=std::move(ortho);
 	}
       }
     }
@@ -143,10 +146,17 @@ namespace ajaj{
 	  //swap order
 	  m_unit.swap(0,1);
 	  //measure etc.
-	  m_unit=std::move(OrthogonaliseInversionSymmetric(m_unit));
-	  m_unit.store(Name_,m_current_time_step);
-	  m_unit.OutputOneVertexDensityMatrix("OneVertexRho",m_current_time_step);
-	  this->do_measurements(m_unit,measuredMPOs);
+	  UnitCell ortho(OrthogonaliseInversionSymmetric(m_unit));
+	  if (ortho.size()){ //if generating unitcell works, then measure and use it
+	    ortho.store(Name_,m_current_time_step);
+	    ortho.OutputOneVertexDensityMatrix("OneVertexRho",m_current_time_step);
+	    this->do_measurements(ortho,measuredMPOs);
+	    m_unit=std::move(ortho);
+	  }
+	  //m_unit=std::move(OrthogonaliseInversionSymmetric(m_unit));
+	  //m_unit.store(Name_,m_current_time_step);
+	  //m_unit.OutputOneVertexDensityMatrix("OneVertexRho",m_current_time_step);
+	  //this->do_measurements(m_unit,measuredMPOs);
 
 	  //complete time step
 	  apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
