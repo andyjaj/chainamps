@@ -65,12 +65,12 @@ ajaj::MPO_matrix MakeHamiltonian(const ajaj::Vertex& modelvertex, const ajaj::Ve
 
   cout << "End generating chain spectrum, generated " << ModelVertex.Spectrum.size() << " states" << endl;
   cout << "Starting Matrix Elements" << endl;
-  ModelVertex.Operators.push_back(ajaj::VertexOperator("Spin x Operator",ModelVertex.Spectrum.size()));
+  ModelVertex.Operators.push_back(ajaj::VertexOperator("Spin_x_Operator",ModelVertex.Spectrum.size()));
   ModelVertex.Operators.back().MatrixElements.entry(0,1,1.0);
   ModelVertex.Operators.back().MatrixElements.entry(1,0,1.0);
   ModelVertex.Operators.back().MatrixElements.finalise();
 
-  ModelVertex.Operators.push_back(ajaj::VertexOperator("Spin z Operator",ModelVertex.Spectrum.size()));
+  ModelVertex.Operators.push_back(ajaj::VertexOperator("Spin_z_Operator",ModelVertex.Spectrum.size()));
   ModelVertex.Operators.back().MatrixElements.entry(0,0,1.0);
   ModelVertex.Operators.back().MatrixElements.entry(1,1,-1.0);
   ModelVertex.Operators.back().MatrixElements.finalise();
