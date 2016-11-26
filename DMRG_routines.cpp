@@ -466,8 +466,6 @@ namespace ajaj {
     else {
       StorageName=getName();
     }
-    // PROBLEM IS HERE
-    //  INCORRECT STORAGE NAME FOR HIGHER EXCITED STATES?
 
     const EigenStateArray& spectrum=getH().GetPhysicalSpectrum();
     //check we can move right
@@ -812,7 +810,7 @@ namespace ajaj {
     //internal contractions may be large.
     //however if allowed_indices is small we should use a dense method
 
-    if (allowed_indices.size()<400){
+    if (allowed_indices.size()<400 && !ProjectorTensors.size()){
       //just make the (dense) matrix and use lapack
       static std::pair<const std::vector<MPXInt>,const std::vector<MPXInt> > condition={{1,7},{2,6}};
       TranslationBlock<DenseMatrix> TB(contract_conditional<DenseMatrix>(contract(H,0,LeftBlock,0,contract13),0,contract(H,0,RightBlock,0,contract32),0,contract21,condition));
@@ -916,6 +914,7 @@ namespace ajaj {
       //Vector.print_indices();
 
       SparseMatrix s(contract_to_sparse(PT.first,0,Vector,0,contract00112233));//really should be a scalar
+      //std:: cout << "s: " << s.get_x(0) <<std::endl;
       if (s.rows()!=1 || s.cols()!=1){
 	std::cout << "Error contracting projector down to scalar: " << s.rows() << " " << s.cols() << std::endl;
       }

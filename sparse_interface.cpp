@@ -1006,7 +1006,9 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     if (old.rows()*old.cols()!=newrows*newcols){std::cout << "Incorrect reshape params" << std::endl; exit(1);}
     if (newrows==old.rows()){
       // just copy
+#ifndef NDEBUG
       std::cout << "Requested reshape is the same as original, so just copying..." <<std::endl;
+#endif
       return SparseMatrix(old);
     }
     else {
