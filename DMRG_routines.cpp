@@ -712,7 +712,6 @@ namespace ajaj {
     formations++;
 #endif
 
-
     MPXInt num_to_find = stuff.length() >= 5 ? 4 : 1;
 #ifdef TIMING
     auto tD1 = std::chrono::high_resolution_clock::now();
@@ -724,16 +723,23 @@ namespace ajaj {
     decomp_time_millisecs+=std::chrono::duration_cast<std::chrono::milliseconds>(tD2-tD1).count();
     decomps++;
 #endif
-
-    std::cout << "Lowest energy/Number of Vertices: " << decomp.Values[0]/double(NumVertices) <<std::endl;
+    if (!ProjectorBlocksPtr){ //are we looking for excited states?
+      std::cout << "Lowest energy/Number of Vertices: " << decomp.Values[0]/double(NumVertices) <<std::endl;
+    }
+    std::cout << "Lowest eigenvalue: " << decomp.Values[0] <<std::endl;
     if (num_to_find>1) {
-      std::cout << "Next lowest eigenvalues/Number of Vertices: ";
+      std::cout << "Next lowest eigenvalues: ";
       for (MPXInt n=1;n<num_to_find;++n) {
-	std::cout << decomp.Values[n]/double(NumVertices)  << " ";
+	std::cout << decomp.Values[n] << " ";
       }
       std::cout << std::endl;
     }
-    result.Real_measurements.push_back(decomp.Values[0]/double(NumVertices));
+    if (ProjectorBlocksPtr){ //looking for excited states, then don't divide
+      result.Real_measurements.push_back(decomp.Values[0]);
+    }
+    else {
+      result.Real_measurements.push_back(decomp.Values[0]/double(NumVertices));
+    }
     //need to reshape from a vector
     //(sigma a), (sigma a) matrix form
     return MPX_matrix(LB.GetPhysicalSpectrum(),stuff.indices,2,reshape(decomp.EigenVectors.ExtractColumns(std::vector<MPXInt>(1,0)),LB.GetPhysicalSpectrum().size()*LB.Index(5).size()));

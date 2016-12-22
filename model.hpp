@@ -30,6 +30,7 @@ namespace ajaj{
       basis().print();
       std::cout << "MPO MATRIX INFO" <<std::endl;
       H_MPO.print_indices();
+      H_MPO.print_sparse_info();
     }
 
     const Basis& basis() const {return vertex.basis();}

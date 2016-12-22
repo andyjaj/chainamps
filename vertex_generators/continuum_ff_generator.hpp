@@ -49,6 +49,7 @@ namespace continuumff{
     //now the more annoying pieces
 
     double tunnelling=couplingparams[0].Value;
+    double Delta=modelvertex.Parameters[1].Value;
 
     ajaj::Sparseint A_col_offset=1; //+1 for identity matrix in first block
     ajaj::Sparseint A_row_offset=differencecombinations.size()*number_of_measured_modes+1; //reversed order
