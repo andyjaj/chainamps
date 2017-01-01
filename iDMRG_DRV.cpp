@@ -24,6 +24,8 @@ int main(int argc, char** argv){
     static double convergence_test=-0.0;
     const ajaj::Model myModel(ajaj::MakeModelFromArgs(RuntimeArgs));
 
+    myModel.H_MPO.print_matrix();
+
     ajaj::State TargetState(myModel.make_target(RuntimeArgs.target()));
     ajaj::DataOutput results(ajaj::OutputName(RuntimeArgs.filename(),"Energies.dat"),"Index, Energy/vertex, Entropy, Truncation, Fidelity");
     ajaj::iDMRG infvol(std::string("GroundState"),myModel.H_MPO,TargetState,results);

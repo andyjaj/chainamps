@@ -29,11 +29,12 @@ namespace continuumff{
     ajaj::QNCombinations differencecombinations(modelvertex.Spectrum,1); //1 means use difference
 
     //Unlike the Ising case (where the coupling operator is spin, which is Hermitian) the coupling here is a tunneling: psi^dagger psi, where psi is not Hermitian.
-    //Therefore there is an extra factor of 2, in 2*couplingparams.size(), as A_n and A_n^dagger are different
+    //Therefore there is an extra factor of 2, as A_n and A_n^dagger are different
     //Additionally there is a different tunnelling for each fermionic mode, n, i.e. a tunnelling term looks like A_{n,i}^dagger A_{n,i+1} where i is the vertex index
 
-    ajaj::MPXInt number_of_measured_modes=modelvertex.Operators.size()-1; //first operator is the total occupation and currently we don't measure anything else...
-    //would need to adapt the above otherwise
+    ajaj::MPXInt number_of_measured_modes=modelvertex.Operators.size()-2; //first operator is the total occupation and last is vertex hamiltonian.
+    //This is a flaky step, and should be checked first if there are any errors
+    //better to count up the number of 'weighted annihilation operators'
 
     ajaj::MPXInt lineardim=modelvertex.Spectrum.size()*(2+2*number_of_measured_modes*differencecombinations.size()); //the actual length of the sparse matrix needed
     ajaj::MPXInt offset_to_last_block=modelvertex.Spectrum.size()*(1+2*number_of_measured_modes*differencecombinations.size()); //offset to get to the last row of operators
@@ -156,8 +157,8 @@ namespace continuumff{
     ajaj::MPXInt num_chain_states = 0;
 
     //useful containers
-    std::vector<int>* onechain_modenumber_ptr=new std::vector<int>();
-    std::vector<int> &onechain_modenumber=*onechain_modenumber_ptr;
+    //std::vector<int>* onechain_modenumber_ptr=new std::vector<int>();
+    //std::vector<int> &onechain_modenumber=*onechain_modenumber_ptr;
     //block for setting up occupation numbers
     //need to guess largest k
     int measured_occupations=0;
@@ -169,7 +170,7 @@ namespace continuumff{
     }
     ++measured_occupations; //add on 1 to make array sizes right
 
-    cout << "Number of +tive measured occupations including zero: " << measured_occupations << endl;
+    cout << "Number of +tive measured occupations including zero mode: " << measured_occupations << endl;
 
     bool** occupations=new bool*[2*measured_occupations-1];
     for (int i=0;i<2*measured_occupations-1;++i){
@@ -184,7 +185,7 @@ namespace continuumff{
     /*NS sector 0 particle mode, continuum chain ground state */
     ModelVertex.Spectrum.push_back(ajaj::EigenState(ChargeRules,ajaj::QNVector(1,0),onechain_gs_energy));
 
-    onechain_modenumber.push_back(0);
+    //onechain_modenumber.push_back(0);
 
     cout << "NS0: " << num_chain_states << " * " << ModelVertex.Spectrum[0].en << " " << (2.*M_PI/R)*ModelVertex.Spectrum[0][0]<< endl;
     cout << "mode 0 particles: 1" << endl << endl;
@@ -225,7 +226,7 @@ namespace continuumff{
 	    check_mode(i,num_chain_states,measured_occupations,occupations);
 	    check_mode(j,num_chain_states,measured_occupations,occupations);
 	     
-	    onechain_modenumber.push_back(2);
+	    //onechain_modenumber.push_back(2);
 
 	    cout << "NS2: " << num_chain_states << " " << i << " " << j << " ";
 	    cout << en << " " << (2.*M_PI/R)*ModelVertex.Spectrum[num_chain_states][0] << endl;
@@ -252,7 +253,7 @@ namespace continuumff{
 	      check_mode(j,num_chain_states,measured_occupations,occupations);
 	      check_mode(k,num_chain_states,measured_occupations,occupations);
 		  
-	      onechain_modenumber.push_back(3);
+	      //onechain_modenumber.push_back(3);
 		  
 	      cout << "R3: " << num_chain_states << " " << i << " " << j << " " << k << " ";
 	      cout << en << " " << (2.*M_PI/R)*ModelVertex.Spectrum[num_chain_states][0] << endl;
@@ -282,7 +283,7 @@ namespace continuumff{
 		check_mode(k,num_chain_states,measured_occupations,occupations);
 		check_mode(l,num_chain_states,measured_occupations,occupations);
 
-		onechain_modenumber.push_back(4);	    
+		//onechain_modenumber.push_back(4);	    
 	    
 		cout << "NS4: " << num_chain_states << " " << i << " " << j << " " << k << " " << l << " ";
 		cout << en << " " << (2.*M_PI/R)*ModelVertex.Spectrum[num_chain_states][0] << endl;
@@ -315,7 +316,7 @@ namespace continuumff{
 		  check_mode(l,num_chain_states,measured_occupations,occupations);
 		  check_mode(m,num_chain_states,measured_occupations,occupations);
 
-		  onechain_modenumber.push_back(5);
+		  //onechain_modenumber.push_back(5);
 
 		  cout << "R5: " << num_chain_states << " " << i << " " << j << " " << k << " " << l << " " << m << " ";
 		  cout << en << " " << (2.*M_PI)*ModelVertex.Spectrum[num_chain_states][0] << endl;
@@ -351,7 +352,7 @@ namespace continuumff{
 		    check_mode(m,num_chain_states,measured_occupations,occupations);
 		    check_mode(n,num_chain_states,measured_occupations,occupations);
 
-		    onechain_modenumber.push_back(6);
+		    //onechain_modenumber.push_back(6);
 
 		    cout << "NS6: " << num_chain_states << " " << i << " " << j << " " << k << " " << l << " " << m << " " << n << " ";
 		    cout << en << " " << (2.*M_PI/R)*ModelVertex.Spectrum[num_chain_states][0] << endl;
@@ -374,7 +375,7 @@ namespace continuumff{
     cout << "End generating spectrum, generated " << num_chain_states << " states" << endl;
     cout << "Starting Matrix Elements" << endl;
 
-    ModelVertex.Operators.push_back(ajaj::VertexOperator("Total Number",ModelVertex.Spectrum.size()));
+    ModelVertex.Operators.push_back(ajaj::VertexOperator("Total_Number",ModelVertex.Spectrum.size()));
     for (int j=0;j<ModelVertex.Spectrum.size();++j){
       ModelVertex.Operators.back().MatrixElements.entry(j,j,static_cast<complex<double> >(total_occupation[j]));
     }
@@ -383,7 +384,7 @@ namespace continuumff{
     // add some more matrices
     for (int m=0;m<2*measured_occupations-1;++m){
       std::stringstream name;
-      name << "Weighted Annihilation Operator " << m+1;
+      name << "Weighted_Annihilation_Operator_" << m+1;
       ModelVertex.Operators.push_back(ajaj::VertexOperator(name.str(),ModelVertex.Spectrum.size())); //weighted by sqrt(mass/energy)
     }
   
@@ -408,7 +409,7 @@ namespace continuumff{
     }
 
     //clean up workspace
-    delete onechain_modenumber_ptr;
+    //delete onechain_modenumber_ptr;
     for (int i=0;i<2*measured_occupations-1;++i){
       delete[] occupations[i];
     }
