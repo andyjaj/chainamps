@@ -53,9 +53,9 @@ int main(int argc, char** argv){
       }
     }
     else {
-      Initial=MakeProductStateUnitCell(myModel.basis(),0,ajaj::State(myModel.basis().getChargeRules()));
       Name="Ortho";
-      //Initial=MakeProductStateUnitCell(myModel.basis(),std::vector<std::pair<ajaj::uMPXInt,double> > ({{0,1.0/sqrt(2.0)},{1,1.0/sqrt(2.0)}}),ajaj::State(myModel.basis().getChargeRules()))
+      Initial=MakeProductStateUnitCell(myModel.basis(),0,ajaj::State(myModel.basis().getChargeRules()));
+      //Initial=MakeProductStateUnitCell(myModel.basis(),std::vector<std::pair<ajaj::uMPXInt,double> > ({{0,1.0/sqrt(2.0)},{1,1.0/sqrt(2.0)}}),ajaj::State(myModel.basis().getChargeRules()));
     }
 
 

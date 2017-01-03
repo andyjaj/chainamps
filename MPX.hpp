@@ -126,7 +126,10 @@ namespace ajaj {
     MPX_matrix(const EigenStateArray& spectrum) noexcept; /**< Default constructor. All tensors need to know about the physical spectrum. This might be a design flaw.*/
     MPX_matrix(const EigenStateArray& spectrum, const std::vector<MPXIndex>& indices, const Sparseint numrowindices, const SparseMatrix& matrix); /**< Constructor, indices are listed in order from left to right. numrowindices lets the object know how many of the indices are associated with rows of the SparseMatrix. */
     MPX_matrix(const EigenStateArray& spectrum, const std::vector<MPXIndex>& indices, const Sparseint numrowindices, SparseMatrix&& matrix);
-    MPX_matrix(const EigenStateArray& spectrum, const MPXIndex& index, const std::vector<complex<double> >& values,bool inverse=0); /**< Diagonal constructor, with possible inversion of values.*/
+    MPX_matrix(const EigenStateArray& spectrum, const MPXIndex& index, const std::vector<std::complex<double> >& values,bool inverse=0); /**< Diagonal constructor, with possible inversion of values.*/
+    MPX_matrix(const EigenStateArray& spectrum, const MPXIndex& Lindex, const MPXIndex& Rindex, const std::vector<std::complex<double> >& values,bool inverse=0); /**< Diagonal constructor, with different left and right indices and possible inversion of values.*/
+    MPX_matrix(const EigenStateArray& spectrum, const MPXIndex& Lindex, const MPXIndex& Rindex, const std::vector<double>& values,bool inverse=0); /**< Diagonal constructor, with different left and right indices and possible inversion of values.*/
+
     MPX_matrix(const EigenStateArray& spectrum, const MPXIndex& index, const std::vector<double>& values,bool inverse=0);
     MPX_matrix(MPX_matrix&& rhs) noexcept : m_SpectrumPtr(rhs.m_SpectrumPtr) {swap(*this,rhs);}
     MPX_matrix(const MPX_matrix& rhs) : m_SpectrumPtr(rhs.m_SpectrumPtr), m_Indices(rhs.m_Indices), m_NumRowIndices(rhs.m_NumRowIndices), m_Matrix(copy(rhs.m_Matrix)){}

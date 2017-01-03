@@ -181,6 +181,7 @@ namespace ajaj {
     VLIndices.emplace_back(1,MPSD.LeftMatrix.getInwardMatrixIndex());
     VLIndices.emplace_back(0,MPSD.LeftMatrix.getInwardMatrixIndex());
     //decompose it into Xdagger X form
+
     std::pair<std::vector<double>,MPX_matrix> VLDecomp(SqrtDR(MPX_matrix(basis,VLIndices,1,reshape(LeftTdecomp.EigenVectors/*.ExtractColumns(std::vector<MPXInt>({0}))*/,MPSD.LeftMatrix.getInwardMatrixIndex().size()))));
     //If failure, return dummy
     if (!VLDecomp.first.size()) return UnitCell(basis);
@@ -191,11 +192,13 @@ namespace ajaj {
     std::vector<MPXIndex> VRIndices;
     VRIndices.emplace_back(1,MPSD.RightMatrix.getOutwardMatrixIndex());
     VRIndices.emplace_back(0,MPSD.RightMatrix.getOutwardMatrixIndex());
+
     std::pair<std::vector<double>,MPX_matrix> VRDecomp(SqrtDR(MPX_matrix(basis,VRIndices,1,reshape(RightTdecomp.EigenVectors/*.ExtractColumns(std::vector<MPXInt>({0}))*/,MPSD.RightMatrix.getOutwardMatrixIndex().size()))));
     //If failure, return dummy
     if (!VRDecomp.first.size()) return UnitCell(basis);
 
     MPX_matrix Y(contract(reorder(VRDecomp.second,1,reorder10,1),0,MPX_matrix(basis,VRDecomp.second.Index(0),VRDecomp.first),0,contract10));
+    std::cout << "X Lambda Y" << std::endl;
 
     MPXDecomposition XLYDecomp(contract(contract(X,0,MPX_matrix(basis,MPSD.RightMatrix.getOutwardMatrixIndex(),PreviousLambda),0,contract10),0,Y,0,contract10).SVD());//SVD with no args keeps all singular values...
     SquareSumRescale(XLYDecomp.Values,1.0);//rescale here to set normalisation

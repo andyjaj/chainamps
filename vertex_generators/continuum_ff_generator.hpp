@@ -134,6 +134,7 @@ namespace continuumff{
     //initialise vertex object
     ajaj::Vertex ModelVertex(inputs);
     ModelVertex.ChargeRules.push_back(0); //just a momentum quantum number
+    ModelVertex.ChargeRules.push_back(1); //number
 
     const ajaj::QNVector& ChargeRules=ModelVertex.ChargeRules; //useful reference, saves typing ModelVertex
 
@@ -183,7 +184,7 @@ namespace continuumff{
     std::vector<int> total_occupation;
 
     /*NS sector 0 particle mode, continuum chain ground state */
-    ModelVertex.Spectrum.push_back(ajaj::EigenState(ChargeRules,ajaj::QNVector(1,0),onechain_gs_energy));
+    ModelVertex.Spectrum.push_back(ajaj::EigenState(ChargeRules,ajaj::QNVector({{ajaj::QuantumNumberInt(0),0}}),onechain_gs_energy));
 
     //onechain_modenumber.push_back(0);
 
@@ -200,7 +201,7 @@ namespace continuumff{
 	double en = Delta*sqrt(1.+pow(2.*M_PI*i/DR,2.)) +vac;
 	if (en < spectrum_cutoff) {       
 	  mode1part_R++;
-	  ModelVertex.Spectrum.push_back(ajaj::EigenState(ChargeRules,ajaj::QNVector(1,i),en));
+	  ModelVertex.Spectrum.push_back(ajaj::EigenState(ChargeRules,ajaj::QNVector({{ajaj::QuantumNumberInt(i),1}}),en));
 	  check_mode(i,num_chain_states,measured_occupations,occupations);
   
 	  cout << "R1: " << num_chain_states << " " << i << " " << en << " " << (2.*M_PI/R)*ModelVertex.Spectrum[num_chain_states][0] << endl;
@@ -222,7 +223,7 @@ namespace continuumff{
 	  double en = Delta*(sqrt(1.+pow(2.*M_PI*(i)/DR,2.))+sqrt(1.+pow(2.*M_PI*(j)/DR,2.)))+vac;
 	  if (en< spectrum_cutoff) {
 	    mode2part_NS++;
-	    ModelVertex.Spectrum.push_back(ajaj::EigenState(ChargeRules,ajaj::QNVector(1,i+j),en));
+	    ModelVertex.Spectrum.push_back(ajaj::EigenState(ChargeRules,ajaj::QNVector({{ajaj::QuantumNumberInt(i+j),2}}),en));
 	    check_mode(i,num_chain_states,measured_occupations,occupations);
 	    check_mode(j,num_chain_states,measured_occupations,occupations);
 	     
@@ -248,7 +249,7 @@ namespace continuumff{
 	    double en = Delta*(sqrt(1.+pow(2.*M_PI*i/DR,2.)) + sqrt(1.+pow(2.*M_PI*j/DR,2.)) + sqrt(1.+pow(2.*M_PI*k/DR,2.))) + vac;
 	    if (en < spectrum_cutoff) {
 	      mode3part_R++;
-	      ModelVertex.Spectrum.push_back(ajaj::EigenState(ChargeRules,ajaj::QNVector(1,i+j+k),en));
+	      ModelVertex.Spectrum.push_back(ajaj::EigenState(ChargeRules,ajaj::QNVector({{ajaj::QuantumNumberInt(i+j+k),3}}),en));
 	      check_mode(i,num_chain_states,measured_occupations,occupations);
 	      check_mode(j,num_chain_states,measured_occupations,occupations);
 	      check_mode(k,num_chain_states,measured_occupations,occupations);
@@ -277,7 +278,7 @@ namespace continuumff{
 	      double en = Delta*(sqrt(1.+pow(2.*M_PI*(i)/DR,2.))+sqrt(1.+pow(2.*M_PI*(j)/DR,2.)))+ sqrt(1.+pow(2.*M_PI*(k)/DR,2.)) + sqrt(1.+pow(2.*M_PI*(l)/DR,2.))+vac;
 	      if (en < spectrum_cutoff) {
 		mode4part_NS++;
-		ModelVertex.Spectrum.push_back(ajaj::EigenState(ChargeRules,ajaj::QNVector(1,i+j+k+l),en));
+		ModelVertex.Spectrum.push_back(ajaj::EigenState(ChargeRules,ajaj::QNVector({{ajaj::QuantumNumberInt(i+j+k+l),4}}),en));
 		check_mode(i,num_chain_states,measured_occupations,occupations);
 		check_mode(j,num_chain_states,measured_occupations,occupations);
 		check_mode(k,num_chain_states,measured_occupations,occupations);
@@ -309,7 +310,7 @@ namespace continuumff{
 		double en = Delta*(sqrt(1.+pow(2.*M_PI*i/DR,2.)) + sqrt(1.+pow(2.*M_PI*(j)/DR,2.)) + sqrt(1.+pow(2.*M_PI*(k)/DR,2.)) + sqrt(1.+pow(2.*M_PI*(l)/DR,2.)) + sqrt(1.+pow(2.*M_PI*(m)/DR,2.))) + vac;//-onechain_gs_energy;
 		if (en < spectrum_cutoff) {
 		  mode5part_R++;
-		  ModelVertex.Spectrum.push_back(ajaj::EigenState(ChargeRules,ajaj::QNVector(1,i+j+k+l+m),en));
+		  ModelVertex.Spectrum.push_back(ajaj::EigenState(ChargeRules,ajaj::QNVector({{ajaj::QuantumNumberInt(i+j+k+l+m),5}}),en));
 		  check_mode(i,num_chain_states,measured_occupations,occupations);
 		  check_mode(j,num_chain_states,measured_occupations,occupations);
 		  check_mode(k,num_chain_states,measured_occupations,occupations);
@@ -344,7 +345,7 @@ namespace continuumff{
 		  double en = Delta*(sqrt(1.+pow(2.*M_PI*(i)/DR,2.))+sqrt(1.+pow(2.*M_PI*(j)/DR,2.)))+ sqrt(1.+pow(2.*M_PI*(k)/DR,2.)) + sqrt(1.+pow(2.*M_PI*(l)/DR,2.))+sqrt(1.+pow(2.*M_PI*(m)/DR,2.)) + sqrt(1.+pow(2.*M_PI*(n)/DR,2.))+vac;
 		  if (en < spectrum_cutoff) {
 		    mode6part_NS++;
-		    ModelVertex.Spectrum.push_back(ajaj::EigenState(ChargeRules,ajaj::QNVector(1,i+j+k+l+m+n),en));
+		    ModelVertex.Spectrum.push_back(ajaj::EigenState(ChargeRules,ajaj::QNVector({{ajaj::QuantumNumberInt(i+j+k+l+m+n),6}}),en));
 		    check_mode(i,num_chain_states,measured_occupations,occupations);
 		    check_mode(j,num_chain_states,measured_occupations,occupations);
 		    check_mode(k,num_chain_states,measured_occupations,occupations);

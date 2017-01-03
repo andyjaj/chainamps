@@ -204,7 +204,7 @@ namespace ajaj {
     initial_2(MakeInitialLeftBlock(LeftH,CentralDecomposition.LeftMatrix),MakeInitialRightBlock(RightH,CentralDecomposition.RightMatrix));
     //at this point there are 2 vertices, and we have pre stored the blocks they contribute to
     previous_lambda_=std::vector<double>(1,1.0);
-    pred_=MakePrediction(CentralDecomposition,previous_lambda_);//give use one way of checking overlap of current state with the previous one.
+    pred_=MakePrediction(CentralDecomposition,previous_lambda_);//allows checking overlap of current state with the previous one.
     fidelity_=CheckConvergence(pred_,previous_lambda_);
     double S_E(entropy(CentralDecomposition.Values));
     std::cout << "Current Bond Dimension: " << CentralDecomposition.Values.size() << ", Entropy: " << S_E << std::endl;
@@ -668,7 +668,8 @@ namespace ajaj {
     SparseHED decomp(H2.Eigs(TargetSector,2,SMALLESTREAL));//uses arpack, finds two eigenvals for fun
     decomp.printValues();
     std::cout << "Lowest energy/Number of Vertices: " << decomp.Values[0]/2.0 <<std::endl;
-    std::cout << "Next lowest energy/Number of Vertices: " << decomp.Values[1]/2.0 <<std::endl;
+    if (decomp.ValuesSize()>1)
+      std::cout << "Next lowest energy/Number of Vertices: " << decomp.Values[1]/2.0 <<std::endl;
     result.Real_measurements.push_back(decomp.Values[0]/2.0);
     std::vector<MPXIndex> wfindices;
     wfindices.push_back(MPXIndex(1,H2.GetPhysicalSpectrum())); //ingoing
@@ -689,10 +690,9 @@ namespace ajaj {
     MPX_matrix ALambdaR(reorder(contract(svals,0,Decomp.RightMatrix,0,contract10),0,reorder102,2));
     RotDecomp=ALambdaR.SVD();
     ans.LambdaR=contract_to_sparse(MPX_matrix(spectrum,RotDecomp.RowMatrix.Index(0),RotDecomp.Values),0,RotDecomp.RowMatrix,0,contract10);
-    MPX_matrix InversePreviousLambda(spectrum,Decomp.LeftMatrix.Index(1),PreviousLambda,1); //1 means take inverse values    
+    MPX_matrix InversePreviousLambda(spectrum,Decomp.RightMatrix.Index(2),Decomp.LeftMatrix.Index(1),PreviousLambda,1); //1 means take inverse values    
     ans.Guess=reshape_to_vector(contract(contract(ALambdaR,0,InversePreviousLambda,0,contract20),0,LambdaLB,0,contract20));
     //ans.Guess.rescale(sqrt(1.0/ans.Guess.square_norm()));
-
     return ans;
   }
 
@@ -727,7 +727,7 @@ namespace ajaj {
       std::cout << "Lowest energy/Number of Vertices: " << decomp.Values[0]/double(NumVertices) <<std::endl;
     }
     std::cout << "Lowest eigenvalue: " << decomp.Values[0] <<std::endl;
-    if (num_to_find>1) {
+    if (decomp.ValuesSize()>1) {
       std::cout << "Next lowest eigenvalues: ";
       for (MPXInt n=1;n<num_to_find;++n) {
 	std::cout << decomp.Values[n] << " ";
@@ -810,6 +810,7 @@ namespace ajaj {
     uMPXInt fulldim(this->length());
     std::cout <<"Eigensolver for matrix of length " << fulldim << std::endl;
     std::cout <<"Using reduced subspace of length " << allowed_indices.size() <<std::endl;
+    numevals=numevals > allowed_indices.size() ? allowed_indices.size() : numevals;
 
     SparseVectorWithRestriction guess_struct(initial,&allowed_indices);
 
@@ -822,7 +823,7 @@ namespace ajaj {
       TranslationBlock<DenseMatrix> TB(contract_conditional<DenseMatrix>(contract(H,0,LeftBlock,0,contract13),0,contract(H,0,RightBlock,0,contract32),0,contract21,condition));
       //use lapack
       DenseHED dense_ans(TB.Block.HED(numevals,which));
-      return SparseHED(std::vector<double>(dense_ans.Values,dense_ans.Values+numevals),TB.TranslateRows(dense_ans.EigenVectors));
+      return SparseHED(std::vector<double>(dense_ans.Values,dense_ans.Values+dense_ans.ValuesSize()),TB.TranslateRows(dense_ans.EigenVectors));
     }
     else {
       std::cout <<"Allocate storage for evals and evecs" << std::endl;

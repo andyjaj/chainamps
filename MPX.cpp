@@ -436,9 +436,19 @@ namespace ajaj {
     if (!m_Matrix.is_finalised()){std::cout << "Initialising MPX_matrix from unfinalised SparseMatrix is not allowed!" << std::endl; exit(1);}
   };
 
-  MPX_matrix::MPX_matrix(const EigenStateArray& spectrum, const MPXIndex& index, const std::vector<complex<double> >& values, bool inverse): m_SpectrumPtr(&spectrum) {
+  MPX_matrix::MPX_matrix(const EigenStateArray& spectrum, const MPXIndex& index, const std::vector<std::complex<double> >& values, bool inverse): m_SpectrumPtr(&spectrum) {
     m_Indices.emplace_back(1,index);
     m_Indices.emplace_back(0,index);
+    m_NumRowIndices=1;
+    m_Matrix=SparseMatrix(values,inverse);
+  };
+
+  MPX_matrix::MPX_matrix(const EigenStateArray& spectrum, const MPXIndex& Lindex, const MPXIndex& Rindex, const std::vector<std::complex<double> >& values, bool inverse): m_SpectrumPtr(&spectrum) {
+    if (Lindex.size()!=Rindex.size()){
+      std::cout << "Malformed diagonal MPX_matrix, left and right indices are of different lengths!" <<std::endl; exit(1);
+    }
+    m_Indices.emplace_back(1,Lindex);
+    m_Indices.emplace_back(0,Rindex);
     m_NumRowIndices=1;
     m_Matrix=SparseMatrix(values,inverse);
   };
@@ -446,6 +456,16 @@ namespace ajaj {
   MPX_matrix::MPX_matrix(const EigenStateArray& spectrum, const MPXIndex& index, const std::vector<double>& values,bool inverse): m_SpectrumPtr(&spectrum) {
     m_Indices.emplace_back(1,index);
     m_Indices.emplace_back(0,index);
+    m_NumRowIndices=1;
+    m_Matrix=SparseMatrix(values,inverse);
+  };
+
+  MPX_matrix::MPX_matrix(const EigenStateArray& spectrum, const MPXIndex& Lindex, const MPXIndex& Rindex, const std::vector<double>& values, bool inverse): m_SpectrumPtr(&spectrum) {
+    if (Lindex.size()!=Rindex.size()){
+      std::cout << "Malformed diagonal MPX_matrix, left and right indices are of different lengths!" <<std::endl; exit(1);
+    }
+    m_Indices.emplace_back(1,Lindex);
+    m_Indices.emplace_back(0,Rindex);
     m_NumRowIndices=1;
     m_Matrix=SparseMatrix(values,inverse);
   };

@@ -1298,9 +1298,6 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     double total_weight(0.0);
     double tolerance=min_s_val < 0.0 ? 0.0 : min_s_val*min_s_val;
 
-    //would like to avoid numerous allocations
-    //what is the largest block?
-
 #ifndef NDEBUG
     std::cout << "Looping over " << B.size() << " blocks" << std::endl;
 #endif
@@ -1331,9 +1328,6 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
       std::cout << "Forming Dense Translation block" << std::endl;
 #endif
       TranslationBlock<DenseMatrix> TB(*this,cols /* *cit*/ ); //form block
-      //shouldn't be possible to form an empty dense block?
-      //if block is empty we should skip it obviously
-      //if (TB.Block.empty()){continue;}
 #ifndef NDEBUG
       std::cout << "Performing Dense SVD" << std::endl;
 #endif
@@ -1358,6 +1352,19 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 	}
 	UnsortedValues.push_back(std::pair<Sparseint,double>(UnsortedValues.size(),Blockans.Values[v]));
       }
+    }
+
+    if (UnsortedValues.size()==0){
+      std::cout << "Error: No singular values. Empty blocks?" << std::endl;
+      this->print();
+      for (auto&& bc : B){
+	std::cout << "Block column indices: ";
+	for (auto c : bc){
+	  std::cout << c << " ";
+	}
+	std::cout << std::endl;
+      }
+      exit(1);
     }
 
 #ifndef NDEBUG
@@ -1448,14 +1455,17 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     //std::cout << "METHOD 2: "<<std::endl;
     if (!this->is_finalised()){std::cout << "Not finalised!" << std::endl; exit(1);}
     if (this->rows()!=this->cols()){std::cout << "Hermitian matrix not square!" << std::endl; exit(1);}
-    SparseHED ans(this->rows(),numevals);
-    if (numevals>=this->rows()){std::cout << "Requesting too many eigenvalues and vectors " << numevals << ", " << this->rows() << std::endl; exit(1);}
+    //if (numevals>=this->rows()){std::cout << "Requesting too many eigenvalues and vectors " << numevals << ", " << this->rows() << std::endl; exit(1);}
     //now choose dense or sparse method for few eigenvals
-    //if we have matrices smaller than 100*100 then dense is probably fine
+    //if we have matrices smaller than 400*400 then dense is probably fine
     //larger matrices should use a sparse method
-    if (this->rows()<=100){ //use dense storage for block
+    if (this->rows()<=400){ //use dense storage for block
       //std::cout << "Method 2 with dense storage" <<std::endl;
       TranslationBlock<DenseMatrix> TB(*this,B,B); //form block
+      
+      numevals=numevals>TB.Block.rows() ? TB.Block.rows() : numevals;
+      SparseHED ans(this->rows(),numevals);
+
       DenseHED Blockans=TB.Block.HED(numevals,which);
       // now read through block answer and feed back into sparse
       //copy across eigenvalues
@@ -1470,9 +1480,16 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 	}
 	ans.Values.push_back(Blockans.Values[v]);
       }
+
+      ans.EigenVectors.finalise();
+      return ans;
+
     }
     else { //use sparse storage for block
       TranslationBlock<SparseMatrix> SpTB(*this,B,B); //form block
+      numevals=numevals>SpTB.Block.rows() ? SpTB.Block.rows() : numevals;
+      SparseHED ans(this->rows(),numevals);
+
       SparseMatrix* Guessptr;
       SparseMatrix Guess;
       if (initial) {Guess=SpTB.ReverseTranslateRows(*initial); Guessptr=&Guess;std::cout << "Allocating Guess" <<std::endl;}
@@ -1487,9 +1504,10 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 	  ans.EigenVectors.entry(SpTB.ColLookups[SpBlockans.EigenVectors.get_i(p)],c,SpBlockans.EigenVectors.get_x(p));
 	}
       }
+      
+      ans.EigenVectors.finalise();
+      return ans;
     }
-    ans.EigenVectors.finalise();
-    return ans;
   }
 
   //////////////////////////////////////////////////////////
@@ -1499,6 +1517,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
   SparseHED SparseMatrix::HED(Sparseint numevals, char which[3],SparseMatrix* initial) const {
     //std::cout << "METHOD 3" << std::endl;
     if (this->rows()!=this->cols()){std::cout << "Matrix not square for HED!" << std::endl; exit(1);}
+    numevals=numevals>this->rows() ? this->rows() : numevals;
     SparseHED ans(this->rows(),numevals);
     std::complex<double>* Evecs = new std::complex<double>[this->rows()*numevals];
     std::complex<double>* Evals = new std::complex<double>[numevals];
