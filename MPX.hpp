@@ -419,6 +419,11 @@ namespace ajaj {
       }
       std::cout << "Total squared weight " << weight<<std::endl;
     }
+
+    const Basis& basis() const {
+      return ColumnMatrix.basis();
+    }
+
   };
 
   /** Used for storing the results of decompositions, when both rows and columns are needed. For example in an SVD, ColumnMatrix == U. RowMatrix == Vdagger. */
@@ -427,19 +432,18 @@ namespace ajaj {
     MPX_matrix RowMatrix;
     MPXDecomposition(const Basis& basis) : MPXDecompositionBase(basis), RowMatrix(basis){};
     MPXDecomposition(MPX_matrix&& cm, std::vector<double>&& v, MPX_matrix&& rm, double Trunc=0.0) noexcept : MPXDecompositionBase(std::move(cm),std::move(v),Trunc), RowMatrix(std::move(rm)) {};
-    
   };
 
   /** Used for storing the results of decompositions, such as SVD (Schmidt decomposition) that produce two new MPS_matrix objects.*/
   class MPSDecomposition {
-  private: 
+  private:
   public:
     double Truncation;
     std::vector<double> Values;
     MPS_matrix LeftMatrix;
     MPS_matrix RightMatrix;
     MPSDecomposition(MPXDecomposition&& X) noexcept : Truncation(X.Truncation), Values(std::move(X.Values)), LeftMatrix(std::move(X.ColumnMatrix)), RightMatrix(std::move(X.RowMatrix)){};
-    MPSDecomposition(const EigenStateArray& spectrum) : Truncation(0.0), Values(), LeftMatrix(spectrum), RightMatrix(spectrum){};
+    MPSDecomposition(const Basis& basis) : Truncation(0.0), Values(), LeftMatrix(basis), RightMatrix(basis){};
     const std::vector<double>& SquareRescale(double sqsum) {
       Truncation/=sqsum;
       SquareSumRescale(Values,sqsum);
@@ -468,6 +472,9 @@ namespace ajaj {
     }
 
     void OutputPhysicalIndexDensities(std::ofstream& d) const;
+    const Basis& basis() const {
+      return LeftMatrix.basis();
+    }
   };
 
   /** A class to hold a unit cell of arbitrary length
@@ -514,6 +521,9 @@ namespace ajaj {
     void store(const std::string& filename) const; /**< Print the UnitCell to file in binary format. */
 
     double Entropy() const;
+    const Basis& basis() const {
+      return *basis_ptr_;
+    }
   };
 
   /** Sometimes after a decomposition we need to figure out the new charges of all the rows, which we can do using the columns and the sparse structure.*/

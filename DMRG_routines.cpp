@@ -670,6 +670,7 @@ namespace ajaj {
     std::cout << "Lowest energy/Number of Vertices: " << decomp.Values[0]/2.0 <<std::endl;
     if (decomp.ValuesSize()>1)
       std::cout << "Next lowest energy/Number of Vertices: " << decomp.Values[1]/2.0 <<std::endl;
+    result.Real_measurements.push_back(decomp.Values[0]);
     result.Real_measurements.push_back(decomp.Values[0]/2.0);
     std::vector<MPXIndex> wfindices;
     wfindices.push_back(MPXIndex(1,H2.GetPhysicalSpectrum())); //ingoing
@@ -738,6 +739,7 @@ namespace ajaj {
       result.Real_measurements.push_back(decomp.Values[0]);
     }
     else {
+      result.Real_measurements.push_back(decomp.Values[0]);
       result.Real_measurements.push_back(decomp.Values[0]/double(NumVertices));
     }
     //need to reshape from a vector

@@ -182,7 +182,7 @@ namespace ajaj {
        "  \tThe maximum bond dimension, >= 0. If 0, then ignored." },
       {NUMBER_OF_STEPS,0,"N","number-of-steps",Arg::PositiveNumeric,"  -N <number>, \t--number-of-steps=<number>"
        "  \tThe number of infinite volume steps, >= 0" },
-      {TARGET,0,"T","target-charges",Arg::CommaSepShorts,"  -T <number>,<number>,<number>, /t--target-charges=<n>,<n>,<n>"
+      {TARGET,0,"T","target-charges",Arg::CommaSepShorts,"  -T <number>,<number>,<number>, \t--target-charges=<n>,<n>,<n>"
        "  \t Charges to target for the unit cell."},
       { 0, 0, 0, 0, 0, 0 }
     };
@@ -199,7 +199,7 @@ namespace ajaj {
        "  \tThe number of finite size sweeps to perform, >= 0" },
       {WEIGHT_FACTOR,0,"W","weight-factor",Arg::PositiveDouble,"  -W <number>, \t--weight-factor=<number>"
        "  \tThe weight factor if calculating excited states. Must be > 0. Specifying this indicates that the number of requested excited states is at least 1." },
-      {TARGET,0,"T","target-charges",Arg::CommaSepShorts,"  -T <number>,<number>,<number>, /t--target-charges=<n>,<n>,<n>"
+      {TARGET,0,"T","target-charges",Arg::CommaSepShorts,"  -T <number>,<number>,<number>, \t--target-charges=<n>,<n>,<n>"
        "  \tCharges for target state."},
       { 0, 0, 0, 0, 0, 0 }
     };
@@ -242,7 +242,7 @@ namespace ajaj {
       { 0, 0, 0, 0, 0, 0 }
     };
 
-  const option::Descriptor iMEAS_usage[8] =
+  const option::Descriptor iMEAS_usage[9] =
     {
       {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: UNITCELL_MEASURE.bin [-D <number>] <unitcell_filename1> ... \n"},
       {OPERATORFILE,0,"O","operator filename",Arg::NonEmpty,"  -O <filename>, \t--operator-file=<filename>"
@@ -252,7 +252,9 @@ namespace ajaj {
       {NOINDEX,0,"X","No index",Arg::None,"  -X, \t--no-index"
        "  \tDon't extract index from filenames." },
       {NEV,0,"N","Number of eigenvalues",Arg::PositiveDefiniteNumeric,"  -N, \t--number-of-eigenvalues=<number>"
-       "  \tNumber of transfer matrix eigenvalues to calculate." },
+       "  \tNumber of transfer matrix eigenvalues to calculate. Requires a target to be set, using -T" },
+      {TARGET,0,"T","target-charges",Arg::CommaSepShorts,"  -T <number>,<number>,<number>, \t--target-charges=<n>,<n>,<n>"
+       "  \tCharges to target eigenvalues."},
       {ENTANGLEMENT,0,"E","Entanglement Entropy",Arg::None,"  -E, \t--entanglement-entropy"
        "  \tCalculate the bipartite entanglement for the infinite system."},
       {VERTEX_ENTANGLEMENT,0,"V","Multi Vertex Entanglement",Arg::PositiveDefiniteNumeric,"  -V <number>, \t--vertex-entanglement=<number>"
@@ -548,9 +550,9 @@ namespace ajaj {
     bool two_point_;
     bool calc_entanglement_;
     unsigned long vert_entanglement_;
-
     std::vector<std::string> operator_filenames_;
     std::vector<std::string> files_;
+    std::vector<short int> target_;
 
   public:
     iMEAS_Args(int argc, char* argv[]) : Base_Args(argc,argv,iMEAS_usage),separation_(0),nev_(0),use_filename_index_(1),two_point_(0),calc_entanglement_(0),vert_entanglement_(0){
@@ -564,8 +566,15 @@ namespace ajaj {
 	    separation_=stoul(options[SEPARATION].arg);
 	    two_point_=1;
 	  }
-	  if (options[NEV])
-	    nev_=stoul(options[NEV].arg);
+	  if (options[NEV] && !options[TARGET])
+	    valid_=0;
+	  if (options[TARGET]){
+	    std::istringstream tss(options[TARGET].arg);
+	    tss >> target_;
+	    nev_=1;
+	    if (options[NEV])
+	      nev_=stoul(options[NEV].arg);
+	  }
 	  if (options[NOINDEX])
 	    use_filename_index_=0;
 	  if (options[OPERATORFILE])
@@ -593,6 +602,7 @@ namespace ajaj {
     unsigned long nev() const {return nev_;}
     bool calc_entanglement() const {return calc_entanglement_;}
     unsigned long vert_entanglement() const {return vert_entanglement_;}
+    const std::vector<short int>& target() const {return target_;}
   };
 
   class Store_Args : public Base_Args{

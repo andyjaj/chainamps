@@ -33,7 +33,7 @@ int main(int argc, char** argv){
     double weight_factor(RuntimeArgs.weight_factor());
 
     ajaj::State TargetState(myModel.make_target(RuntimeArgs.target()));
-    ajaj::DataOutput results(ajaj::OutputName(RuntimeArgs.filename(),"Energies.dat"),"Index, Energy/vertices, Entropy, Truncation, Fidelity"); //open file for output
+    ajaj::DataOutput results(ajaj::OutputName(RuntimeArgs.filename(),"Energies.dat"),"Index, Energy, Energy/vertices, Entropy, Truncation, Fidelity"); //open file for output
     ajaj::iDMRG infvol(std::string("GroundState"),myModel.H_MPO,TargetState,results); //create an infinite sweep simulation object
     auto t1 = std::chrono::high_resolution_clock::now();
     infvol.run(number_of_vertices/2,-1.0,CHI,minS); //convergence criterion: not used if negative, number of vertices used instead

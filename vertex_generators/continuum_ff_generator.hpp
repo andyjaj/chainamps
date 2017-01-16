@@ -34,7 +34,7 @@ namespace continuumff{
 
     ajaj::MPXInt number_of_measured_modes=modelvertex.Operators.size()-2; //first operator is the total occupation and last is vertex hamiltonian.
     //This is a flaky step, and should be checked first if there are any errors
-    //better to count up the number of 'weighted annihilation operators'
+    //would be better to count up the number of 'weighted annihilation operators'
 
     ajaj::MPXInt lineardim=modelvertex.Spectrum.size()*(2+2*number_of_measured_modes*differencecombinations.size()); //the actual length of the sparse matrix needed
     ajaj::MPXInt offset_to_last_block=modelvertex.Spectrum.size()*(1+2*number_of_measured_modes*differencecombinations.size()); //offset to get to the last row of operators
@@ -134,7 +134,7 @@ namespace continuumff{
     //initialise vertex object
     ajaj::Vertex ModelVertex(inputs);
     ModelVertex.ChargeRules.push_back(0); //just a momentum quantum number
-    ModelVertex.ChargeRules.push_back(1); //number
+    ModelVertex.ChargeRules.push_back(0); //number
 
     const ajaj::QNVector& ChargeRules=ModelVertex.ChargeRules; //useful reference, saves typing ModelVertex
 
@@ -214,7 +214,7 @@ namespace continuumff{
     
     /*Neveu-Schwarz Sector -- two particle modes*/
     ajaj::MPXInt mode2part_NS=0;
-    if (2*Delta*(sqrt(1.+pow(2.*M_PI/DR,2.))) +vac <= spectrum_cutoff){
+    if (2.0*Delta +vac <= spectrum_cutoff){
        
       for(ajaj::MPXInt i=-num2NS-1;i<num2NS;++i) {
 	if (Delta +vac > spectrum_cutoff){break;}
@@ -241,7 +241,7 @@ namespace continuumff{
 
     /*Ramond Sector -- three particle modes*/
     ajaj::MPXInt mode3part_R = 0;
-    if (Delta+2.0*Delta*(sqrt(1.+pow(2.*M_PI/DR,2.))) +vac <= spectrum_cutoff){
+    if (3.0*Delta+vac <= spectrum_cutoff){
 
       for(ajaj::MPXInt i=-num3R;i<num3R-1;++i) {
 	for(ajaj::MPXInt j=i+1;j<num3R;++j) {
@@ -269,7 +269,7 @@ namespace continuumff{
 
     /*Neveu-Schwarz Sector -- four particle modes*/
     ajaj::MPXInt mode4part_NS = 0.;
-    if (2.0*Delta*(sqrt(1.+pow(2.*M_PI/DR,2.))+sqrt(1.+pow(2.*M_PI/DR,2.))) +vac <= spectrum_cutoff){
+    if (4.0*Delta +vac <= spectrum_cutoff){
 
       for(ajaj::MPXInt i=-num4NS-1;i<num4NS-2;++i) {
 	for(ajaj::MPXInt j=i+1;j<num4NS-1;++j) {
@@ -300,7 +300,7 @@ namespace continuumff{
 
     /*Ramond Sector -- five particle modes*/
     ajaj::MPXInt mode5part_R = 0;
-    if (Delta+2.0*Delta*(sqrt(1.+pow(2.*M_PI/DR,2.))+sqrt(1.+pow(2.*M_PI*2.0/DR,2.))) +vac <= spectrum_cutoff){
+    if (5.0*Delta +vac <= spectrum_cutoff){
 
       for(ajaj::MPXInt i=-num5R;i<num5R-3;++i) {
 	for(ajaj::MPXInt j=i+1;j<num5R-2;++j) {
@@ -334,7 +334,7 @@ namespace continuumff{
 
     /*Neveu-Schwarz Sector -- six particle modes*/
     ajaj::MPXInt mode6part_NS = 0;
-    if (2.0*Delta*(sqrt(1.+pow(2.*M_PI*0.5/DR,2.))+sqrt(1.+pow(2.*M_PI*1.5/DR,2.))+sqrt(1.+pow(2.*M_PI*2.5/DR,2.))) +vac <= spectrum_cutoff){
+    if (6.0*Delta +vac <= spectrum_cutoff){
 
       for(ajaj::MPXInt i=-num6NS-1;i<num6NS-4;++i) {
 	for(ajaj::MPXInt j=i+1;j<num6NS-3;++j) {

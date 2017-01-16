@@ -63,7 +63,8 @@ int main(int argc, char** argv){
       }
     }
 
-    if (RuntimeArgs.nev()>1) std::cout << "Number of transfer matrix eigenvalues requested: " << RuntimeArgs.nev() << std::endl;
+    if (RuntimeArgs.nev()) std::cout << "Number of transfer matrix eigenvalues requested: " << RuntimeArgs.nev() << std::endl;
+
     if (opinfo.size()){
       std::cout << "Measuring " << (RuntimeArgs.two_point() ? 2 : 1) << "-point function" << std::endl;
       std::cout << opinfo.front();
@@ -113,6 +114,8 @@ int main(int argc, char** argv){
       if (infile.is_open()){
 	std::cout << "Loading " << f << std::endl;
 	ajaj::UnitCell AA(ajaj::load_UnitCell_binary(infile,iMEAS_vertex.ChargeRules,iMEAS_vertex.Spectrum));//populates basis
+	ajaj::State TargetState(iMEAS_vertex.ChargeRules,RuntimeArgs.target());
+
 	for (auto&& m : AA.Matrices){
 	  m.print_sparse_info();
 	}
@@ -124,7 +127,7 @@ int main(int argc, char** argv){
 	  indexed_results.back().second.Real_measurements.emplace_back(MultiVertexEntropy(AA,RuntimeArgs.vert_entanglement()));
 	}
 	if (RuntimeArgs.nev()){
-	  std::vector<std::complex<double> > Transfer_eigs(ajaj::TransferMatrixEigs(AA,RuntimeArgs.nev()));
+	  std::vector<std::complex<double> > Transfer_eigs(ajaj::TransferMatrixEigs(AA,RuntimeArgs.nev(),TargetState));
 	  for (auto&& eig : Transfer_eigs) {
 	    indexed_results.back().second.Real_measurements.emplace_back(abs(eig));
 	  }
@@ -183,9 +186,22 @@ int main(int argc, char** argv){
     outfilename << "UNITCELL_Results";
     if (!mss.str().empty())
       outfilename << "_" << mss.str();
+    if (RuntimeArgs.nev()){
+      outfilename << "_TransferMatrix_EVals_TargetState";
+      for (auto t : RuntimeArgs.target()){
+	outfilename << "_" << t;
+      }
+    }
     outfilename << ".dat";
 
     std::ostringstream commentstream;
+    if (RuntimeArgs.nev()){
+      commentstream << "Transfer Matrix EigenValues for Target State: ";
+      for (auto t : RuntimeArgs.target()){
+	commentstream << t <<" ";
+      }
+      commentstream << "\n";
+    }
     commentstream << "Index";
     if (RuntimeArgs.calc_entanglement()){
       commentstream << ",S_E";
@@ -193,6 +209,7 @@ int main(int argc, char** argv){
     if (RuntimeArgs.vert_entanglement()){
       commentstream << "," << RuntimeArgs.vert_entanglement() <<" vertex S_E";
     }
+
     for (size_t l=0; l<RuntimeArgs.nev();++l){
       commentstream << ",abs(Lambda_" << l+1 << ")";
     }

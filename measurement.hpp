@@ -157,8 +157,7 @@ namespace ajaj {
 
   std::complex<double> Overlap(const UnitCell& bra, const UnitCell& ket);
   std::vector<std::complex<double> > Overlap(const UnitCell& bra, const UnitCell& ket, uMPXInt nev);
-  std::vector<std::complex<double> > TransferMatrixEigs(const UnitCell& ket, uMPXInt nev=1);
-
+  std::vector<std::complex<double> > TransferMatrixEigs(const UnitCell& ket, uMPXInt nev,const State& S);
 
   /** Measure an operator that spans only two vertices. */
   std::complex<double> TwoVertexMeasurement(const MPO_matrix& W1, const MPO_matrix& W2, const MPS_matrix& A1ket, const MPS_matrix& A2ket, const MPX_matrix& Lambda);
@@ -171,7 +170,7 @@ namespace ajaj {
 
   class TransferMatrixComponents {
   private:
-    const State* TargetStatePtr_;
+    const State TargetState_;
     const uMPXInt CellSize_;
     const bool Hermitian_answer_; //setting this true insists that the final eigenvector can be reshaped into a (obviously square) Hermitian matrix
 
@@ -190,8 +189,8 @@ namespace ajaj {
 
   public:
 
-    TransferMatrixComponents(const std::vector<const MPS_matrix*>& BraPtrs, const std::vector<const MPS_matrix*>& KetPtrs, bool HV=0, const State* T=nullptr);
-    TransferMatrixComponents(const std::vector<const MPS_matrix*>& KetPtrs, bool HV=0, const State* T=nullptr);
+    TransferMatrixComponents(const std::vector<const MPS_matrix*>& BraPtrs, const std::vector<const MPS_matrix*>& KetPtrs, bool HV, const State S);
+    TransferMatrixComponents(const std::vector<const MPS_matrix*>& KetPtrs, bool HV, const State S);
 
     const MPS_matrix& BraMatrix(uMPXInt i) const {return *(BraKetMatrixPtrs_.at(i).first);} //public interface
     const MPS_matrix& KetMatrix(uMPXInt i) const {return *(BraKetMatrixPtrs_.at(i).second);}

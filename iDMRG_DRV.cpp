@@ -25,7 +25,7 @@ int main(int argc, char** argv){
     const ajaj::Model myModel(ajaj::MakeModelFromArgs(RuntimeArgs));
 
     ajaj::State TargetState(myModel.make_target(RuntimeArgs.target()));
-    ajaj::DataOutput results(ajaj::OutputName(RuntimeArgs.filename(),"Energies.dat"),"Index, Energy/vertex, Entropy, Truncation, Fidelity");
+    ajaj::DataOutput results(ajaj::OutputName(RuntimeArgs.filename(),"Energies.dat"),"Index, Energy, Energy/vertex, Entropy, Truncation, Fidelity");
     ajaj::iDMRG infvol(std::string("GroundState"),myModel.H_MPO,TargetState,results);
 
     ajaj::uMPXInt CHI(RuntimeArgs.chi());

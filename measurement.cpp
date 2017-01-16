@@ -154,7 +154,9 @@ namespace ajaj {
     //MPX_matrix P_(contract(MPX_matrix(basis,L.RowMatrix.Index(0),L.Values),0,L.RowMatrix,0,contract10));
     MPS_matrix NL(contract(contract(L.ColumnMatrix,0,contract(MPX_matrix(basis,L.RowMatrix.Index(0),L.Values),0,L.RowMatrix,0,contract10),0,contract20),0,PreviousLambdaInverse,0,contract20));
 
-    SparseED LeftTdecomp(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&MPSD.LeftMatrix,&NL}}),1).LeftED(1,LARGESTMAGNITUDE));
+    State Target(MPSD.basis().getChargeRules());
+
+    SparseED LeftTdecomp(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&MPSD.LeftMatrix,&NL}}),1,Target).LeftED(1,LARGESTMAGNITUDE));
 
     std::cout << "Leading left eigenvalue of left transfer matrix: " << LeftTdecomp.Values.at(0) << std::endl; //will need to rescale by this
     if (abs(imag(LeftTdecomp.Values.at(0)))>=IMAGTOL*abs(real(LeftTdecomp.Values.at(0)))) {
@@ -168,7 +170,7 @@ namespace ajaj {
     //MPX_matrix Q_(contract(R.ColumnMatrix,0,MPX_matrix(basis,R.ColumnMatrix.Index(1),R.Values),0,contract10));
     MPS_matrix NR(contract(PreviousLambdaInverse,0,contract(contract(R.ColumnMatrix,0,MPX_matrix(basis,R.ColumnMatrix.Index(1),R.Values),0,contract10),0,R.RowMatrix,0,contract10),0,contract10));
 
-    SparseED RightTdecomp(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&NR,&MPSD.RightMatrix}}),1).RightED(1,LARGESTMAGNITUDE));
+    SparseED RightTdecomp(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&NR,&MPSD.RightMatrix}}),1,Target).RightED(1,LARGESTMAGNITUDE));
 
     std::cout << "Leading right eigenvalue of right transfer matrix: " << RightTdecomp.Values.at(0) << std::endl;
     if (abs(imag(RightTdecomp.Values.at(0)))>=IMAGTOL*abs(real(RightTdecomp.Values.at(0)))) {
@@ -198,7 +200,7 @@ namespace ajaj {
     if (!VRDecomp.first.size()) return UnitCell(basis);
 
     MPX_matrix Y(contract(reorder(VRDecomp.second,1,reorder10,1),0,MPX_matrix(basis,VRDecomp.second.Index(0),VRDecomp.first),0,contract10));
-    std::cout << "X Lambda Y" << std::endl;
+    //std::cout << "X Lambda Y" << std::endl;
 
     MPXDecomposition XLYDecomp(contract(contract(X,0,MPX_matrix(basis,MPSD.RightMatrix.getOutwardMatrixIndex(),PreviousLambda),0,contract10),0,Y,0,contract10).SVD());//SVD with no args keeps all singular values...
     SquareSumRescale(XLYDecomp.Values,1.0);//rescale here to set normalisation
@@ -220,7 +222,7 @@ namespace ajaj {
     const Basis& basis(C.Matrices.front().basis());
 
     //transfer matrix components with these flags enforces hermiticity of the (reshaped) left eigenvector
-    SparseED LeftTdecomp(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&C.Matrices.at(0),&C.Matrices.at(1)}}),1).LeftED(1,LARGESTMAGNITUDE));
+    SparseED LeftTdecomp(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&C.Matrices.at(0),&C.Matrices.at(1)}}),1,State(C.basis().getChargeRules())).LeftED(1,LARGESTMAGNITUDE));
     std::cout << "Leading left eigenvalue of left transfer matrix: " << LeftTdecomp.Values.at(0) << std::endl; //will need to rescale by this
     if (abs(imag(LeftTdecomp.Values.at(0)))>=IMAGTOL*abs(real(LeftTdecomp.Values.at(0)))) {
       std::cout << "Eigenvalue has non negligible imaginary part, numerical error in transfer matrix contraction?" << std::endl;
@@ -399,13 +401,13 @@ namespace ajaj {
     return MakeLTransferMatrix(bra,ket).LeftEigs(nev,LARGESTMAGNITUDE).Values;
   }
 
-  std::vector<std::complex<double> > TransferMatrixEigs(const UnitCell& ket, uMPXInt nev){
+  std::vector<std::complex<double> > TransferMatrixEigs(const UnitCell& ket, uMPXInt nev,const State& TargetState){
     //make the required bits
     std::vector<const MPS_matrix*> ket_ptrs;
     for (auto&& k: ket.Matrices){
       ket_ptrs.emplace_back(&k);
     }
-    return TransferMatrixComponents(ket_ptrs,1).LeftED(nev,LARGESTMAGNITUDE).Values;
+    return TransferMatrixComponents(ket_ptrs,1,TargetState).LeftED(nev,LARGESTMAGNITUDE).Values;
   }
 
   std::complex<double> TwoVertexMeasurement(const MPO_matrix& W1, const MPO_matrix& W2, const MPS_matrix& A1, const MPS_matrix& A2, const MPX_matrix& Lambda){
@@ -532,9 +534,9 @@ namespace ajaj {
     std::cout << "Done" << std::endl;
   }
 
-  TransferMatrixComponents::TransferMatrixComponents(const std::vector<const MPS_matrix*>& KetPtrs, bool HV, const State* Target) : TransferMatrixComponents(KetPtrs,KetPtrs,HV,Target) {}
+  TransferMatrixComponents::TransferMatrixComponents(const std::vector<const MPS_matrix*>& KetPtrs, bool HV, const State S) : TransferMatrixComponents(KetPtrs,KetPtrs,HV,S) {}
 
-  TransferMatrixComponents::TransferMatrixComponents(const std::vector<const MPS_matrix*>& BraPtrs, const std::vector<const MPS_matrix*>& KetPtrs, bool HV, const State* Target) : TargetStatePtr_(Target), CellSize_(BraPtrs.size()), Hermitian_answer_(HV) {
+  TransferMatrixComponents::TransferMatrixComponents(const std::vector<const MPS_matrix*>& BraPtrs, const std::vector<const MPS_matrix*>& KetPtrs, bool HV, const State S) : CellSize_(BraPtrs.size()), Hermitian_answer_(HV),TargetState_(S) {
     //init ptr lists
 
     //range check
@@ -560,11 +562,11 @@ namespace ajaj {
     vcols_=m.size();
 
     for (MPXInt c=0;c<m.size();++c){
-      if (TargetStatePtr_){ //have we set a target state here? If so, do we have a match, are we in the target state sector?
+      /*if (TargetStatePtr_){ //have we set a target state here? If so, do we have a match, are we in the target state sector?
 	if (m[c] != *TargetStatePtr_){continue;}
-      }
+	}*/
       for (MPXInt r=0;r<mprimed.size();++r){
-	if (m[c]==mprimed[r]){ //check for consistency of charges	      
+	if (m[c]==mprimed[r]+TargetState_){ //check for consistency of charges	      
 	  allowed_indices_.push_back(r+vrows_*c);
 	  allowed_indices_dagger_.push_back(c+vcols_*r);
 	  rows_and_cols_.push_back(std::array<MPXInt,2> {{r,c}});
