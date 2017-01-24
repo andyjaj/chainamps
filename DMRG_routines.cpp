@@ -187,6 +187,7 @@ namespace ajaj {
     //we need the left and right MPO forms of H for open boundary conditions
     MPO_matrix LeftH(LeftOpenBCHamiltonian(getH())); //left Hamiltonian MPO
     MPO_matrix RightH(RightOpenBCHamiltonian(getH())); //right Hamiltonian MPO
+    
     //why not save these to file as well?
     LeftH.store("LeftH.MPO_matrix");
     RightH.store("RightH.MPO_matrix");
@@ -551,31 +552,37 @@ namespace ajaj {
     std::cout << "Performing finite sweeps" << std::endl;
     //we start at the middle of the system
     //in case we need excited states later, we store MPS matrices as well as the L and R blocks.
-    for (uMPXInt n=num_sweeps;n>0;--n){//sweep towards right
-      std::cout << std::endl << "Starting sweep: " << num_sweeps-n+1<< std::endl;
-      for (uMPXInt r=right_size();r>0;--r){
-	move_right_two_vertex(chi,smin);
-      }
-      CentralDecomposition.store_right(getName(),right_size()+1);
-      for (uMPXInt l=left_size();l>0;--l){
-	Data this_step(move_left_two_vertex(chi,smin));
-	if (left_size()==right_size()) {
-	  output_ref_.push(this_step);//at midpoint, push output
-	  CentralDecomposition.store(getName(),left_size()+1,right_size()+1);//store left and right
+    if (size()==2) {
+      //CentralDecomposition.store(getName(),left_size()+1,right_size()+1);//store left and right
+      std::cout << "Skipping finite sweeps, only two vertices..." << std::endl;
+    }
+    else {
+      for (uMPXInt n=num_sweeps;n>0;--n){//sweep towards right
+	std::cout << std::endl << "Starting sweep: " << num_sweeps-n+1<< std::endl;
+	for (uMPXInt r=right_size();r>0;--r){
+	  move_right_two_vertex(chi,smin);
 	}
-	else if (left_size()>right_size()) {CentralDecomposition.store_right(getName(),right_size()+1);} //just store right
-      }
-      CentralDecomposition.store_left(getName(),left_size()+1);
-
-      if (n==num_sweeps) init_flag_=0; //first time through, turn off init here as we have formed all blocks once...
-
-      for (uMPXInt r=right_size();r>left_size();--r){
-	Data this_step(move_right_two_vertex(chi,smin));
-	if (left_size()==right_size()) {
-	  output_ref_.push(this_step);
-	  CentralDecomposition.store(getName(),left_size()+1,right_size()+1);//store left and right
+	CentralDecomposition.store_right(getName(),right_size()+1);
+	for (uMPXInt l=left_size();l>0;--l){
+	  Data this_step(move_left_two_vertex(chi,smin));
+	  if (left_size()==right_size()) {
+	    output_ref_.push(this_step);//at midpoint, push output
+	    CentralDecomposition.store(getName(),left_size()+1,right_size()+1);//store left and right
+	  }
+	  else if (left_size()>right_size()) {CentralDecomposition.store_right(getName(),right_size()+1);} //just store right
 	}
-	else if (left_size()<right_size()) {CentralDecomposition.store_left(getName(),left_size()+1);} //just store left
+	CentralDecomposition.store_left(getName(),left_size()+1);
+	
+	if (n==num_sweeps) init_flag_=0; //first time through, turn off init here as we have formed all blocks once...
+	
+	for (uMPXInt r=right_size();r>left_size();--r){
+	  Data this_step(move_right_two_vertex(chi,smin));
+	  if (left_size()==right_size()) {
+	    output_ref_.push(this_step);
+	    CentralDecomposition.store(getName(),left_size()+1,right_size()+1);//store left and right
+	  }
+	  else if (left_size()<right_size()) {CentralDecomposition.store_left(getName(),left_size()+1);} //just store left
+	}
       }
     }
   }
@@ -660,12 +667,9 @@ namespace ajaj {
   MPX_matrix TwoVertexInitialWavefunction(const MPO_matrix& LeftH, const MPO_matrix& RightH, const State& TargetSector, Data& result){
     const MPX_matrix H2(TwoVertexInitialHamiltonian(LeftH,RightH));
     static char SMALLESTREAL[]={'S','R','\n'}; //lowest real part for energies
-    //SparseMatrix InitialGuess(LeftH.GetPhysicalSpectrum().size()*RightH.GetPhysicalSpectrum().size(),1,1);
-    //a good initial guess would be equal weighting to all combinations in target sector?
-    //InitialGuess.entry(0,0,1.0);
-    //InitialGuess.finalise();
+
     std::cout << "Eigensolver starting for two vertex wavefunction..." << std::endl;
-    SparseHED decomp(H2.Eigs(TargetSector,2,SMALLESTREAL));//uses arpack, finds two eigenvals for fun
+    SparseHED decomp(H2.Eigs(TargetSector,2,SMALLESTREAL));//uses arpack, finds two eigenvals
     decomp.printValues();
     std::cout << "Lowest energy/Number of Vertices: " << decomp.Values[0]/2.0 <<std::endl;
     if (decomp.ValuesSize()>1)
@@ -812,19 +816,22 @@ namespace ajaj {
     uMPXInt fulldim(this->length());
     std::cout <<"Eigensolver for matrix of length " << fulldim << std::endl;
     std::cout <<"Using reduced subspace of length " << allowed_indices.size() <<std::endl;
-    numevals=numevals > allowed_indices.size() ? allowed_indices.size() : numevals;
-
+    numevals=(numevals+ProjectorTensors.size() > allowed_indices.size() ? allowed_indices.size()-ProjectorTensors.size() : numevals);
+    if (numevals==0){
+      std::cout << "All excited states in sector have been found!" <<std::endl;
+      return SparseHED(fulldim,0);
+    }
     SparseVectorWithRestriction guess_struct(initial,&allowed_indices);
 
     //internal contractions may be large.
     //however if allowed_indices is small we should use a dense method
 
-    if (allowed_indices.size()<400 && !ProjectorTensors.size()){
+    if (allowed_indices.size()<400 /*&& !ProjectorTensors.size()*/){
       //just make the (dense) matrix and use lapack
       static std::pair<const std::vector<MPXInt>,const std::vector<MPXInt> > condition={{1,7},{2,6}};
       TranslationBlock<DenseMatrix> TB(contract_conditional<DenseMatrix>(contract(H,0,LeftBlock,0,contract13),0,contract(H,0,RightBlock,0,contract32),0,contract21,condition));
       //use lapack
-      DenseHED dense_ans(TB.Block.HED(numevals,which));
+      DenseHED dense_ans(TB.Block.HED(numevals,ProjectorTensors.size()));
       return SparseHED(std::vector<double>(dense_ans.Values,dense_ans.Values+dense_ans.ValuesSize()),TB.TranslateRows(dense_ans.EigenVectors));
     }
     else {

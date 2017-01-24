@@ -13,10 +13,27 @@
 
 namespace continuumff{
 
-  inline void check_mode(const int double_mode_num,const unsigned short int entry,const int measured_occupations, bool** occupations){
-    for (int i=-measured_occupations+1;i<measured_occupations;++i){
-      if (double_mode_num==i){occupations[measured_occupations+i-1][entry]=1;break;}//we have a particle in this mode, and it can't be in any others
-    }
+  unsigned long int makebit(ajaj::QuantumNumberInt i){
+    return i == 0 ? 1 : (1 << (2*abs(i)-1 +(i>0)));
+  }
+
+  unsigned int Hamming(unsigned long int b){
+    unsigned int count ;
+    for (count=0; b; count++)
+      b&=b-1;
+    return count;
+  }
+
+  int signfactor(unsigned long int b /* state bit string */, int m /* the mode we have*/){
+    b >>= (m==0)+(2*abs(m) +(m>0)); //shift away bits for lower mode numbers
+    return (Hamming(b) % 2) ? -1 : 1;
+  }  
+
+  inline void check_mode(const int i,const unsigned short int entry,const int measured_occupations, bool** occupations){
+    occupations[measured_occupations+i-1][entry]=1;
+    //for (int i=-measured_occupations+1;i<measured_occupations;++i){
+    //if (mode_num==i){occupations[measured_occupations+i-1][entry]=1;break;}//we have a particle in this mode, and it can't be in any others
+    //}
   };
 
   ajaj::MPO_matrix MakeHamiltonian(const ajaj::Vertex& modelvertex, const ajaj::VertexParameterArray& couplingparams){
@@ -98,7 +115,7 @@ namespace continuumff{
 	  //lowest block row
 	  M.entry(offset_to_last_block+col,modelvertex.Spectrum.size()*(Adagger_col_offset+differencecombinations.size()*m+MPO_subcolAdagger)+i,conj(x));
 	  //first block col
-	  M.entry(modelvertex.Spectrum.size()*(Adagger_row_offset+differencecombinations.size()*m+MPO_subrowAdagger)+col,i,conj(x)*tunnelling); //no factor of R
+	  M.entry(modelvertex.Spectrum.size()*(Adagger_row_offset+differencecombinations.size()*m+MPO_subrowAdagger)+col,i,-conj(x)*tunnelling); //no factor of R, - sign to compensate for fermi operator order
 	}
       }
     }
@@ -148,8 +165,8 @@ namespace continuumff{
     const double DR=Delta*R;
     const double vac = 0.0;
     const ajaj::MPXInt num1R = 200;
-    const ajaj::MPXInt num2NS = 100;
-    const ajaj::MPXInt num3R = 50;
+    const ajaj::MPXInt num2NS = 200;
+    const ajaj::MPXInt num3R = 100;
     const ajaj::MPXInt num4NS = 50;
     const ajaj::MPXInt num5R = 20;
     const ajaj::MPXInt num6NS = 20;
@@ -171,7 +188,7 @@ namespace continuumff{
     }
     ++measured_occupations; //add on 1 to make array sizes right
 
-    cout << "Number of +tive measured occupations including zero mode: " << measured_occupations << endl;
+    cout << "Number of measured occupations including zero mode: " << 2*measured_occupations-1 << endl;
 
     bool** occupations=new bool*[2*measured_occupations-1];
     for (int i=0;i<2*measured_occupations-1;++i){
@@ -182,16 +199,17 @@ namespace continuumff{
     }
 
     std::vector<int> total_occupation;
+    std::vector<unsigned long int> occ_bitstring;
 
     /*NS sector 0 particle mode, continuum chain ground state */
     ModelVertex.Spectrum.push_back(ajaj::EigenState(ChargeRules,ajaj::QNVector({{ajaj::QuantumNumberInt(0),0}}),onechain_gs_energy));
 
     //onechain_modenumber.push_back(0);
-
-    cout << "NS0: " << num_chain_states << " * " << ModelVertex.Spectrum[0].en << " " << (2.*M_PI/R)*ModelVertex.Spectrum[0][0]<< endl;
-    cout << "mode 0 particles: 1" << endl << endl;
-    num_chain_states++;
     total_occupation.push_back(0);
+    occ_bitstring.push_back(0);
+    cout << "NS0: " << num_chain_states << " * " << ModelVertex.Spectrum[0].en << " " << (2.*M_PI/R)*ModelVertex.Spectrum[0][0] <<  " " << occ_bitstring.back() << endl;
+    cout << "vacuum states: 1" << endl << endl;
+    num_chain_states++;
 
     /*Ramond Sector -- one particle modes*/
 
@@ -204,20 +222,21 @@ namespace continuumff{
 	  ModelVertex.Spectrum.push_back(ajaj::EigenState(ChargeRules,ajaj::QNVector({{ajaj::QuantumNumberInt(i),1}}),en));
 	  check_mode(i,num_chain_states,measured_occupations,occupations);
   
-	  cout << "R1: " << num_chain_states << " " << i << " " << en << " " << (2.*M_PI/R)*ModelVertex.Spectrum[num_chain_states][0] << endl;
-	  num_chain_states++;
 	  total_occupation.push_back(1);
+	  occ_bitstring.push_back(makebit(i));
+	  cout << "R1: " << num_chain_states << " " << i << " " << en << " " << (2.*M_PI/R)*ModelVertex.Spectrum[num_chain_states][0] << " " << occ_bitstring.back() << endl;
+	  num_chain_states++;
+	      
 	}
       }
     }
-    cout << "mode 1 particles: " << mode1part_R << endl << endl;
+    cout << "1 particle states: " << mode1part_R << endl << endl;
     
     /*Neveu-Schwarz Sector -- two particle modes*/
     ajaj::MPXInt mode2part_NS=0;
     if (2.0*Delta +vac <= spectrum_cutoff){
        
-      for(ajaj::MPXInt i=-num2NS-1;i<num2NS;++i) {
-	if (Delta +vac > spectrum_cutoff){break;}
+      for(ajaj::MPXInt i=-num2NS;i<num2NS;++i) {
 
 	for(ajaj::MPXInt j=i+1;j<=num2NS;++j) {
 	  double en = Delta*(sqrt(1.+pow(2.*M_PI*(i)/DR,2.))+sqrt(1.+pow(2.*M_PI*(j)/DR,2.)))+vac;
@@ -229,15 +248,17 @@ namespace continuumff{
 	     
 	    //onechain_modenumber.push_back(2);
 
-	    cout << "NS2: " << num_chain_states << " " << i << " " << j << " ";
-	    cout << en << " " << (2.*M_PI/R)*ModelVertex.Spectrum[num_chain_states][0] << endl;
-	    num_chain_states++;
 	    total_occupation.push_back(2);
+	    occ_bitstring.push_back(makebit(i)+makebit(j)); 
+	    cout << "NS2: " << num_chain_states << " " << i << " " << j << " ";
+	    cout << en << " " << (2.*M_PI/R)*ModelVertex.Spectrum[num_chain_states][0] << " " << occ_bitstring.back()<< endl;
+	    num_chain_states++;
+
 	  }
 	}
       }
     }
-    cout << "mode 2 particles: " << mode2part_NS << endl << endl;
+    cout << "2 particle states: " << mode2part_NS << endl << endl;
 
     /*Ramond Sector -- three particle modes*/
     ajaj::MPXInt mode3part_R = 0;
@@ -255,17 +276,18 @@ namespace continuumff{
 	      check_mode(k,num_chain_states,measured_occupations,occupations);
 		  
 	      //onechain_modenumber.push_back(3);
-		  
-	      cout << "R3: " << num_chain_states << " " << i << " " << j << " " << k << " ";
-	      cout << en << " " << (2.*M_PI/R)*ModelVertex.Spectrum[num_chain_states][0] << endl;
-	      num_chain_states++;	
 	      total_occupation.push_back(3);
+	      occ_bitstring.push_back(makebit(i)+makebit(j)+makebit(k));  
+	      cout << "R3: " << num_chain_states << " " << i << " " << j << " " << k << " ";
+	      cout << en << " " << (2.*M_PI/R)*ModelVertex.Spectrum[num_chain_states][0] << " " << occ_bitstring.back()<<endl;
+	      num_chain_states++;	
+	        
 	    }
 	  }
 	}
       }
     }
-    cout << "mode 3 particles: " << mode3part_R << endl << endl;
+    cout << "3 particle states: " << mode3part_R << endl << endl;
 
     /*Neveu-Schwarz Sector -- four particle modes*/
     ajaj::MPXInt mode4part_NS = 0.;
@@ -286,17 +308,20 @@ namespace continuumff{
 
 		//onechain_modenumber.push_back(4);	    
 	    
-		cout << "NS4: " << num_chain_states << " " << i << " " << j << " " << k << " " << l << " ";
-		cout << en << " " << (2.*M_PI/R)*ModelVertex.Spectrum[num_chain_states][0] << endl;
-		num_chain_states++;
 		total_occupation.push_back(4);
+		occ_bitstring.push_back(makebit(i)+makebit(j)+makebit(k)+makebit(l));    
+		cout << "NS4: " << num_chain_states << " " << i << " " << j << " " << k << " " << l << " ";
+		cout << en << " " << (2.*M_PI/R)*ModelVertex.Spectrum[num_chain_states][0] << " " << occ_bitstring.back()<< endl;
+		num_chain_states++;
+		
+	      
 	      }
 	    }
 	  }
 	}
       }
     }
-    cout << "mode 4 particles: " << mode4part_NS << endl << endl;
+    cout << "4 particle states: " << mode4part_NS << endl << endl;
 
     /*Ramond Sector -- five particle modes*/
     ajaj::MPXInt mode5part_R = 0;
@@ -318,11 +343,13 @@ namespace continuumff{
 		  check_mode(m,num_chain_states,measured_occupations,occupations);
 
 		  //onechain_modenumber.push_back(5);
-
-		  cout << "R5: " << num_chain_states << " " << i << " " << j << " " << k << " " << l << " " << m << " ";
-		  cout << en << " " << (2.*M_PI)*ModelVertex.Spectrum[num_chain_states][0] << endl;
-		  num_chain_states++;
 		  total_occupation.push_back(5);
+		  occ_bitstring.push_back(makebit(i)+makebit(j)+makebit(k)+makebit(l)+makebit(m)); 
+		  cout << "R5: " << num_chain_states << " " << i << " " << j << " " << k << " " << l << " " << m << " ";
+		  cout << en << " " << (2.*M_PI)*ModelVertex.Spectrum[num_chain_states][0] << " " << occ_bitstring.back()<< endl;
+		  num_chain_states++;
+		     
+
 		}
 	      }
 	    }
@@ -330,7 +357,7 @@ namespace continuumff{
 	}
       }
     }
-    cout << "mode 5 particles: " << mode5part_R << endl << endl;
+    cout << "5 particle states: " << mode5part_R << endl << endl;
 
     /*Neveu-Schwarz Sector -- six particle modes*/
     ajaj::MPXInt mode6part_NS = 0;
@@ -355,10 +382,14 @@ namespace continuumff{
 
 		    //onechain_modenumber.push_back(6);
 
-		    cout << "NS6: " << num_chain_states << " " << i << " " << j << " " << k << " " << l << " " << m << " " << n << " ";
-		    cout << en << " " << (2.*M_PI/R)*ModelVertex.Spectrum[num_chain_states][0] << endl;
-		    num_chain_states++;
 		    total_occupation.push_back(6);
+		    occ_bitstring.push_back(makebit(i)+makebit(j)+makebit(k)+makebit(l)+makebit(m)+makebit(n)); 
+
+		    cout << "NS6: " << num_chain_states << " " << i << " " << j << " " << k << " " << l << " " << m << " " << n << " ";
+		    cout << en << " " << (2.*M_PI/R)*ModelVertex.Spectrum[num_chain_states][0] << " " << occ_bitstring.back() << endl;
+		    num_chain_states++;
+		       
+
 		  }
 		}
 	      }
@@ -367,13 +398,21 @@ namespace continuumff{
 	}
       }
     }
-    cout << "mode 6 particles: " << mode6part_NS << endl;
+    cout << "6 particle states: " << mode6part_NS << endl;
 
     if (ModelVertex.Spectrum.size()!=static_cast<size_t>(num_chain_states)){
       cout << "Mismatch error" << endl; exit(1);
     }
 
     cout << "End generating spectrum, generated " << num_chain_states << " states" << endl;
+
+    /*for (int m=0;m<2*measured_occupations-1;++m){
+      for (int i=0;i<ModelVertex.Spectrum.size();++i){
+	std::cout << occupations[m][i] << " ";
+      }
+      std::cout << std::endl;
+    }*/
+
     cout << "Starting Matrix Elements" << endl;
 
     ModelVertex.Operators.push_back(ajaj::VertexOperator("Total_Number",ModelVertex.Spectrum.size()));
@@ -391,14 +430,29 @@ namespace continuumff{
   
     //populate annihilation operators
     for (int j=0;j<ModelVertex.Spectrum.size();++j){
-      for (int i=0;i<ModelVertex.Spectrum.size();++i){
-	if (total_occupation[i]==total_occupation[j]-1){ //bra has one less particle than ket
+      for (int i=0;i<ModelVertex.Spectrum.size();++i){//inefficient
+	/*if (total_occupation[i]==total_occupation[j]-1){ //bra has one less particle than ket
 	  for (int m=0;m<2*measured_occupations-1;++m){
-	    if (occupations[m][i]==occupations[m][j]-1){ //specifically which mode
-	      if (ModelVertex.Spectrum[j].en<=0.0) {cout << "Incorrect occupation operator" << endl; exit(1);}
-	      ModelVertex.Operators[m+1].MatrixElements.entry(i,j,sqrt(Delta/ModelVertex.Spectrum[j].en)); //note the offset
-	      break;
+	    int mode=-measured_occupations+1+m;
+	    if (occupations[m][j] == 1 && occupations[m][i]==0){ //search through modes to find which one is missing a particle
+	      //if (ModelVertex.Spectrum[j].en<=0.0) {cout << "Incorrect occupation operator" << endl; exit(1);}
+	      ModelVertex.Operators[m+1].MatrixElements.entry(i,j,signfactor(occ_bitstring[j],mode)*sqrt(Delta/ModelVertex.Spectrum[j].en)); //note the offset
+	      break; //if this was a match, we can skip to next
 	    }
+	  }
+	  }*/
+
+	if (total_occupation[i]==total_occupation[j]-1){ //bra has one less particle than ket
+	  unsigned long int where=occ_bitstring[i]^occ_bitstring[j];
+	  if (Hamming(where)==1){	  
+	    //convert where back to mode
+	    int mode=0;
+	    while (where!=1) {
+	      if (mode>=0) mode++;
+	      mode*=-1;
+	      where >>= 1;
+	    }
+	    ModelVertex.Operators[mode+measured_occupations].MatrixElements.entry(i,j,signfactor(occ_bitstring[j],mode)/sqrt(sqrt(1.+4.0*M_PI*M_PI*(mode*mode)/DR/DR))); //note the offset	    
 	  }
 	}
       }
@@ -407,6 +461,7 @@ namespace continuumff{
     //finish off
     for (int m=0;m<2*measured_occupations-1;++m){
       ModelVertex.Operators[m+1].MatrixElements.finalise();
+      //ModelVertex.Operators[m+1].MatrixElements.print();
     }
 
     //clean up workspace

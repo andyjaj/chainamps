@@ -65,6 +65,8 @@ namespace ajaj {
     //these destroy the contents of the matrix, so be careful
     DenseHED HED(); //
     DenseHED HED(Denseint numevals, char which[3]);
+    DenseHED HED(Denseint numevals, Denseint il);
+
     DenseSVD SVD();
     std::vector<double> SingularValues();
     DenseNHED NHED();

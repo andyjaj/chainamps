@@ -141,6 +141,22 @@ namespace ajaj {
     return ans;
   }
 
+  DenseHED DenseMatrix::HED(Denseint numevals,Denseint il){
+    //check square!
+    if (nrows!=ncols){std::cout << "Not square, can't do eigenvalue decomposition " << nrows << " " << ncols << std::endl; this->print(); exit(1);}
+
+    DenseHED ans(nrows,numevals);
+    if (il+numevals<=nrows){
+      densefuncs::diagonalise_with_lapack(nrows, m_array, ans.EigenVectors.m_array,ans.Values,1+il,il+numevals);
+    }
+    else {
+      std::cout << "Incorrect argument to LAPACK " << std::endl;
+      exit(1);
+    }
+    //clear();
+    return ans;
+  }
+
   //Non Hermitian eigen decomposition
   DenseNHED DenseMatrix::NHED(){
     //check square!
