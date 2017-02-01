@@ -108,14 +108,14 @@ namespace continuumff{
 	  std::complex<double> x=modelvertex.Operators[1+m].MatrixElements.get_x(p);
 	  //do A first
 	  //lowest block row
-	  M.entry(offset_to_last_block+i,modelvertex.Spectrum.size()*(A_col_offset+differencecombinations.size()*m+MPO_subcol)+col,x);
+	  M.entry(offset_to_last_block+i,modelvertex.Spectrum.size()*(A_col_offset+differencecombinations.size()*m+MPO_subcol)+col,1.0*x);
 	  //first block col
 	  M.entry(modelvertex.Spectrum.size()*(A_row_offset+differencecombinations.size()*m+MPO_subrow)+i,col,x*tunnelling); //no factor of R
 	  //now A dagger so swap i and col
 	  //lowest block row
 	  M.entry(offset_to_last_block+col,modelvertex.Spectrum.size()*(Adagger_col_offset+differencecombinations.size()*m+MPO_subcolAdagger)+i,conj(x));
 	  //first block col
-	  M.entry(modelvertex.Spectrum.size()*(Adagger_row_offset+differencecombinations.size()*m+MPO_subrowAdagger)+col,i,-conj(x)*tunnelling); //no factor of R, - sign to compensate for fermi operator order
+	  M.entry(modelvertex.Spectrum.size()*(Adagger_row_offset+differencecombinations.size()*m+MPO_subrowAdagger)+col,i,conj(x)*tunnelling); //no factor of R
 	}
       }
     }
@@ -164,12 +164,12 @@ namespace continuumff{
     }
     const double DR=Delta*R;
     const double vac = 0.0;
-    const ajaj::MPXInt num1R = 200;
-    const ajaj::MPXInt num2NS = 200;
+    const ajaj::MPXInt num1R = 100;
+    const ajaj::MPXInt num2NS = 100;
     const ajaj::MPXInt num3R = 100;
-    const ajaj::MPXInt num4NS = 50;
-    const ajaj::MPXInt num5R = 20;
-    const ajaj::MPXInt num6NS = 20;
+    const ajaj::MPXInt num4NS = 10;
+    const ajaj::MPXInt num5R = 2;
+    const ajaj::MPXInt num6NS = 2;
     
     const double onechain_gs_energy=vac;
     ajaj::MPXInt num_chain_states = 0;
@@ -444,7 +444,7 @@ namespace continuumff{
 
 	if (total_occupation[i]==total_occupation[j]-1){ //bra has one less particle than ket
 	  unsigned long int where=occ_bitstring[i]^occ_bitstring[j];
-	  if (Hamming(where)==1){	  
+	  if (Hamming(where)==1){ //is this the right one?	  
 	    //convert where back to mode
 	    int mode=0;
 	    while (where!=1) {

@@ -14,9 +14,12 @@ namespace ajaj {
   State::State(const QNVector& CHARGE_RULES, QNVector v) : m_CHARGE_RULES(CHARGE_RULES),values(v) {
     if (v.size()> CHARGE_RULES.size()){std::cout << "Charge info doesn't match rules!" << std::endl; exit(1);}
     for (size_t i=0;i<v.size();++i){
-      if (m_CHARGE_RULES[i]>0){
+      if (m_CHARGE_RULES[i]>1){
 	if (values[i]<0){std::cout << "Z_" << m_CHARGE_RULES[i] << " charges can't be negative! " << values[i] << " entry " << i << std::endl;exit(1);}
 	values[i]=v[i] % m_CHARGE_RULES[i];
+      }
+      else if (m_CHARGE_RULES[i]==1){
+	values[i]=0;
       }
     }
     for (size_t i=v.size();i<m_CHARGE_RULES.size();++i){
@@ -61,9 +64,10 @@ namespace ajaj {
   std::istream &operator>>(std::istream &input, State &S){
    for (size_t i=0;i<S.m_CHARGE_RULES.size();++i){
       input >> S.values[i];
-      if (S.values[i]<0 && S.m_CHARGE_RULES[i]>0){std::cout << "Z_" << S.m_CHARGE_RULES[i] << " charges can't be negative! " << S.values[i] << std::endl;exit(1);}
+      if (S.values[i]<0 && S.m_CHARGE_RULES[i]>1){std::cout << "Z_" << S.m_CHARGE_RULES[i] << " charges can't be negative! " << S.values[i] << std::endl;exit(1);}
+      else if (S.m_CHARGE_RULES[i]==1) {S.values[i]=0;}
    }
-    return input;
+   return input;
   }
 
   std::ostream &operator<<(std::ostream &output, const State &S){

@@ -666,14 +666,18 @@ namespace ajaj {
 
   MPX_matrix TwoVertexInitialWavefunction(const MPO_matrix& LeftH, const MPO_matrix& RightH, const State& TargetSector, Data& result){
     const MPX_matrix H2(TwoVertexInitialHamiltonian(LeftH,RightH));
+
+    //H2.print_matrix();
+
     static char SMALLESTREAL[]={'S','R','\n'}; //lowest real part for energies
 
     std::cout << "Eigensolver starting for two vertex wavefunction..." << std::endl;
     SparseHED decomp(H2.Eigs(TargetSector,2,SMALLESTREAL));//uses arpack, finds two eigenvals
     decomp.printValues();
     std::cout << "Lowest energy/Number of Vertices: " << decomp.Values[0]/2.0 <<std::endl;
-    if (decomp.ValuesSize()>1)
+    if (decomp.ValuesSize()>1){
       std::cout << "Next lowest energy/Number of Vertices: " << decomp.Values[1]/2.0 <<std::endl;
+    }
     result.Real_measurements.push_back(decomp.Values[0]);
     result.Real_measurements.push_back(decomp.Values[0]/2.0);
     std::vector<MPXIndex> wfindices;
@@ -681,7 +685,13 @@ namespace ajaj {
     wfindices.push_back(MPXIndex(1,StateArray(1,TargetSector-TargetSector))); //ingoing
     wfindices.push_back(MPXIndex(1,H2.GetPhysicalSpectrum())); //ingoing
     wfindices.push_back(MPXIndex(0,StateArray(1,TargetSector))); //outgoing
+
     return MPX_matrix(H2.GetPhysicalSpectrum(),wfindices,2,reshape(decomp.EigenVectors.ExtractColumns(std::vector<MPXInt>(1,0)),H2.GetPhysicalSpectrum().size()));
+
+    /*SparseMatrix comb(decomp.EigenVectors.ExtractColumns(std::vector<MPXInt>(1,0)));
+    comb+=decomp.EigenVectors.ExtractColumns(std::vector<MPXInt>(1,1));
+    comb.rescale(sqrt(1.0/2.0));
+    return MPX_matrix(H2.GetPhysicalSpectrum(),wfindices,2,reshape(comb,H2.GetPhysicalSpectrum().size()));*/
   }
 
   Prediction MakePrediction(const MPSDecomposition& Decomp, const std::vector<double>& PreviousLambda){
