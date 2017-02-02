@@ -836,7 +836,7 @@ namespace ajaj {
     //internal contractions may be large.
     //however if allowed_indices is small we should use a dense method
 
-    if (allowed_indices.size()<400 /*&& !ProjectorTensors.size()*/){
+    if (allowed_indices.size()<800 /*&& !ProjectorTensors.size()*/){
       //just make the (dense) matrix and use lapack
       static std::pair<const std::vector<MPXInt>,const std::vector<MPXInt> > condition={{1,7},{2,6}};
       TranslationBlock<DenseMatrix> TB(contract_conditional<DenseMatrix>(contract(H,0,LeftBlock,0,contract13),0,contract(H,0,RightBlock,0,contract32),0,contract21,condition));
