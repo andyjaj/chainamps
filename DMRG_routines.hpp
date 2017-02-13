@@ -113,15 +113,11 @@ namespace ajaj {
 
     SuperBlock(const std::string& Name, const MPO_matrix& H, const State& TargetState) : BlocksStructure(Name,H.GetPhysicalSpectrum(),0,0,0),H_ptr_(&H),TargetState_(TargetState),CentralDecomposition(H.getPhysicalSpectrum()) {
       std::stringstream dnamestream;
-      dnamestream << getName() << "_One_Vertex_Densities.dat";
+      dnamestream << getName();// << "_Density_Matrix.dat";
       DensityFileName_=dnamestream.str();
-      std::ofstream DensityFileStream_;
-      DensityFileStream_.open(DensityFileName_.c_str(),ios::out | ios::trunc);
-      for (auto&& i : H.getPhysicalSpectrum().Energies()){
-	DensityFileStream_ << i << " ";
-      }
-      DensityFileStream_ << std::endl;
-      DensityFileStream_.close();
+      //std::ofstream DensityFileStream_;
+      //DensityFileStream_.open(DensityFileName_.c_str(),ios::out | ios::trunc);
+      //DensityFileStream_.close();
     }
     const MPO_matrix& getH() const {return *H_ptr_;}
     const MPSDecomposition& getCentralDecomposition() const {return CentralDecomposition;}

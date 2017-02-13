@@ -123,7 +123,7 @@ namespace ajaj{
 	//do we need to take a measurement?
 	if (m_current_time_step % measurement_interval==0) /*make measurement*/ {
 	  UnitCell ortho(OrthogonaliseInversionSymmetric(m_unit));
-	  ortho.OutputOneVertexDensityMatrix("OneVertexRho",m_current_time_step);
+	  //ortho.OutputOneVertexDensityMatrix("OneVertexRho",m_current_time_step);
 	  if (ortho.size()){ //only if unitcell isn't empty
 	    ortho.store(Name_,m_current_time_step);
 	    this->do_measurements(ortho,measuredMPOs);
@@ -149,13 +149,13 @@ namespace ajaj{
 	  UnitCell ortho(OrthogonaliseInversionSymmetric(m_unit));
 	  if (ortho.size()){ //if generating unitcell works, then measure and use it
 	    ortho.store(Name_,m_current_time_step);
-	    ortho.OutputOneVertexDensityMatrix("OneVertexRho",m_current_time_step);
+	    //ortho.OutputOneVertexDensityMatrix("OneVertexRho",m_current_time_step);
 	    this->do_measurements(ortho,measuredMPOs);
 	    m_unit=std::move(ortho);
 	  }
 	  //m_unit=std::move(OrthogonaliseInversionSymmetric(m_unit));
 	  //m_unit.store(Name_,m_current_time_step);
-	  //m_unit.OutputOneVertexDensityMatrix("OneVertexRho",m_current_time_step);
+	  m_unit.OutputOneVertexDensityMatrix("OneVertexRho",m_current_time_step);
 	  //this->do_measurements(m_unit,measuredMPOs);
 
 	  //complete time step

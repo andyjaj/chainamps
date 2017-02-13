@@ -172,13 +172,6 @@ namespace ajaj {
     save_right_block();
   }
 
-  void SuperBlock::push_density() const {
-    std::ofstream DensityFileStream;
-    DensityFileStream.open(DensityFileName_.c_str(),ios::out);
-    CentralDecomposition.OutputPhysicalIndexDensities(DensityFileStream);
-    DensityFileStream.close();
-  }
-
   Data SuperBlock::initialise(uMPXInt chi, double smin){
     //Assumes any previous contents of the blocks are junk.
     if(!H_ptr_->isConsistent()){std::cout << "Hamiltonian MPO is malformed. Aborting." << std::endl; H_ptr_->print_indices_values(); exit(1);}
@@ -198,7 +191,6 @@ namespace ajaj {
     //solve
     CentralDecomposition=TwoVertexSVD(TwoVertexInitialWavefunction(LeftH,RightH,TargetState_,two_vertex_energy),bonddim,smin);
     CentralDecomposition.SquareRescale(1.0);
-    push_density();
     //CentralDecomposition.OutputPhysicalIndexDensities(DensityFileStream_);
     //at this stage we can use the generated left and right Hamiltonians to save the left and right blocks
     //update superblock values
@@ -236,7 +228,6 @@ namespace ajaj {
     CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),nullptr,size(),energy,&(pred_.Guess)),chi,smin);
     CentralDecomposition.SquareRescale(1.0);
     //CentralDecomposition.OutputPhysicalIndexDensities(DensityFileStream_);
-    push_density();
     pred_=MakePrediction(CentralDecomposition,previous_lambda_);
     fidelity_=CheckConvergence(pred_,previous_lambda_);
     double S_E(entropy(CentralDecomposition.Values));
@@ -266,7 +257,6 @@ namespace ajaj {
     CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),nullptr,size(),energy),chi,smin);
     CentralDecomposition.SquareRescale(1.0);
     //CentralDecomposition.OutputPhysicalIndexDensities(DensityFileStream_);
-    push_density();
     //pred_=MakePrediction(CentralDecomposition,previous_lambda_);
     //fidelity_=CheckConvergence(pred_,previous_lambda_);
     double S_E(entropy(CentralDecomposition.Values));
@@ -295,7 +285,6 @@ namespace ajaj {
     CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),nullptr,size(),energy),chi,smin);
     CentralDecomposition.SquareRescale(1.0);
     //CentralDecomposition.OutputPhysicalIndexDensities(DensityFileStream_);
-    push_density();
     //pred_=MakePrediction(CentralDecomposition,previous_lambda_);
     //fidelity_=CheckConvergence(pred_,previous_lambda_);
     double S_E(entropy(CentralDecomposition.Values));
@@ -671,13 +660,14 @@ namespace ajaj {
 
     static char SMALLESTREAL[]={'S','R','\n'}; //lowest real part for energies
 
-    std::cout << "Eigensolver starting for two vertex wavefunction..." << std::endl;
-    SparseHED decomp(H2.Eigs(TargetSector,2,SMALLESTREAL));//uses arpack, finds two eigenvals
-    decomp.printValues();
+    std::cout << "Eigensolver starting for two vertex wavefunction..." << std::endl;    
+
+    SparseHED decomp(H2.Eigs(TargetSector,3,SMALLESTREAL));//uses arpack, finds three eigenvals if possible
     std::cout << "Lowest energy/Number of Vertices: " << decomp.Values[0]/2.0 <<std::endl;
-    if (decomp.ValuesSize()>1){
-      std::cout << "Next lowest energy/Number of Vertices: " << decomp.Values[1]/2.0 <<std::endl;
-    }
+
+    std::cout << "Raw eigenvalues" <<std::endl;
+    decomp.printValues();
+
     result.Real_measurements.push_back(decomp.Values[0]);
     result.Real_measurements.push_back(decomp.Values[0]/2.0);
     std::vector<MPXIndex> wfindices;
@@ -690,7 +680,9 @@ namespace ajaj {
 
     /*SparseMatrix comb(decomp.EigenVectors.ExtractColumns(std::vector<MPXInt>(1,0)));
     comb+=decomp.EigenVectors.ExtractColumns(std::vector<MPXInt>(1,1));
-    comb.rescale(sqrt(1.0/2.0));
+    comb+=decomp.EigenVectors.ExtractColumns(std::vector<MPXInt>(1,2));
+
+    comb.rescale(sqrt(1.0/3.0));
     return MPX_matrix(H2.GetPhysicalSpectrum(),wfindices,2,reshape(comb,H2.GetPhysicalSpectrum().size()));*/
   }
 
@@ -727,7 +719,7 @@ namespace ajaj {
     formations++;
 #endif
 
-    MPXInt num_to_find = stuff.length() >= 5 ? 4 : 1;
+    MPXInt num_to_find = stuff.length() >= 5 ? 4 : 1; //guard partially against ARPACK doing silly things
 #ifdef TIMING
     auto tD1 = std::chrono::high_resolution_clock::now();
 #endif
@@ -834,7 +826,7 @@ namespace ajaj {
     SparseVectorWithRestriction guess_struct(initial,&allowed_indices);
 
     //internal contractions may be large.
-    //however if allowed_indices is small we should use a dense method
+    //however if allowed_indices is 'small' we should use a dense method
 
     if (allowed_indices.size()<800 /*&& !ProjectorTensors.size()*/){
       //just make the (dense) matrix and use lapack
