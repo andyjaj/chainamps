@@ -14,7 +14,8 @@
 namespace continuumff{
 
   unsigned long int makebit(ajaj::QuantumNumberInt i){
-    return i == 0 ? 1 : (1 << (2*abs(i)-1 +(i>0)));
+
+    return i == 0 ? 1 : 1 << int(2*abs(i)-1 +(i>0));
   }
 
   unsigned int Hamming(unsigned long int b){
