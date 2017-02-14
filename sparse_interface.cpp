@@ -90,6 +90,54 @@ namespace ajaj {
     subidxarray[numdims-1]=idx;
   }
 
+  bool check_equal(const SparseMatrix& A, const SparseMatrix& B, double tol){
+    if (A.rows()!=B.rows() || A.cols()!=B.cols()){ //check dimensions
+      return 0;
+    }
+    //need to allow for spurious zeros in matrix, leading to differing numbers of 'non zeros'
+
+    //loop through all in A, and test against B
+    // if A != B then check if row/col indices match and if one of the elements is actually 0.0.
+
+    for (Sparseint c=0;c<A.cols();++c){
+      Sparseint Bp=B.get_p(c);
+      Sparseint Ap=A.get_p(c);
+      
+      while (Ap<A.get_p(c+1) && Bp<B.get_p(c+1)){ //if we haven't reached the end of both columns
+	//skip values smaller than tol
+	while (abs(A.get_x(Ap))<=tol && Ap<A.get_p(c+1)){ 
+	  ++Ap;
+	}
+	while (abs(B.get_x(Bp))<=tol && Bp<B.get_p(c+1)){ 
+	  ++Bp;
+	}
+
+	if (Ap==A.get_p(c+1) && Bp==B.get_p(c+1)){
+	  break; //next col
+	}
+
+	//non zeros in hand
+	if (A.get_i(Ap)==B.get_i(Bp)){ //rows match?
+	  if (abs(A.get_x(Ap)-B.get_x(Bp))<=tol) {
+	    //equal, increment both
+	    ++Ap;
+	    ++Bp;
+	  }
+	}
+	else{
+	  //not equal
+	  return 0; 
+	}
+	
+	
+      }
+    }
+      
+      
+    return 1;
+  }
+
+
   SparseMatrix::SparseMatrix(SparseType* m_array_to_use,const bool is_it_finalised) noexcept : m_array(m_array_to_use), m_finalised(is_it_finalised) {};//constructor used by internals only
 
   SparseMatrix::SparseMatrix() noexcept : m_array(0),m_finalised(0) {};//useful when creating an instance that needs to be replaced later

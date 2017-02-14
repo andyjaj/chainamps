@@ -139,6 +139,7 @@ namespace ajaj {
     const EigenStateArray& getPhysicalSpectrum() const {return *m_SpectrumPtr;} /**< Return ref to the Physical spectrum */
     const Basis& basis() const {return *m_SpectrumPtr;}
     bool isConsistent() const; /**< Check dimensions of SparseMatrix match the dimensions of the indices.*/
+    bool isHermitian() const;
     std::vector<Sparseint> dimsvector() const; /**< Return a vector containing all the dimensions of the MPXIndex indices, from left to right. */
     void print_matrix() const; /**< Print the SparseMatrix */
     void print_indices() const; /**< Print the dimensions of the indices. Colon indicates how many correspond to rows and how many to columns. */
@@ -182,6 +183,8 @@ namespace ajaj {
       return *this;
     }
 
+    friend bool arrays_equal(const MPX_matrix& A, const MPX_matrix& B,double tol);
+
     friend MPX_matrix copy(const MPX_matrix& A);
     friend MPX_matrix reorder(const MPX_matrix& A, bool conjA, const std::vector<Sparseint>& newindexorder, const Sparseint numrows); /**< Reorders MPXIndex indices, and reshapes SparseMatrix accordingly. */
     friend MPX_matrix contract(const MPX_matrix& A, bool conjA,const MPX_matrix& B,bool conjB, const std::vector<MPXPair>& contractidxs); /**< Contracts two MPX_matrix objects using the index pairs given in contractidxs. */
@@ -193,6 +196,11 @@ namespace ajaj {
     friend SparseMatrix contract_to_sparse(const MPX_matrix& A, bool conjA,const MPX_matrix& B,bool conjB, const std::vector<MPXPair>& contractidxs); /**< Contract, but only keep the SparseMatrix, not the MPXIndex info. */
     friend void swap(MPX_matrix& A, MPX_matrix& B);
   }; 
+
+  inline bool arrays_equal(const MPX_matrix& A, const MPX_matrix& B,double tol=0.0){
+    return check_equal(A.m_Matrix,B.m_Matrix,tol);
+  }
+
 
   /** Overload for contract, if only one index needs to be contracted. */
   inline MPX_matrix contract(const MPX_matrix& A, bool conjA,const MPX_matrix& B,bool conjB, const MPXPair& contractidx){

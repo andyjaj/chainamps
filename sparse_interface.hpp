@@ -41,6 +41,8 @@ namespace ajaj {
   //std::vector<double>& SquareSumRescale(std::vector<double>& Values, double newsquaresum);
   double SquareSumRescale(std::vector<double>& Values, double newsquaresum);
   double entropy(const std::vector<double>& Values);
+  bool check_equal(const SparseMatrix& A, const SparseMatrix& B, double tol=0.0 ); 
+
   //////////////////////////////////////////////////////////////////////////
   //friend forward declarations
   SparseMatrix NoTransMultiply(const SparseMatrix& A,const SparseMatrix& B);

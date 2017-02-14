@@ -70,7 +70,7 @@ namespace ll{
 
     //populate spectrum
     for (ajaj::uMPXInt n=0;n<nstates;++n){
-      //ajaj::QuantumNumberInt hyperindex=rmk::state_metaZ[n];
+      //Robert's charges are not in the order I prefer
       ModelVertex.Spectrum.push_back(ajaj::EigenState(ChargeRules,ajaj::QNVector({{ajaj::QuantumNumberInt(rmk::state_Z[2][n]),ajaj::QuantumNumberInt(rmk::state_Z[0][n]),ajaj::QuantumNumberInt(rmk::state_Z[1][n])}}),rmk::state_en[n]));
     }
 
@@ -87,7 +87,7 @@ namespace ll{
     ModelVertex.Operators.push_back(ajaj::VertexOperator("Density_integrated",ModelVertex.Spectrum.size()));   
     ModelVertex.Operators.push_back(ajaj::VertexOperator("Phase",ModelVertex.Spectrum.size()));   
 
-    double factor=pow(tpi_R,Beta*Beta); //get this right!!!
+    double factor=pow(tpi_R,Beta*Beta);
 
     for (ajaj::MPXInt col=0;col<ModelVertex.Spectrum.size();++col){
       for (ajaj::MPXInt row=0;row<ModelVertex.Spectrum.size();++row){

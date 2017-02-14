@@ -656,13 +656,17 @@ namespace ajaj {
   MPX_matrix TwoVertexInitialWavefunction(const MPO_matrix& LeftH, const MPO_matrix& RightH, const State& TargetSector, Data& result){
     const MPX_matrix H2(TwoVertexInitialHamiltonian(LeftH,RightH));
 
+    /*if (!H2.isHermitian()){
+      std::cout << "NOT HERMITIAN" << std::endl;
+      exit(1);
+    }*/
     //H2.print_matrix();
 
     static char SMALLESTREAL[]={'S','R','\n'}; //lowest real part for energies
 
     std::cout << "Eigensolver starting for two vertex wavefunction..." << std::endl;    
 
-    SparseHED decomp(H2.Eigs(TargetSector,3,SMALLESTREAL));//uses arpack, finds three eigenvals if possible
+    SparseHED decomp(H2.Eigs(TargetSector,10,SMALLESTREAL));//uses arpack, finds three eigenvals if possible
     std::cout << "Lowest energy/Number of Vertices: " << decomp.Values[0]/2.0 <<std::endl;
 
     std::cout << "Raw eigenvalues" <<std::endl;

@@ -668,6 +668,11 @@ namespace ajaj {
     }
   }
 
+  bool MPX_matrix::isHermitian() const {
+    if (m_Matrix.rows()!= m_Matrix.cols()) return 0;
+    else return check_equal(m_Matrix,m_Matrix.copy_dagger(),1.0e-14);
+  }
+
   bool MPX_matrix::isConsistent() const {
     MPXInt rows=1;
     MPXInt cols=1;
