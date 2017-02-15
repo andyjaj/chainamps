@@ -14,7 +14,7 @@ double non_chir_psi_dagger(int k,int l)
   N_l = state_Z[0][l];
 
   if (N_k==(N_l+1))
-    return(me_plus_chi[kl][ll]*me_minus_chi[kr][lr]);
+    return(me_plus_chi[kl][ll]*me_plus_chi[kr][lr]);
   else
     return(0.);
 }
@@ -35,11 +35,12 @@ double non_chir_psi(int k,int l)
   N_l = state_Z[0][l];
 
   if (N_k==(N_l-1))
-    return(me_minus_chi[kl][ll]*me_plus_chi[kr][lr]);
+    return(me_minus_chi[kl][ll]*me_minus_chi[kr][lr]);
   else
     return(0.);
 
 }
+
 
 //k is out state, l in state, i.e. <k|I*\phi(x=0)|l>
 double phase_me(double Beta, int k, int l)
