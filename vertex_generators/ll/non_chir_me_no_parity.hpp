@@ -41,7 +41,6 @@ double non_chir_psi(int k,int l)
 
 }
 
-
 //k is out state, l in state, i.e. <k|I*\phi(x=0)|l>
 double phase_me(double Beta, int k, int l)
 {

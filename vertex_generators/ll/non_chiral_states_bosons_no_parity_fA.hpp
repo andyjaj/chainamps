@@ -34,9 +34,9 @@ int non_chir_bosons(double tpi_R, double Beta, double en_cutoff)
 	  en = en_vac[-nmin+n][-mmin+m] + tpi_R*(cstate_lev[k]+cstate_lev[j]);
 	  mom = mom_vac[-nmin+n][-mmin+m] + cstate_lev[k]-cstate_lev[j];
 
-	  if (en < en_cutoff) {
+	  if (en <= en_cutoff) {
 	    //printf("state: %ld %d %d %d %d %d %d %3.8f %d %3.8f %3.8f\n",nstate,n,m,k,j,cstate_lev[k],cstate_lev[j],en,mom,en_vac[-nmin+n][-mmin+m],tpi_R);
-	    state_en[nstate] = en+nstate*0.000000001;
+	    state_en[nstate] = en;//+nstate*1.0e-9;
 
 	    state_Z[0][nstate] = n; /*center of mass momentum*/
 	    state_Z[1][nstate] = m; /*U(1) charge*/
