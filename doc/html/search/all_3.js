@@ -3,6 +3,7 @@ var searchData=
   ['data',['Data',['../structajaj_1_1_data.html',1,'ajaj']]],
   ['data_2ehpp',['data.hpp',['../data_8hpp.html',1,'']]],
   ['dataoutput',['DataOutput',['../classajaj_1_1_data_output.html',1,'ajaj']]],
+  ['datapoint',['datapoint',['../structdatapoint.html',1,'']]],
   ['deducefromcolumns',['DeduceFromColumns',['../namespaceajaj.html#a02985ca335b71943ca980413fe649335',1,'ajaj']]],
   ['densedecompositionbase',['DenseDecompositionBase',['../classajaj_1_1_dense_decomposition_base.html',1,'ajaj']]],
   ['densedecompositionbase_3c_20double_20_3e',['DenseDecompositionBase&lt; double &gt;',['../classajaj_1_1_dense_decomposition_base.html',1,'ajaj']]],

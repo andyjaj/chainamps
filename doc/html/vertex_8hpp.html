@@ -96,7 +96,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
 <a href="#namespaces">Namespaces</a> &#124;
-<a href="#typedef-members">Typedefs</a>  </div>
+<a href="#typedef-members">Typedefs</a> &#124;
+<a href="#func-members">Functions</a>  </div>
   <div class="headertitle">
 <div class="title">vertex.hpp File Reference</div>  </div>
 </div><!--header-->
@@ -117,6 +118,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structajaj_1_1_shifted_operator_info.html">ajaj::ShiftedOperatorInfo</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classajaj_1_1_vertex_operator.html">ajaj::VertexOperator</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classajaj_1_1_vertex.html" title="Vertex defines the local Hilbert space, the local Hamiltonian, any operators etc. ...">Vertex</a> Operator class contains the matrix elements and the name of an operator of the local (site or integrable chain) Hilbert space.  <a href="classajaj_1_1_vertex_operator.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -135,15 +138,18 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
 Typedefs</h2></td></tr>
-<tr class="memitem:a879280ff660f4c2f9868f06887e9c954"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a879280ff660f4c2f9868f06887e9c954"></a>
-typedef EigenStateArray&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::Basis</b></td></tr>
-<tr class="separator:a879280ff660f4c2f9868f06887e9c954"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1e667a743610fb490c64281e0ef24f82"><td class="memItemLeft" align="right" valign="top">typedef std::vector&lt; VertexOperator &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceajaj.html#a1e667a743610fb490c64281e0ef24f82">ajaj::VertexOperatorArray</a></td></tr>
 <tr class="memdesc:a1e667a743610fb490c64281e0ef24f82"><td class="mdescLeft">&#160;</td><td class="mdescRight">Container for vertex operators.  <a href="namespaceajaj.html#a1e667a743610fb490c64281e0ef24f82">More...</a><br /></td></tr>
 <tr class="separator:a1e667a743610fb490c64281e0ef24f82"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aac14c748e81f4ee73d6382b91fe3020d"><td class="memItemLeft" align="right" valign="top">typedef std::vector&lt; VertexParameter &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceajaj.html#aac14c748e81f4ee73d6382b91fe3020d">ajaj::VertexParameterArray</a></td></tr>
 <tr class="memdesc:aac14c748e81f4ee73d6382b91fe3020d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Container for vertex parameters.  <a href="namespaceajaj.html#aac14c748e81f4ee73d6382b91fe3020d">More...</a><br /></td></tr>
 <tr class="separator:aac14c748e81f4ee73d6382b91fe3020d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
+Functions</h2></td></tr>
+<tr class="memitem:ac2e98e296758fe677dc929ab74ce0117"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ac2e98e296758fe677dc929ab74ce0117"></a>
+std::ostream &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::operator&lt;&lt;</b> (std::ostream &amp;output, const ShiftedOperatorInfo &amp;SOp)</td></tr>
+<tr class="separator:ac2e98e296758fe677dc929ab74ce0117"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>A model is a combination of the vertex definition (e.g. </p>

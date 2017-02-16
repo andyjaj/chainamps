@@ -7,9 +7,15 @@ ChainAMPS is a set of libraries and driver routines, designed to implement MPS a
 However it also works perfectly well for canonical 1D MPS algorithms, though it is not optimised for this task.
 
 Currently there are distinct drivers for DMRG; both infinite (iDMRG) and finite (fDMRG); and for TEBD, including the infinite case (iTEBD).
+
 The driver naming convention for algorithm X is X_DRV.bin.
 
+There is also a driver to create and store the local basis and operators for a model (STORE\_MODEL.bin)
+and a driver to post process stored translationally invariant unit cells (UNITCELL\_MEASURE.bin).
+
 Several example models are implemented, via example files in the examples sub directory. In addition user defined models can be studied.
+
+Usage info on the drivers can be found by running them without any command line arguments.
 
 Further documentation is provided via doc/html/index.html
 

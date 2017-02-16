@@ -113,12 +113,15 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a9c520bb60176b27b6525128b397ce914"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a9c520bb60176b27b6525128b397ce914"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>UnitCell</b> (const <a class="el" href="classajaj_1_1_eigen_state_array.html">EigenStateArray</a> &amp;spectrum)</td></tr>
-<tr class="separator:a9c520bb60176b27b6525128b397ce914"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a39abeccb05356e6b905e261c77588e7e"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a39abeccb05356e6b905e261c77588e7e"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>UnitCell</b> (const <a class="el" href="classajaj_1_1_eigen_state_array.html">EigenStateArray</a> &amp;spectrum, const <a class="el" href="classajaj_1_1_m_p_s__matrix.html">MPS_matrix</a> &amp;m, const std::vector&lt; double &gt; &amp;l, uMPXInt length=1)</td></tr>
-<tr class="separator:a39abeccb05356e6b905e261c77588e7e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac3abdbac704bfa1b3a5563a737849c85"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ac3abdbac704bfa1b3a5563a737849c85"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>UnitCell</b> (const <a class="el" href="classajaj_1_1_eigen_state_array.html">Basis</a> &amp;spectrum)</td></tr>
+<tr class="separator:ac3abdbac704bfa1b3a5563a737849c85"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a08da4737066f7cdb4fb0319e4679a2fe"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a08da4737066f7cdb4fb0319e4679a2fe"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>UnitCell</b> (const <a class="el" href="classajaj_1_1_eigen_state_array.html">Basis</a> &amp;spectrum, const <a class="el" href="classajaj_1_1_m_p_s__matrix.html">MPS_matrix</a> &amp;m, const std::vector&lt; double &gt; &amp;l, uMPXInt length=1)</td></tr>
+<tr class="separator:a08da4737066f7cdb4fb0319e4679a2fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7c967e97e47aaa6731672184e7489374"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a7c967e97e47aaa6731672184e7489374"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>UnitCell</b> (const <a class="el" href="classajaj_1_1_eigen_state_array.html">Basis</a> &amp;spectrum, std::vector&lt; <a class="el" href="classajaj_1_1_m_p_s__matrix.html">MPS_matrix</a> &gt; &amp;&amp;mvec, std::vector&lt; std::vector&lt; double &gt; &gt; &amp;&amp;lvec)</td></tr>
+<tr class="separator:a7c967e97e47aaa6731672184e7489374"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a248c1e8084ac0eae09c11448a5cb10ff"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a248c1e8084ac0eae09c11448a5cb10ff"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>UnitCell</b> (const <a class="el" href="classajaj_1_1_m_p_s_decomposition.html">MPSDecomposition</a> &amp;D, const std::vector&lt; double &gt; &amp;PreviousLambda)</td></tr>
 <tr class="separator:a248c1e8084ac0eae09c11448a5cb10ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -140,6 +143,21 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>OutputPhysicalIndexDe
 <tr class="memitem:a589dd9a696656583259ffe8c8e434582"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a589dd9a696656583259ffe8c8e434582"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>OutputOneVertexDensityMatrix</b> (std::ofstream &amp;d) const </td></tr>
 <tr class="separator:a589dd9a696656583259ffe8c8e434582"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a140b939fbe03bde6d73890af68c88c75"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a140b939fbe03bde6d73890af68c88c75"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OutputOneVertexDensityMatrix</b> (const std::string &amp;name, uMPXInt l) const </td></tr>
+<tr class="separator:a140b939fbe03bde6d73890af68c88c75"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad299a6a6e1687dfb4e054cb90e0cbd41"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classajaj_1_1_unit_cell.html#ad299a6a6e1687dfb4e054cb90e0cbd41">store</a> (const std::string &amp;filename, uMPXInt l) const </td></tr>
+<tr class="memdesc:ad299a6a6e1687dfb4e054cb90e0cbd41"><td class="mdescLeft">&#160;</td><td class="mdescRight">Print <a class="el" href="classajaj_1_1_unit_cell.html" title="A class to hold a unit cell of arbitrary length. ">UnitCell</a> with to binary file, with an index in filename.  <a href="#ad299a6a6e1687dfb4e054cb90e0cbd41">More...</a><br /></td></tr>
+<tr class="separator:ad299a6a6e1687dfb4e054cb90e0cbd41"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acbac265f56b097ac792eb33fcfaea39b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classajaj_1_1_unit_cell.html#acbac265f56b097ac792eb33fcfaea39b">store</a> (const std::string &amp;filename) const </td></tr>
+<tr class="memdesc:acbac265f56b097ac792eb33fcfaea39b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Print the <a class="el" href="classajaj_1_1_unit_cell.html" title="A class to hold a unit cell of arbitrary length. ">UnitCell</a> to file in binary format.  <a href="#acbac265f56b097ac792eb33fcfaea39b">More...</a><br /></td></tr>
+<tr class="separator:acbac265f56b097ac792eb33fcfaea39b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afeab2d9fbb7108305911ad210c62a5c8"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="afeab2d9fbb7108305911ad210c62a5c8"></a>
+double&#160;</td><td class="memItemRight" valign="bottom"><b>Entropy</b> () const </td></tr>
+<tr class="separator:afeab2d9fbb7108305911ad210c62a5c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a601aeb888fa50bbb57d02da19856aa0a"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a601aeb888fa50bbb57d02da19856aa0a"></a>
+const <a class="el" href="classajaj_1_1_eigen_state_array.html">Basis</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>basis</b> () const </td></tr>
+<tr class="separator:a601aeb888fa50bbb57d02da19856aa0a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -152,13 +170,60 @@ std::vector&lt; std::vector&lt; double &gt; &gt;&#160;</td><td class="memItemRig
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
-<tr class="memitem:a186b75fa7d0caac0171e418f7c64c75b"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a186b75fa7d0caac0171e418f7c64c75b"></a>
-const <a class="el" href="classajaj_1_1_eigen_state_array.html">EigenStateArray</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>m_spectrum_ptr</b></td></tr>
-<tr class="separator:a186b75fa7d0caac0171e418f7c64c75b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab8fbb17fa29e4eb3b02a8ea5972067e4"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ab8fbb17fa29e4eb3b02a8ea5972067e4"></a>
+const <a class="el" href="classajaj_1_1_eigen_state_array.html">Basis</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>basis_ptr_</b></td></tr>
+<tr class="separator:ab8fbb17fa29e4eb3b02a8ea5972067e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>A class to hold a unit cell of arbitrary length. </p>
-</div><hr/>The documentation for this class was generated from the following files:<ul>
+</div><h2 class="groupheader">Member Function Documentation</h2>
+<a class="anchor" id="ad299a6a6e1687dfb4e054cb90e0cbd41"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ajaj::UnitCell::store </td>
+          <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>filename</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uMPXInt&#160;</td>
+          <td class="paramname"><em>l</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Print <a class="el" href="classajaj_1_1_unit_cell.html" title="A class to hold a unit cell of arbitrary length. ">UnitCell</a> with to binary file, with an index in filename. </p>
+
+</div>
+</div>
+<a class="anchor" id="acbac265f56b097ac792eb33fcfaea39b"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ajaj::UnitCell::store </td>
+          <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>filename</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Print the <a class="el" href="classajaj_1_1_unit_cell.html" title="A class to hold a unit cell of arbitrary length. ">UnitCell</a> to file in binary format. </p>
+
+</div>
+</div>
+<hr/>The documentation for this class was generated from the following files:<ul>
 <li>ajajdmrg/ChainAMPS/<a class="el" href="_m_p_x_8hpp_source.html">MPX.hpp</a></li>
 <li>ajajdmrg/ChainAMPS/MPX.cpp</li>
 </ul>

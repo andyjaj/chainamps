@@ -110,12 +110,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ad62167b1d5b3bbd71ee07199e6e8cc82"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ad62167b1d5b3bbd71ee07199e6e8cc82"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>TwoVertexComponents</b> (const <a class="el" href="classajaj_1_1_m_p_x__matrix.html">MPX_matrix</a> &amp;L, const <a class="el" href="classajaj_1_1_m_p_o__matrix.html">MPO_matrix</a> &amp;HMPO, const <a class="el" href="classajaj_1_1_m_p_x__matrix.html">MPX_matrix</a> &amp;R, const std::vector&lt; <a class="el" href="classajaj_1_1_projector_blocks.html">ProjectorBlocks</a> &gt; *P=nullptr, const <a class="el" href="classajaj_1_1_state.html">State</a> *StatePtr=nullptr)</td></tr>
 <tr class="separator:ad62167b1d5b3bbd71ee07199e6e8cc82"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a282032326db93e90f72c57995ef7115c"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a282032326db93e90f72c57995ef7115c"></a>
-<a class="el" href="classajaj_1_1_sparse_h_e_d.html">SparseHED</a>&#160;</td><td class="memItemRight" valign="bottom"><b>HED</b> (Sparseint numevals, char which[3], const <a class="el" href="classajaj_1_1_sparse_matrix.html">SparseMatrix</a> *initial=NULL)</td></tr>
-<tr class="separator:a282032326db93e90f72c57995ef7115c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac0a8f51f872aaa752be1f87297a65c44"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ac0a8f51f872aaa752be1f87297a65c44"></a>
-<a class="el" href="namespaceajaj.html#a03dbc5450e17e430998de6233c3c8453">MPXInt</a>&#160;</td><td class="memItemRight" valign="bottom"><b>length</b> ()</td></tr>
-<tr class="separator:ac0a8f51f872aaa752be1f87297a65c44"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5027f367b21aec6bf830aae90d53d582"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a5027f367b21aec6bf830aae90d53d582"></a>
+<a class="el" href="classajaj_1_1_sparse_h_e_d.html">SparseHED</a>&#160;</td><td class="memItemRight" valign="bottom"><b>HED</b> (<a class="el" href="namespaceajaj.html#a03dbc5450e17e430998de6233c3c8453">MPXInt</a> numevals, char which[3], const <a class="el" href="classajaj_1_1_sparse_matrix.html">SparseMatrix</a> *initial=NULL) const </td></tr>
+<tr class="separator:a5027f367b21aec6bf830aae90d53d582"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a24f3da6a695d7bc7723686469cd5586a"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a24f3da6a695d7bc7723686469cd5586a"></a>
+<a class="el" href="namespaceajaj.html#a03dbc5450e17e430998de6233c3c8453">MPXInt</a>&#160;</td><td class="memItemRight" valign="bottom"><b>length</b> () const </td></tr>
+<tr class="separator:a24f3da6a695d7bc7723686469cd5586a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -137,15 +137,15 @@ const <a class="el" href="classajaj_1_1_state.html">State</a> *&#160;</td><td cl
 <tr class="memitem:aa11f6326c3493500befdf60af0d1fe0c"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aa11f6326c3493500befdf60af0d1fe0c"></a>
 std::vector&lt; <a class="el" href="classajaj_1_1_m_p_x_index.html">MPXIndex</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>indices</b></td></tr>
 <tr class="separator:aa11f6326c3493500befdf60af0d1fe0c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a487c6d283a38d4c72de25020056d789d"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a487c6d283a38d4c72de25020056d789d"></a>
-std::vector&lt; Sparseint &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>allowed_indices</b></td></tr>
-<tr class="separator:a487c6d283a38d4c72de25020056d789d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abd3ff35d078b7a04b3ceba946fbd5ba1"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="abd3ff35d078b7a04b3ceba946fbd5ba1"></a>
-std::vector&lt; Sparseint &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>left_allowed_indices</b></td></tr>
-<tr class="separator:abd3ff35d078b7a04b3ceba946fbd5ba1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0968b2fd7d85037b51d8acc8e6437613"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a0968b2fd7d85037b51d8acc8e6437613"></a>
-std::vector&lt; std::array&lt; Sparseint, 2 &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>rows_and_cols</b></td></tr>
-<tr class="separator:a0968b2fd7d85037b51d8acc8e6437613"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7d4d43e3caef737bd725071584b4c881"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a7d4d43e3caef737bd725071584b4c881"></a>
+std::vector&lt; <a class="el" href="namespaceajaj.html#a03dbc5450e17e430998de6233c3c8453">MPXInt</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>allowed_indices</b></td></tr>
+<tr class="separator:a7d4d43e3caef737bd725071584b4c881"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9c0a50fa3156d14ed5a9de873d859fb1"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a9c0a50fa3156d14ed5a9de873d859fb1"></a>
+std::vector&lt; <a class="el" href="namespaceajaj.html#a03dbc5450e17e430998de6233c3c8453">MPXInt</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>left_allowed_indices</b></td></tr>
+<tr class="separator:a9c0a50fa3156d14ed5a9de873d859fb1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a07e0b0d2f3f277688160552a303d841d"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a07e0b0d2f3f277688160552a303d841d"></a>
+std::vector&lt; std::array&lt; <a class="el" href="namespaceajaj.html#a03dbc5450e17e430998de6233c3c8453">MPXInt</a>, 2 &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>rows_and_cols</b></td></tr>
+<tr class="separator:a07e0b0d2f3f277688160552a303d841d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab22e4f74a80f1e027d831d0a81a6a46b"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ab22e4f74a80f1e027d831d0a81a6a46b"></a>
 uMPXInt&#160;</td><td class="memItemRight" valign="bottom"><b>vrows</b></td></tr>
 <tr class="separator:ab22e4f74a80f1e027d831d0a81a6a46b"><td class="memSeparator" colspan="2">&#160;</td></tr>

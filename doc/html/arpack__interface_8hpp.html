@@ -148,16 +148,16 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>arpack::av</b> (std::
 void&#160;</td><td class="memItemRight" valign="bottom"><b>arpack::aTv</b> (cs_cl *sparse, std::complex&lt; double &gt; *in, std::complex&lt; double &gt; *out)</td></tr>
 <tr class="memdesc:a5e35895f51161516dd20ea452dc5adfe"><td class="mdescLeft">&#160;</td><td class="mdescRight">transpose matrix * vector <br /></td></tr>
 <tr class="separator:a5e35895f51161516dd20ea452dc5adfe"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a36a7c66db592ac5dac71793ff536f267"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a36a7c66db592ac5dac71793ff536f267"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>arpack::sparse_matrix_vector_mult</b> (cs_cl *array, std::complex&lt; double &gt; *in, std::complex&lt; double &gt; *out)</td></tr>
-<tr class="separator:a36a7c66db592ac5dac71793ff536f267"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaf3bdc063cab533df3a707a09c3844fa"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aaf3bdc063cab533df3a707a09c3844fa"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>arpack::sparse_matrix_vector_mult</b> (const cs_cl *array, std::complex&lt; double &gt; *in, std::complex&lt; double &gt; *out)</td></tr>
+<tr class="separator:aaf3bdc063cab533df3a707a09c3844fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a31ad4fe50141acc985535193f04e0475"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a31ad4fe50141acc985535193f04e0475"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>arpack::cs_cl_to_dense</b> (cs_cl *sparsevec, std::complex&lt; double &gt; *densevec)</td></tr>
 <tr class="separator:a31ad4fe50141acc985535193f04e0475"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae0264e633e50759b56f0c1d4584606a8"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ae0264e633e50759b56f0c1d4584606a8"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>arpack::cpparpack</b> (cs_cl *sparse, arpack_int n, arpack_int nev, std::complex&lt; double &gt; *Evals, std::complex&lt; double &gt; *Evecs, char which[3], cs_cl *initial=NULL)</td></tr>
-<tr class="memdesc:ae0264e633e50759b56f0c1d4584606a8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sparse eigensolver for which nev eigenvalues and eigenvectors, optional initial guess vector in sparse form. <br /></td></tr>
-<tr class="separator:ae0264e633e50759b56f0c1d4584606a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a68c19b9f4bda0e425fb9294253af165d"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a68c19b9f4bda0e425fb9294253af165d"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>arpack::cpparpack</b> (const cs_cl *sparse, arpack_int n, arpack_int nev, std::complex&lt; double &gt; *Evals, std::complex&lt; double &gt; *Evecs, char which[3], cs_cl *initial=NULL)</td></tr>
+<tr class="memdesc:a68c19b9f4bda0e425fb9294253af165d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sparse eigensolver for which nev eigenvalues and eigenvectors, optional initial guess vector in sparse form. <br /></td></tr>
+<tr class="separator:a68c19b9f4bda0e425fb9294253af165d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Interface to arpack fortran calls Can do sparse and dense eigensolving for a few eigenvalues and vectors. </p>

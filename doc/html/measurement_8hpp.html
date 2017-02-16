@@ -124,6 +124,8 @@ Classes</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classajaj_1_1_transfer_matrix_parts.html">ajaj::TransferMatrixParts</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classajaj_1_1_transfer_matrix_components.html">ajaj::TransferMatrixComponents</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
 Namespaces</h2></td></tr>
@@ -133,12 +135,12 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a20d8cf8b06832d68ad3648e7a1d826ad"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a20d8cf8b06832d68ad3648e7a1d826ad"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::LeftTransferMatrixMultiply</b> (TransferMatrixParts *stuff, std::complex&lt; double &gt; *in, std::complex&lt; double &gt; *out)</td></tr>
-<tr class="separator:a20d8cf8b06832d68ad3648e7a1d826ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae7d0552c5f2b7fe0498cea4f9f5a69a2"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ae7d0552c5f2b7fe0498cea4f9f5a69a2"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::RightTransferMatrixMultiply</b> (TransferMatrixParts *stuff, std::complex&lt; double &gt; *in, std::complex&lt; double &gt; *out)</td></tr>
-<tr class="separator:ae7d0552c5f2b7fe0498cea4f9f5a69a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae7f2f040c49b88087e757bf966bf87c7"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ae7f2f040c49b88087e757bf966bf87c7"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::LeftTransferMatrixMultiply</b> (const TransferMatrixParts *stuff, std::complex&lt; double &gt; *in, std::complex&lt; double &gt; *out)</td></tr>
+<tr class="separator:ae7f2f040c49b88087e757bf966bf87c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a059c87dce249240405d92f4a7da914b1"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a059c87dce249240405d92f4a7da914b1"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::RightTransferMatrixMultiply</b> (const TransferMatrixParts *stuff, std::complex&lt; double &gt; *in, std::complex&lt; double &gt; *out)</td></tr>
+<tr class="separator:a059c87dce249240405d92f4a7da914b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9f3604925029cd782c0c1d3758c09efa"><td class="memItemLeft" align="right" valign="top">UnitCell&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceajaj.html#a9f3604925029cd782c0c1d3758c09efa">ajaj::Orthogonalise</a> (const MPSDecomposition &amp;MPSD, const std::vector&lt; double &gt; &amp;PreviousLambda)</td></tr>
 <tr class="memdesc:a9f3604925029cd782c0c1d3758c09efa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Orthogonalise a new decomposition, A L_n B inverse L_(n-1).  <a href="namespaceajaj.html#a9f3604925029cd782c0c1d3758c09efa">More...</a><br /></td></tr>
 <tr class="separator:a9f3604925029cd782c0c1d3758c09efa"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -169,16 +171,37 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::ShiftLTransferM
 <tr class="memitem:ab652b20e19fe03f713f59152a524db99"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ab652b20e19fe03f713f59152a524db99"></a>
 std::complex&lt; double &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::Overlap</b> (const UnitCell &amp;bra, const UnitCell &amp;ket)</td></tr>
 <tr class="separator:ab652b20e19fe03f713f59152a524db99"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a105e452258b537f95c37ce2ab7a4345f"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a105e452258b537f95c37ce2ab7a4345f"></a>
+std::vector&lt; std::complex&lt; double &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::Overlap</b> (const UnitCell &amp;bra, const UnitCell &amp;ket, uMPXInt nev)</td></tr>
+<tr class="separator:a105e452258b537f95c37ce2ab7a4345f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a302b8f35ed2a934dd747565467d2495f"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a302b8f35ed2a934dd747565467d2495f"></a>
+std::vector&lt; std::complex&lt; double &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::TransferMatrixEigs</b> (const UnitCell &amp;ket, uMPXInt nev, const State &amp;TargetState)</td></tr>
+<tr class="separator:a302b8f35ed2a934dd747565467d2495f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a751079645010fb4a95fb93ca6f3da552"><td class="memItemLeft" align="right" valign="top">std::complex&lt; double &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceajaj.html#a751079645010fb4a95fb93ca6f3da552">ajaj::TwoVertexMeasurement</a> (const MPO_matrix &amp;W1, const MPO_matrix &amp;W2, const MPS_matrix &amp;A1ket, const MPS_matrix &amp;A2ket, const MPX_matrix &amp;Lambda)</td></tr>
 <tr class="memdesc:a751079645010fb4a95fb93ca6f3da552"><td class="mdescLeft">&#160;</td><td class="mdescRight">Measure an operator that spans only two vertices.  <a href="namespaceajaj.html#a751079645010fb4a95fb93ca6f3da552">More...</a><br /></td></tr>
 <tr class="separator:a751079645010fb4a95fb93ca6f3da552"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa91fe0c53d62e59894ac5036f9cd29aa"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aa91fe0c53d62e59894ac5036f9cd29aa"></a>
 std::complex&lt; double &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::OneVertexMeasurement</b> (const MPO_matrix &amp;W, const UnitCell &amp;U)</td></tr>
 <tr class="separator:aa91fe0c53d62e59894ac5036f9cd29aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af0848fb9bfe47118b2102c039b0ce03e"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="af0848fb9bfe47118b2102c039b0ce03e"></a>
+std::complex&lt; double &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::TwoVertexMeasurement</b> (const MPO_matrix &amp;W1, const MPO_matrix &amp;W2, const UnitCell &amp;U, uMPXInt separation)</td></tr>
+<tr class="separator:af0848fb9bfe47118b2102c039b0ce03e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0acc97cda24b52fea68795a81bdcf033"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a0acc97cda24b52fea68795a81bdcf033"></a>
 std::complex&lt; double &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceajaj.html#a0acc97cda24b52fea68795a81bdcf033">ajaj::SimpleEnergy</a> (const MPO_matrix &amp;LeftH, const MPO_matrix &amp;RightH, const MPO_matrix &amp;H1, const MPO_matrix &amp;I, const UnitCell &amp;Ortho)</td></tr>
 <tr class="memdesc:a0acc97cda24b52fea68795a81bdcf033"><td class="mdescLeft">&#160;</td><td class="mdescRight">Special routine to measure the energy per vertex, because Hamiltonian is a lower triangular matrix product operator. <br /></td></tr>
 <tr class="separator:a0acc97cda24b52fea68795a81bdcf033"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aec5033fd9c8d1c4743435efca61f33c8"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aec5033fd9c8d1c4743435efca61f33c8"></a>
+std::complex&lt; double &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::iTwoVertexEnergy</b> (const MPO_matrix &amp;ColX, const MPO_matrix &amp;RowX, const MPO_matrix &amp;H1, const UnitCell &amp;Ortho)</td></tr>
+<tr class="separator:aec5033fd9c8d1c4743435efca61f33c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5f59baf1c8ee460133af538bd33f231d"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a5f59baf1c8ee460133af538bd33f231d"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::LeftComponentsMultiply</b> (const TransferMatrixComponents *stuff, std::complex&lt; double &gt; *in, std::complex&lt; double &gt; *out)</td></tr>
+<tr class="separator:a5f59baf1c8ee460133af538bd33f231d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5a86f321e68c9405c130d87636622f0b"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a5a86f321e68c9405c130d87636622f0b"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::RightComponentsMultiply</b> (const TransferMatrixComponents *stuff, std::complex&lt; double &gt; *in, std::complex&lt; double &gt; *out)</td></tr>
+<tr class="separator:a5a86f321e68c9405c130d87636622f0b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abbef039e5f13bfeace3069914ad8e806"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="abbef039e5f13bfeace3069914ad8e806"></a>
+double&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::MultiVertexEntropy</b> (const UnitCell &amp;U, uMPXInt v)</td></tr>
+<tr class="separator:abbef039e5f13bfeace3069914ad8e806"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Routines for measuring expectation values, and orthogonalising infinite states. </p>

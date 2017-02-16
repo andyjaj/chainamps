@@ -133,6 +133,8 @@ Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classajaj_1_1_m_p_o__matrix.html">ajaj::MPO_matrix</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Inherited class from <a class="el" href="classajaj_1_1_m_p_x__matrix.html" title="MPX_matrix is the base tensor class. ">MPX_matrix</a>.  <a href="classajaj_1_1_m_p_o__matrix.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structajaj_1_1_named_m_p_o__matrix.html">ajaj::NamedMPO_matrix</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classajaj_1_1_m_p_s__matrix.html">ajaj::MPS_matrix</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Inherited class from <a class="el" href="classajaj_1_1_m_p_x__matrix.html" title="MPX_matrix is the base tensor class. ">MPX_matrix</a>.  <a href="classajaj_1_1_m_p_s__matrix.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -186,12 +188,18 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::MPS_swap</b> (M
 <tr class="memitem:a92b0e71a73110b400e87a17a50289322"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a92b0e71a73110b400e87a17a50289322"></a>
 MPX_matrix&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::copy</b> (const MPX_matrix &amp;A)</td></tr>
 <tr class="separator:a92b0e71a73110b400e87a17a50289322"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aef1fe8bff782ec14ee0391a594397858"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aef1fe8bff782ec14ee0391a594397858"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::arrays_equal</b> (const MPX_matrix &amp;A, const MPX_matrix &amp;B, double tol=0.0)</td></tr>
+<tr class="separator:aef1fe8bff782ec14ee0391a594397858"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5cf828028945fa2623748218594b4e64"><td class="memItemLeft" align="right" valign="top">MPX_matrix&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceajaj.html#a5cf828028945fa2623748218594b4e64">ajaj::contract</a> (const MPX_matrix &amp;A, bool conjA, const MPX_matrix &amp;B, bool conjB, const MPXPair &amp;contractidx)</td></tr>
 <tr class="memdesc:a5cf828028945fa2623748218594b4e64"><td class="mdescLeft">&#160;</td><td class="mdescRight">Overload for contract, if only one index needs to be contracted.  <a href="namespaceajaj.html#a5cf828028945fa2623748218594b4e64">More...</a><br /></td></tr>
 <tr class="separator:a5cf828028945fa2623748218594b4e64"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9f6c14121c214fc4a09deb04de013354"><td class="memItemLeft" align="right" valign="top">MPO_matrix&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceajaj.html#a9f6c14121c214fc4a09deb04de013354">ajaj::IdentityMPO_matrix</a> (const EigenStateArray &amp;spectrum)</td></tr>
 <tr class="memdesc:a9f6c14121c214fc4a09deb04de013354"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create an identity <a class="el" href="classajaj_1_1_m_p_o__matrix.html" title="Inherited class from MPX_matrix. ">MPO_matrix</a>.  <a href="namespaceajaj.html#a9f6c14121c214fc4a09deb04de013354">More...</a><br /></td></tr>
 <tr class="separator:a9f6c14121c214fc4a09deb04de013354"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a11602c05c3f6cd16a06d80520b7c7011"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a11602c05c3f6cd16a06d80520b7c7011"></a>
+MPO_matrix&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::UnitaryTransformMPO_matrix</b> (const Basis &amp;b, const std::vector&lt; MPXIndex &gt; &amp;idxs, const SparseMatrix &amp;s, size_t c, double f)</td></tr>
+<tr class="separator:a11602c05c3f6cd16a06d80520b7c7011"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a02985ca335b71943ca980413fe649335"><td class="memItemLeft" align="right" valign="top">StateArray&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceajaj.html#a02985ca335b71943ca980413fe649335">ajaj::DeduceFromColumns</a> (const SparseMatrix &amp;array, const MPXIndex &amp;colindices)</td></tr>
 <tr class="memdesc:a02985ca335b71943ca980413fe649335"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sometimes after a decomposition we need to figure out the new charges of all the rows, which we can do using the columns and the sparse structure.  <a href="namespaceajaj.html#a02985ca335b71943ca980413fe649335">More...</a><br /></td></tr>
 <tr class="separator:a02985ca335b71943ca980413fe649335"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -199,9 +207,12 @@ MPX_matrix&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::copy</b> 
 MPXIndex&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceajaj.html#a862c06bf9ea3e4db903f51bb215ef7ca">ajaj::load_MPXIndex_binary</a> (std::ifstream &amp;infile, const EigenStateArray &amp;spectrum)</td></tr>
 <tr class="memdesc:a862c06bf9ea3e4db903f51bb215ef7ca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a <a class="el" href="classajaj_1_1_m_p_x_index.html" title="A directed (ingoing or outgoing) tensor index. ">MPXIndex</a> from binary storage format. <br /></td></tr>
 <tr class="separator:a862c06bf9ea3e4db903f51bb215ef7ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a259e945f65e9bf19e5c65f409ee1d627"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a259e945f65e9bf19e5c65f409ee1d627"></a>
+MPX_matrix&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceajaj.html#a259e945f65e9bf19e5c65f409ee1d627">ajaj::load_MPX_matrix_binary</a> (std::string &amp;filename, const EigenStateArray &amp;spectrum)</td></tr>
+<tr class="memdesc:a259e945f65e9bf19e5c65f409ee1d627"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a <a class="el" href="classajaj_1_1_m_p_x__matrix.html" title="MPX_matrix is the base tensor class. ">MPX_matrix</a> from binary storage format. <br /></td></tr>
+<tr class="separator:a259e945f65e9bf19e5c65f409ee1d627"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8885ff081dad6b3ba4d75291cf3b98ae"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a8885ff081dad6b3ba4d75291cf3b98ae"></a>
-MPX_matrix&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceajaj.html#a8885ff081dad6b3ba4d75291cf3b98ae">ajaj::load_MPX_matrix_binary</a> (std::ifstream &amp;infile, const EigenStateArray &amp;spectrum)</td></tr>
-<tr class="memdesc:a8885ff081dad6b3ba4d75291cf3b98ae"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a <a class="el" href="classajaj_1_1_m_p_x__matrix.html" title="MPX_matrix is the base tensor class. ">MPX_matrix</a> from binary storage format. <br /></td></tr>
+MPX_matrix&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::load_MPX_matrix_binary</b> (std::ifstream &amp;infile, const EigenStateArray &amp;spectrum)</td></tr>
 <tr class="separator:a8885ff081dad6b3ba4d75291cf3b98ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab572867f210741a81e134ed5b85bfd76"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ab572867f210741a81e134ed5b85bfd76"></a>
 MPX_matrix&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::load_MPX_matrix</b> (const std::string &amp;filename, const EigenStateArray &amp;spectrum)</td></tr>
@@ -212,9 +223,18 @@ MPO_matrix&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::load_MPO_
 <tr class="memitem:a6c677a13b35f3817b9a1272555a48a4b"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a6c677a13b35f3817b9a1272555a48a4b"></a>
 MPS_matrix&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::load_MPS_matrix</b> (const std::string &amp;filename, const EigenStateArray &amp;spectrum)</td></tr>
 <tr class="separator:a6c677a13b35f3817b9a1272555a48a4b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5db3950a2bb46b72ea282246c59596ca"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a5db3950a2bb46b72ea282246c59596ca"></a>
-MPS_matrix&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::MakeProductState</b> (const EigenStateArray &amp;spectrum, uMPXInt state_index)</td></tr>
-<tr class="separator:a5db3950a2bb46b72ea282246c59596ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a156fc15e8553ee1c2f59edcf21da334d"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a156fc15e8553ee1c2f59edcf21da334d"></a>
+UnitCell&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::load_UnitCell_binary</b> (std::ifstream &amp;infile, QNVector &amp;charge_rules, Basis &amp;basis)</td></tr>
+<tr class="separator:a156fc15e8553ee1c2f59edcf21da334d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7453dea560d68198adc2c6b46b790371"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a7453dea560d68198adc2c6b46b790371"></a>
+UnitCell&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::load_UnitCell_binary</b> (std::ifstream &amp;infile, const QNVector &amp;charge_rules, const Basis &amp;basis)</td></tr>
+<tr class="separator:a7453dea560d68198adc2c6b46b790371"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac2241f4be44dfc3e479aa214734843e0"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ac2241f4be44dfc3e479aa214734843e0"></a>
+MPS_matrix&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::MakeProductState</b> (const Basis &amp;spectrum, const std::vector&lt; std::pair&lt; uMPXInt, double &gt; &gt; &amp;state_index_vec, State leftstate)</td></tr>
+<tr class="separator:ac2241f4be44dfc3e479aa214734843e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab526472f2e9f3223dd9687e09066416b"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ab526472f2e9f3223dd9687e09066416b"></a>
+MPS_matrix&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::MakeProductState</b> (const Basis &amp;spectrum, uMPXInt state_index, State leftstate)</td></tr>
+<tr class="separator:ab526472f2e9f3223dd9687e09066416b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>MPX_matrix is the base class for MPS and MPO matrices. </p>

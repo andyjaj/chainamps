@@ -118,12 +118,18 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a37d1ae63860bf5daa087a68ce747e528"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a37d1ae63860bf5daa087a68ce747e528"></a>
 const <a class="el" href="classajaj_1_1_sparse_matrix.html">SparseMatrix</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_operator_matrix</b> (const std::string &amp;Name) const </td></tr>
 <tr class="separator:a37d1ae63860bf5daa087a68ce747e528"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad4bfb4c2eba84dff867156e5adce9082"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ad4bfb4c2eba84dff867156e5adce9082"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>operator_exists</b> (const std::string &amp;Name) const </td></tr>
+<tr class="separator:ad4bfb4c2eba84dff867156e5adce9082"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:accad4d3181b6740463184af5f471feb0"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="accad4d3181b6740463184af5f471feb0"></a>
 <a class="el" href="classajaj_1_1_m_p_o__matrix.html">MPO_matrix</a>&#160;</td><td class="memItemRight" valign="bottom"><b>make_one_site_operator</b> (uMPXInt i) const </td></tr>
 <tr class="separator:accad4d3181b6740463184af5f471feb0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab7910f3dd16bd228c2d6d3c402ea43ba"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ab7910f3dd16bd228c2d6d3c402ea43ba"></a>
 <a class="el" href="classajaj_1_1_m_p_o__matrix.html">MPO_matrix</a>&#160;</td><td class="memItemRight" valign="bottom"><b>make_one_site_operator</b> (const std::string &amp;Name) const </td></tr>
 <tr class="separator:ab7910f3dd16bd228c2d6d3c402ea43ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a118c5374791a8889ef8ca63997371501"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a118c5374791a8889ef8ca63997371501"></a>
+<a class="el" href="classajaj_1_1_m_p_o__matrix.html">MPO_matrix</a>&#160;</td><td class="memItemRight" valign="bottom"><b>make_one_site_operator</b> (const <a class="el" href="structajaj_1_1_shifted_operator_info.html">ShiftedOperatorInfo</a> &amp;s) const </td></tr>
+<tr class="separator:a118c5374791a8889ef8ca63997371501"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2a9882c064e4ac01362ca08806c0dcb1"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a2a9882c064e4ac01362ca08806c0dcb1"></a>
 const <a class="el" href="classajaj_1_1_eigen_state_array.html">Basis</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>basis</b> () const </td></tr>
 <tr class="separator:a2a9882c064e4ac01362ca08806c0dcb1"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -139,9 +145,10 @@ std::string&#160;</td><td class="memItemRight" valign="bottom"><b>Name</b></td><
 <tr class="memitem:a0b1e43f433d51a43e66cada08c187905"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespaceajaj.html#aac14c748e81f4ee73d6382b91fe3020d">VertexParameterArray</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classajaj_1_1_vertex.html#a0b1e43f433d51a43e66cada08c187905">Parameters</a></td></tr>
 <tr class="memdesc:a0b1e43f433d51a43e66cada08c187905"><td class="mdescLeft">&#160;</td><td class="mdescRight">Params used to create this vertex.  <a href="#a0b1e43f433d51a43e66cada08c187905">More...</a><br /></td></tr>
 <tr class="separator:a0b1e43f433d51a43e66cada08c187905"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad418f2ea7e8a19ad4168127210d0f1aa"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classajaj_1_1_eigen_state_array.html">EigenStateArray</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classajaj_1_1_vertex.html#ad418f2ea7e8a19ad4168127210d0f1aa">Spectrum</a></td></tr>
-<tr class="memdesc:ad418f2ea7e8a19ad4168127210d0f1aa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Params used to create this vertex.  <a href="#ad418f2ea7e8a19ad4168127210d0f1aa">More...</a><br /></td></tr>
-<tr class="separator:ad418f2ea7e8a19ad4168127210d0f1aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad2f9eceda490e224be70ed4e9e176a2d"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ad2f9eceda490e224be70ed4e9e176a2d"></a>
+<a class="el" href="classajaj_1_1_eigen_state_array.html">Basis</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classajaj_1_1_vertex.html#ad2f9eceda490e224be70ed4e9e176a2d">Spectrum</a></td></tr>
+<tr class="memdesc:ad2f9eceda490e224be70ed4e9e176a2d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Describes basis states. <br /></td></tr>
+<tr class="separator:ad2f9eceda490e224be70ed4e9e176a2d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a728632d513326544092d7abbfb84d6ad"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespaceajaj.html#a1e667a743610fb490c64281e0ef24f82">VertexOperatorArray</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classajaj_1_1_vertex.html#a728632d513326544092d7abbfb84d6ad">Operators</a></td></tr>
 <tr class="memdesc:a728632d513326544092d7abbfb84d6ad"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collection of all necessary matrix elements.  <a href="#a728632d513326544092d7abbfb84d6ad">More...</a><br /></td></tr>
 <tr class="separator:a728632d513326544092d7abbfb84d6ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -178,20 +185,6 @@ std::string&#160;</td><td class="memItemRight" valign="bottom"><b>Name</b></td><
 
 <p>Params used to create this vertex. </p>
 <p>Could be empty if predefined basis. </p>
-
-</div>
-</div>
-<a class="anchor" id="ad418f2ea7e8a19ad4168127210d0f1aa"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="classajaj_1_1_eigen_state_array.html">EigenStateArray</a> ajaj::Vertex::Spectrum</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Params used to create this vertex. </p>
 
 </div>
 </div>

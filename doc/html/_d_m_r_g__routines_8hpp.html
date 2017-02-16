@@ -152,6 +152,9 @@ typedef std::pair&lt; MPX_matrix, double &gt;&#160;</td><td class="memItemRight"
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
+<tr class="memitem:a16b0cc89e2d0be93c87ee84221a7b5c2"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a16b0cc89e2d0be93c87ee84221a7b5c2"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::dmrg_print_time_info</b> ()</td></tr>
+<tr class="separator:a16b0cc89e2d0be93c87ee84221a7b5c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af064198e9aa75d4e24e5cc5a22634a21"><td class="memItemLeft" align="right" valign="top">MPO_matrix&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceajaj.html#af064198e9aa75d4e24e5cc5a22634a21">ajaj::LeftOpenBCHamiltonian</a> (const MPO_matrix &amp;H)</td></tr>
 <tr class="memdesc:af064198e9aa75d4e24e5cc5a22634a21"><td class="mdescLeft">&#160;</td><td class="mdescRight">Form a left end, open boundary conditions, Hamiltonian <a class="el" href="classajaj_1_1_m_p_o__matrix.html" title="Inherited class from MPX_matrix. ">MPO_matrix</a>.  <a href="namespaceajaj.html#af064198e9aa75d4e24e5cc5a22634a21">More...</a><br /></td></tr>
 <tr class="separator:af064198e9aa75d4e24e5cc5a22634a21"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -191,16 +194,16 @@ MPX_matrix&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::MakeDummy
 <tr class="memitem:a9cd37a238ecdcc5a0d908742a2afc511"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a9cd37a238ecdcc5a0d908742a2afc511"></a>
 MPX_matrix&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::MakeDummyRightBlock</b> (const MPO_matrix &amp;H, const State &amp;TargetState)</td></tr>
 <tr class="separator:a9cd37a238ecdcc5a0d908742a2afc511"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a922661bea3ba5550e81d4d20300203cb"><td class="memItemLeft" align="right" valign="top">MPX_matrix&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceajaj.html#a922661bea3ba5550e81d4d20300203cb">ajaj::TwoVertexWavefunction</a> (const MPX_matrix &amp;LeftBlock, const MPO_matrix &amp;H, const MPX_matrix &amp;RightBlock, const std::vector&lt; ProjectorBlocks &gt; *ProjectorBlocksPtr, MPXInt NumVertices, Data &amp;result, SparseMatrix *guessptr=NULL)</td></tr>
-<tr class="memdesc:a922661bea3ba5550e81d4d20300203cb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Solves the superblock Hamiltonian eigen problem, output requires SVD.  <a href="namespaceajaj.html#a922661bea3ba5550e81d4d20300203cb">More...</a><br /></td></tr>
-<tr class="separator:a922661bea3ba5550e81d4d20300203cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab837e0ddf850cc42b97b10d866130ced"><td class="memItemLeft" align="right" valign="top">MPX_matrix&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceajaj.html#ab837e0ddf850cc42b97b10d866130ced">ajaj::TwoVertexWavefunction</a> (const MPX_matrix &amp;LeftBlock, const MPO_matrix &amp;H, const MPX_matrix &amp;RightBlock, const std::vector&lt; ProjectorBlocks &gt; *ProjectorBlocksPtr, MPXInt NumVertices, Data &amp;result, SparseMatrix *guessptr=nullptr)</td></tr>
+<tr class="memdesc:ab837e0ddf850cc42b97b10d866130ced"><td class="mdescLeft">&#160;</td><td class="mdescRight">Solves the superblock Hamiltonian eigen problem, output requires SVD.  <a href="namespaceajaj.html#ab837e0ddf850cc42b97b10d866130ced">More...</a><br /></td></tr>
+<tr class="separator:ab837e0ddf850cc42b97b10d866130ced"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2a5d6912a5e12409f35a4cde207e3755"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a2a5d6912a5e12409f35a4cde207e3755"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceajaj.html#a2a5d6912a5e12409f35a4cde207e3755">ajaj::CheckConvergence</a> (const Prediction &amp;guess, const std::vector&lt; double &gt; &amp;Lambda)</td></tr>
 <tr class="memdesc:a2a5d6912a5e12409f35a4cde207e3755"><td class="mdescLeft">&#160;</td><td class="mdescRight">checks overlap between prediction vector and new wavefunction <br /></td></tr>
 <tr class="separator:a2a5d6912a5e12409f35a4cde207e3755"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2efbe67ead434265646487f128030fd6"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a2efbe67ead434265646487f128030fd6"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::TwoVertexMPOMPSMultiply</b> (TwoVertexComponents *arraystuff, std::complex&lt; double &gt; *in, std::complex&lt; double &gt; *out)</td></tr>
-<tr class="separator:a2efbe67ead434265646487f128030fd6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a050eb0625ec904b3b7fdb33faddac060"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a050eb0625ec904b3b7fdb33faddac060"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::TwoVertexMPOMPSMultiply</b> (const TwoVertexComponents *arraystuff, std::complex&lt; double &gt; *in, std::complex&lt; double &gt; *out)</td></tr>
+<tr class="separator:a050eb0625ec904b3b7fdb33faddac060"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Driver functions for DMRG Currently only two site DMRG is implemented. </p>

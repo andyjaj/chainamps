@@ -146,11 +146,23 @@ Typedefs</h2></td></tr>
 <tr class="memitem:a3e0386da08aa95da1271032f77664de5"><td class="memItemLeft" align="right" valign="top">typedef std::vector&lt; State &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceajaj.html#a3e0386da08aa95da1271032f77664de5">ajaj::StateArray</a></td></tr>
 <tr class="memdesc:a3e0386da08aa95da1271032f77664de5"><td class="mdescLeft">&#160;</td><td class="mdescRight">A container for states.  <a href="namespaceajaj.html#a3e0386da08aa95da1271032f77664de5">More...</a><br /></td></tr>
 <tr class="separator:a3e0386da08aa95da1271032f77664de5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a879280ff660f4c2f9868f06887e9c954"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a879280ff660f4c2f9868f06887e9c954"></a>
+typedef EigenStateArray&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::Basis</b></td></tr>
+<tr class="separator:a879280ff660f4c2f9868f06887e9c954"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:af026575ce09f20cf6ed205462b9065ca"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceajaj.html#af026575ce09f20cf6ed205462b9065ca">ajaj::swap</a> (State &amp;A, State &amp;B)</td></tr>
 <tr class="separator:af026575ce09f20cf6ed205462b9065ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9c56cfb2c60a1a3a46b6f453b7d22f83"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a9c56cfb2c60a1a3a46b6f453b7d22f83"></a>
+std::istream &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::operator&gt;&gt;</b> (std::istream &amp;input, State &amp;S)</td></tr>
+<tr class="separator:a9c56cfb2c60a1a3a46b6f453b7d22f83"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a55201e41f879de730415db9cef313b3f"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a55201e41f879de730415db9cef313b3f"></a>
+std::ostream &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::operator&lt;&lt;</b> (std::ostream &amp;output, const State &amp;S)</td></tr>
+<tr class="separator:a55201e41f879de730415db9cef313b3f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaa6bd2be2e0728a87796d8266be81fa1"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aaa6bd2be2e0728a87796d8266be81fa1"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::load_Basis_binary</b> (std::ifstream &amp;infile, QNVector &amp;charge_rules, Basis &amp;basis)</td></tr>
+<tr class="separator:aaa6bd2be2e0728a87796d8266be81fa1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a79b7bfcfbfb483d3c3367c4d86ed7edd"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a79b7bfcfbfb483d3c3367c4d86ed7edd"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>ajaj::operator==</b> (const State &amp;st1, const State &amp;st2)</td></tr>
 <tr class="separator:a79b7bfcfbfb483d3c3367c4d86ed7edd"><td class="memSeparator" colspan="2">&#160;</td></tr>

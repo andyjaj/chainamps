@@ -122,71 +122,85 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;    <a class="code" href="classajaj_1_1_m_p_o__matrix.html">MPO_matrix</a> H_MPO;</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    <a class="code" href="structajaj_1_1_model.html">Model</a>() {};</div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    <a class="code" href="structajaj_1_1_model.html">Model</a>(<span class="keyword">const</span> <a class="code" href="namespaceajaj.html#aac14c748e81f4ee73d6382b91fe3020d">VertexParameterArray</a>&amp; vp, <a class="code" href="classajaj_1_1_vertex.html">Vertex</a> (*generator) (<span class="keyword">const</span> <a class="code" href="namespaceajaj.html#aac14c748e81f4ee73d6382b91fe3020d">VertexParameterArray</a>&amp;), <span class="keyword">const</span> <a class="code" href="namespaceajaj.html#aac14c748e81f4ee73d6382b91fe3020d">VertexParameterArray</a>&amp; cp,  <a class="code" href="classajaj_1_1_m_p_o__matrix.html">MPO_matrix</a> (*makeH) (<span class="keyword">const</span> <a class="code" href="classajaj_1_1_vertex.html">Vertex</a>&amp;, <span class="keyword">const</span> <a class="code" href="namespaceajaj.html#aac14c748e81f4ee73d6382b91fe3020d">VertexParameterArray</a>&amp;)) : vertex(generator(vp)),H_MPO(makeH(vertex,cp)) {}</div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;</div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    <span class="keyword">const</span> <a class="code" href="classajaj_1_1_eigen_state_array.html">Basis</a>&amp; basis()<span class="keyword"> const </span>{<span class="keywordflow">return</span> vertex.basis();}</div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;  };</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;</div>
-<div class="line"><a name="l00034"></a><span class="lineno"><a class="line" href="structajaj_1_1_coupling.html">   34</a></span>&#160;  <span class="keyword">struct </span><a class="code" href="structajaj_1_1_coupling.html">Coupling</a>{</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;  <span class="keyword">public</span>:</div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;    std::string Name;</div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;    std::string Op1Name;</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    std::string Op2Name;</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;    std::complex&lt;double&gt; Value;</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;  };</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;  <span class="keyword">typedef</span> std::vector&lt;Coupling&gt; CouplingArray;</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    <a class="code" href="structajaj_1_1_model.html">Model</a>(<span class="keyword">const</span> <a class="code" href="namespaceajaj.html#aac14c748e81f4ee73d6382b91fe3020d">VertexParameterArray</a>&amp; vp, <a class="code" href="classajaj_1_1_vertex.html">Vertex</a> (*generator) (<span class="keyword">const</span> <a class="code" href="namespaceajaj.html#aac14c748e81f4ee73d6382b91fe3020d">VertexParameterArray</a>&amp;), <span class="keyword">const</span> <a class="code" href="namespaceajaj.html#aac14c748e81f4ee73d6382b91fe3020d">VertexParameterArray</a>&amp; cp,  <a class="code" href="classajaj_1_1_m_p_o__matrix.html">MPO_matrix</a> (*makeH) (<span class="keyword">const</span> <a class="code" href="classajaj_1_1_vertex.html">Vertex</a>&amp;, <span class="keyword">const</span> <a class="code" href="namespaceajaj.html#aac14c748e81f4ee73d6382b91fe3020d">VertexParameterArray</a>&amp;)) : vertex(generator(vp)),H_MPO(makeH(vertex,cp)) {</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;      std::cout &lt;&lt; <span class="stringliteral">&quot;MODEL&#39;S LOCAL BASIS&quot;</span> &lt;&lt;std::endl;</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;      basis().<a class="code" href="classajaj_1_1_eigen_state_array.html#a976f3dbb06fea7400ab08b26776b1e05">print</a>();</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;      std::cout &lt;&lt; <span class="stringliteral">&quot;MPO MATRIX INFO&quot;</span> &lt;&lt;std::endl;</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;      H_MPO.<a class="code" href="classajaj_1_1_m_p_x__matrix.html#a75352f2e3338333a50f315e7626756d4">print_indices</a>();</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;      H_MPO.print_sparse_info();</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    }</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;    <span class="keyword">const</span> <a class="code" href="classajaj_1_1_eigen_state_array.html">Basis</a>&amp; basis()<span class="keyword"> const </span>{<span class="keywordflow">return</span> vertex.basis();}</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    <a class="code" href="classajaj_1_1_state.html">State</a> make_target(<span class="keyword">const</span> <a class="code" href="namespaceajaj.html#a87639289dc139a338ac94c1129ad8770">QNVector</a>&amp; vec)<span class="keyword"> const </span>{</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;      std::cout &lt;&lt;<span class="stringliteral">&quot;Setting target quantum numbers&quot;</span> &lt;&lt;std::endl;</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;      <span class="keywordflow">return</span> <a class="code" href="classajaj_1_1_state.html">State</a>(basis().getChargeRules(),vec);</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;    }</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;  };</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;  std::istream&amp; operator&gt;&gt;(std::istream&amp; is, <a class="code" href="structajaj_1_1_coupling.html">Coupling</a>&amp; c)</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;  {</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <span class="keywordtype">char</span> check;</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <span class="comment">// read c from stream</span></div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    <span class="comment">//format is CouplingName,(Op1Name,Op2Name):Value</span></div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    <span class="comment">//drop initial whitespace</span></div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;    is &gt;&gt; std::ws;</div>
+<div class="line"><a name="l00044"></a><span class="lineno"><a class="line" href="structajaj_1_1_coupling.html">   44</a></span>&#160;  <span class="keyword">struct </span><a class="code" href="structajaj_1_1_coupling.html">Coupling</a>{</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;  <span class="keyword">public</span>:</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    std::string Name;</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    std::string Op1Name;</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    std::string Op2Name;</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    std::complex&lt;double&gt; Value;</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  };</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  <span class="keyword">typedef</span> std::vector&lt;Coupling&gt; CouplingArray;</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;    <span class="keywordtype">bool</span> failure(0);</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;    <a class="code" href="structajaj_1_1_coupling.html">Coupling</a> temp;</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  std::istream&amp; operator&gt;&gt;(std::istream&amp; is, <a class="code" href="structajaj_1_1_coupling.html">Coupling</a>&amp; c)</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;  {</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;    <span class="keywordtype">char</span> check;</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    <span class="keywordflow">if</span> (!getline(is,temp.Name,<span class="charliteral">&#39;,&#39;</span>)) failure=1;</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    <span class="keywordflow">if</span> (!is.get(check) || check!=<span class="charliteral">&#39;(&#39;</span>) failure=1;</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    <span class="keywordflow">if</span> (!getline(is,temp.Op1Name,<span class="charliteral">&#39;,&#39;</span>)) failure=1;</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;    <span class="keywordflow">if</span> (!getline(is,temp.Op2Name,<span class="charliteral">&#39;)&#39;</span>)) failure=1;</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    <span class="keywordflow">if</span> (!is.get(check) || check!=<span class="charliteral">&#39;:&#39;</span>) failure=1;</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    <span class="keywordflow">if</span> (!(is &gt;&gt;temp.Value)) failure=1;</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    <span class="keywordflow">if</span>( failure )</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;      is.setstate(std::ios::failbit);</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="keywordflow">else</span></div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;      c=std::move(temp);</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    <span class="keywordflow">return</span> is;</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;  }</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;  std::ostream&amp; operator&lt;&lt;(std::ostream&amp; os, <span class="keyword">const</span> Coupling&amp; c){</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    <span class="comment">// read c from stream</span></div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    <span class="comment">//format is CouplingName,(Op1Name,Op2Name):Value</span></div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;    <span class="comment">//drop initial whitespace</span></div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    is &gt;&gt; std::ws;</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    <span class="keywordtype">bool</span> failure(0);</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    <a class="code" href="structajaj_1_1_coupling.html">Coupling</a> temp;</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    <span class="keywordflow">if</span> (!getline(is,temp.Name,<span class="charliteral">&#39;,&#39;</span>)) failure=1;</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <span class="keywordflow">if</span> (!is.get(check) || check!=<span class="charliteral">&#39;(&#39;</span>) failure=1;</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    <span class="keywordflow">if</span> (!getline(is,temp.Op1Name,<span class="charliteral">&#39;,&#39;</span>)) failure=1;</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    <span class="keywordflow">if</span> (!getline(is,temp.Op2Name,<span class="charliteral">&#39;)&#39;</span>)) failure=1;</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <span class="keywordflow">if</span> (!is.get(check) || check!=<span class="charliteral">&#39;:&#39;</span>) failure=1;</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    <span class="keywordflow">if</span> (!(is &gt;&gt;temp.Value)) failure=1;</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    os &lt;&lt; c.Name &lt;&lt;<span class="stringliteral">&quot;,(&quot;</span>&lt;&lt;c.Op1Name&lt;&lt;<span class="stringliteral">&quot;,&quot;</span>&lt;&lt;c.Op2Name&lt;&lt;<span class="stringliteral">&quot;):&quot;</span>&lt;&lt;c.Value;</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    <span class="keywordflow">return</span> os;</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;  }</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    <span class="keywordflow">if</span>( failure )</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;      is.setstate(std::ios::failbit);</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    <span class="keywordflow">else</span></div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;      c=std::move(temp);</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;}</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="ttc" id="classajaj_1_1_vertex_html"><div class="ttname"><a href="classajaj_1_1_vertex.html">ajaj::Vertex</a></div><div class="ttdoc">Vertex defines the local Hilbert space, the local Hamiltonian, any operators etc. ...</div><div class="ttdef"><b>Definition:</b> vertex.hpp:55</div></div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    <span class="keywordflow">return</span> is;</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;  }</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;  std::ostream&amp; operator&lt;&lt;(std::ostream&amp; os, <span class="keyword">const</span> Coupling&amp; c){</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    os &lt;&lt; c.Name &lt;&lt;<span class="stringliteral">&quot;,(&quot;</span>&lt;&lt;c.Op1Name&lt;&lt;<span class="stringliteral">&quot;,&quot;</span>&lt;&lt;c.Op2Name&lt;&lt;<span class="stringliteral">&quot;):&quot;</span>&lt;&lt;c.Value;</div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    <span class="keywordflow">return</span> os;</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;  }</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;}</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="ttc" id="classajaj_1_1_vertex_html"><div class="ttname"><a href="classajaj_1_1_vertex.html">ajaj::Vertex</a></div><div class="ttdoc">Vertex defines the local Hilbert space, the local Hamiltonian, any operators etc. ...</div><div class="ttdef"><b>Definition:</b> vertex.hpp:79</div></div>
+<div class="ttc" id="classajaj_1_1_m_p_x__matrix_html_a75352f2e3338333a50f315e7626756d4"><div class="ttname"><a href="classajaj_1_1_m_p_x__matrix.html#a75352f2e3338333a50f315e7626756d4">ajaj::MPX_matrix::print_indices</a></div><div class="ttdeci">void print_indices() const </div><div class="ttdoc">Print the dimensions of the indices. </div><div class="ttdef"><b>Definition:</b> MPX.cpp:650</div></div>
 <div class="ttc" id="states_8hpp_html"><div class="ttname"><a href="states_8hpp.html">states.hpp</a></div><div class="ttdoc">Defines State and EigenState. </div></div>
-<div class="ttc" id="classajaj_1_1_eigen_state_array_html"><div class="ttname"><a href="classajaj_1_1_eigen_state_array.html">ajaj::EigenStateArray</a></div><div class="ttdoc">Container for EigenState. </div><div class="ttdef"><b>Definition:</b> states.hpp:83</div></div>
-<div class="ttc" id="classajaj_1_1_m_p_o__matrix_html"><div class="ttname"><a href="classajaj_1_1_m_p_o__matrix.html">ajaj::MPO_matrix</a></div><div class="ttdoc">Inherited class from MPX_matrix. </div><div class="ttdef"><b>Definition:</b> MPX.hpp:275</div></div>
+<div class="ttc" id="classajaj_1_1_eigen_state_array_html"><div class="ttname"><a href="classajaj_1_1_eigen_state_array.html">ajaj::EigenStateArray</a></div><div class="ttdoc">Container for EigenState. </div><div class="ttdef"><b>Definition:</b> states.hpp:87</div></div>
+<div class="ttc" id="classajaj_1_1_m_p_o__matrix_html"><div class="ttname"><a href="classajaj_1_1_m_p_o__matrix.html">ajaj::MPO_matrix</a></div><div class="ttdoc">Inherited class from MPX_matrix. </div><div class="ttdef"><b>Definition:</b> MPX.hpp:291</div></div>
+<div class="ttc" id="namespaceajaj_html_a87639289dc139a338ac94c1129ad8770"><div class="ttname"><a href="namespaceajaj.html#a87639289dc139a338ac94c1129ad8770">ajaj::QNVector</a></div><div class="ttdeci">std::vector&lt; QuantumNumberInt &gt; QNVector</div><div class="ttdoc">Container type for quantum numbers. </div><div class="ttdef"><b>Definition:</b> states.hpp:18</div></div>
 <div class="ttc" id="vertex_8hpp_html"><div class="ttname"><a href="vertex_8hpp.html">vertex.hpp</a></div><div class="ttdoc">A model is a combination of the vertex definition (e.g. </div></div>
 <div class="ttc" id="_m_p_x_8hpp_html"><div class="ttname"><a href="_m_p_x_8hpp.html">MPX.hpp</a></div><div class="ttdoc">MPX_matrix is the base class for MPS and MPO matrices. </div></div>
 <div class="ttc" id="structajaj_1_1_model_html"><div class="ttname"><a href="structajaj_1_1_model.html">ajaj::Model</a></div><div class="ttdef"><b>Definition:</b> model.hpp:22</div></div>
+<div class="ttc" id="classajaj_1_1_state_html"><div class="ttname"><a href="classajaj_1_1_state.html">ajaj::State</a></div><div class="ttdoc">State is a container for some good quantum numbers, and the rules used to combine them...</div><div class="ttdef"><b>Definition:</b> states.hpp:32</div></div>
+<div class="ttc" id="classajaj_1_1_eigen_state_array_html_a976f3dbb06fea7400ab08b26776b1e05"><div class="ttname"><a href="classajaj_1_1_eigen_state_array.html#a976f3dbb06fea7400ab08b26776b1e05">ajaj::EigenStateArray::print</a></div><div class="ttdeci">void print() const </div><div class="ttdoc">Print all the EigenStates. </div><div class="ttdef"><b>Definition:</b> states.cpp:114</div></div>
 <div class="ttc" id="namespaceajaj_html"><div class="ttname"><a href="namespaceajaj.html">ajaj</a></div><div class="ttdoc">Namespace to prevent clashes between names used by AJAJ and possibly any user included files e...</div></div>
-<div class="ttc" id="namespaceajaj_html_aac14c748e81f4ee73d6382b91fe3020d"><div class="ttname"><a href="namespaceajaj.html#aac14c748e81f4ee73d6382b91fe3020d">ajaj::VertexParameterArray</a></div><div class="ttdeci">std::vector&lt; VertexParameter &gt; VertexParameterArray</div><div class="ttdoc">Container for vertex parameters. </div><div class="ttdef"><b>Definition:</b> vertex.hpp:51</div></div>
-<div class="ttc" id="structajaj_1_1_coupling_html"><div class="ttname"><a href="structajaj_1_1_coupling.html">ajaj::Coupling</a></div><div class="ttdef"><b>Definition:</b> model.hpp:34</div></div>
+<div class="ttc" id="namespaceajaj_html_aac14c748e81f4ee73d6382b91fe3020d"><div class="ttname"><a href="namespaceajaj.html#aac14c748e81f4ee73d6382b91fe3020d">ajaj::VertexParameterArray</a></div><div class="ttdeci">std::vector&lt; VertexParameter &gt; VertexParameterArray</div><div class="ttdoc">Container for vertex parameters. </div><div class="ttdef"><b>Definition:</b> vertex.hpp:75</div></div>
+<div class="ttc" id="structajaj_1_1_coupling_html"><div class="ttname"><a href="structajaj_1_1_coupling.html">ajaj::Coupling</a></div><div class="ttdef"><b>Definition:</b> model.hpp:44</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

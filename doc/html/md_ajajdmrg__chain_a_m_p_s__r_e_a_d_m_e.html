@@ -88,18 +88,23 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="title">README </div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p><em>Version 1.0.0</em></p>
+<div class="textblock"><p><em>Version 1.1.0</em></p>
 <p>ChainAMPS is a set of libraries and driver routines, designed to implement MPS algorithms for large systems of coupled chains (i.e. large local or <em>physical</em> dimension). However it also works perfectly well for canonical 1D MPS algorithms, though it is not optimised for this task.</p>
-<p>Currently there are distinct drivers for DMRG; both infinite (iDMRG) and finite (fDMRG); and for TEBD, including the infinite case (iTEBD). The driver naming convention for algorithm X is X_DRV.bin.</p>
+<p>Currently there are distinct drivers for DMRG; both infinite (iDMRG) and finite (fDMRG); and for TEBD, including the infinite case (iTEBD).</p>
+<p>The driver naming convention for algorithm X is X_DRV.bin.</p>
+<p>There is also a driver to create and store the local basis and operators for a model (STORE_MODEL.bin) and a driver to post process stored translationally invariant unit cells (UNITCELL_MEASURE.bin).</p>
 <p>Several example models are implemented, via example files in the examples sub directory. In addition user defined models can be studied.</p>
+<p>Usage info on the drivers can be found by running them without any command line arguments.</p>
 <p>Further documentation is provided via doc/html/index.html</p>
 <h2>Quick start / How do I get set up? </h2>
 <ul>
 <li>Dependencies: Requires blas and lapack ("framework accelerate" is used on mac), arpack (some issues with certain versions), and SuiteSparse's cxsparse. All available through e.g. macports.</li>
 <li>Optionally can use Intel's freely available Threaded Building Blocks (TBB) to perform threaded sparse multiplication, by specifying the "USETBB" environment variable (-DUSETBB is included by default in the makefiles).</li>
 <li>A rudimentary CMakeLists.txt is included that works well on mac systems with macports.</li>
+<li>Try 'mkdir BUILD; cd BUILD; cmake ..' to set up the build environment</li>
+<li>Then 'make'.</li>
 <li>For usage info on a particular driver run 'X_DRV.bin' where X is replaced by the name of the driver, e.g. iTEBD.</li>
-<li>An example is "./iDMRG_DRV.bin -B 100 -N 20 examples/spin_half_example_input" for 20 iDMRG iterations on a system of coupled spin half objects, with bond dimension 100. </li>
+<li>An example is "./iDMRG_DRV.bin -B 100 -N 20 ../examples/spin_half_example_input" for 20 iDMRG iterations on a system of coupled spin half objects, with bond dimension 100. </li>
 </ul>
 </div></div><!-- contents -->
 <!-- start footer part -->

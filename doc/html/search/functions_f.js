@@ -5,5 +5,5 @@ var searchData=
   ['twovertexinitialwavefunction',['TwoVertexInitialWavefunction',['../namespaceajaj.html#aef91829e06cf09cc5eafd81118bde1e6',1,'ajaj']]],
   ['twovertexmeasurement',['TwoVertexMeasurement',['../namespaceajaj.html#a751079645010fb4a95fb93ca6f3da552',1,'ajaj']]],
   ['twovertexsvd',['TwoVertexSVD',['../namespaceajaj.html#ab6f09d88743be4bf544f6d061251ab4c',1,'ajaj']]],
-  ['twovertexwavefunction',['TwoVertexWavefunction',['../namespaceajaj.html#a922661bea3ba5550e81d4d20300203cb',1,'ajaj']]]
+  ['twovertexwavefunction',['TwoVertexWavefunction',['../namespaceajaj.html#ab837e0ddf850cc42b97b10d866130ced',1,'ajaj']]]
 ];
