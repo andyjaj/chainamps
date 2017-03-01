@@ -1507,7 +1507,8 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     //now choose dense or sparse method for few eigenvals
     //if we have matrices smaller than 400*400 then dense is probably fine
     //larger matrices should use a sparse method
-    if (this->rows()<=400){ //use dense storage for block
+
+    if (B.size()<=500/*this->rows()<=400*/){ //use dense storage for block
       //std::cout << "Method 2 with dense storage" <<std::endl;
       TranslationBlock<DenseMatrix> TB(*this,B,B); //form block
       

@@ -666,7 +666,7 @@ namespace ajaj {
 
     std::cout << "Eigensolver starting for two vertex wavefunction..." << std::endl;    
 
-    SparseHED decomp(H2.Eigs(TargetSector,10,SMALLESTREAL));//uses arpack, finds three eigenvals if possible
+    SparseHED decomp(H2.Eigs(TargetSector,6,SMALLESTREAL));
     std::cout << "Lowest energy/Number of Vertices: " << decomp.Values[0]/2.0 <<std::endl;
 
     std::cout << "Raw eigenvalues" <<std::endl;

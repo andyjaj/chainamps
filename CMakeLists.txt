@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.6)
 project(ChainAMPS)
 
 option(TBB "Use tbb" ON)
-option(TIMING "Timings" ON)
+option(TIMING "Timings" OFF)
 
 if(TIMING)
   add_definitions( -DTIMING)
