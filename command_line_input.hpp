@@ -217,7 +217,7 @@ namespace ajaj {
        "  \tThe Trotter order (currently 1 or 2). Second order (2) is default." },
       {MEASUREMENT_INTERVAL,0,"m","measurement-interval",Arg::PositiveNumeric,"  -m <number>, \t--measurement-interval=<number>"
        "  \tMeasurement at every <number> steps. Default is 1 (measurement at every step)."},
-      {INITIAL_STATE_NAME,0,"i","initial-unit-cell",Arg::NonEmpty,"  -i <initial_unit_cell>, \t--initial-unit-cell<initial_unit_cell>"
+      {INITIAL_STATE_NAME,0,"i","initial-unit-cell",Arg::NonEmpty,"  -i <initial_unit_cell>, \t--initial-unit-cell=<initial_unit_cell>"
        "  \tSpecify an initial unit cell." },
       { 0, 0, 0, 0, 0, 0 }
     };
