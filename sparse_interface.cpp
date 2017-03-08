@@ -1436,6 +1436,13 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 	std::cout << "Truncating further due to very small singular values." <<std::endl; 
 	break;
       }
+
+      //otherwise
+      while (length<UnsortedValues.size() && ((UnsortedValues[length-1].second-UnsortedValues[length].second)/UnsortedValues[length-1].second <1.0e-6)){
+	  ++length;
+	  std::cout << "Increasing bond dimension, due to degeneracies." <<std::endl; 
+      }
+
       sortindices.push_back(UnsortedValues[s].first);
       kept_weight+=UnsortedValues[s].second*UnsortedValues[s].second;
       Values.push_back(UnsortedValues[s].second);

@@ -14,7 +14,6 @@
 #include "dense_interface.hpp"
 #include "MPX.hpp"
 
-
 namespace ajaj{
 
   struct ShiftedOperatorInfo{

@@ -82,6 +82,8 @@ int main(int argc, char** argv){
 	}
 	else {
 	  std::cout << "Operator " << op.first << "couldn't be found or created from predefined matrix elements." <<std::endl;
+	  std::cout << "Note that the name should be a name defined in your operators file, or by a built-in model," <<std::endl;
+	  std::cout << "NOT a .SPARSEMATRIX file name!" <<std::endl;
 	  return 0;
 	} //not found
       }
