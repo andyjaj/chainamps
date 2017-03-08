@@ -77,6 +77,3 @@ target_link_libraries(UNITCELL_MEASURE.bin MEAS ${EXTERNAL_LIBS})
 
 add_executable(STORE_MODEL.bin STORE_MODEL.cpp)
 target_link_libraries(STORE_MODEL.bin STORE ${EXTERNAL_LIBS})
-
-add_executable(LOAD_MATRIX.bin load_sparse.cpp)
-target_link_libraries(LOAD_MATRIX.bin MEAS ${EXTERNAL_LIBS})
