@@ -1438,7 +1438,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
       }
 
       //otherwise
-      while (length<UnsortedValues.size() && ((UnsortedValues[length-1].second-UnsortedValues[length].second)/UnsortedValues[length-1].second <1.0e-6)){
+      while (length<UnsortedValues.size() && ((UnsortedValues[length-1].second-UnsortedValues[length].second)/UnsortedValues[length-1].second <1.0e-3)){
 	  ++length;
 	  std::cout << "Increasing bond dimension, due to degeneracies." <<std::endl; 
       }
