@@ -1430,19 +1430,23 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     Values.reserve(length);
     Values.push_back(UnsortedValues[0].second);
     double kept_weight(UnsortedValues[0].second*UnsortedValues[0].second);
+
     for (size_t s=1;s<length;++s){
       if (UnsortedValues[s].second < SPARSETOL*UnsortedValues.begin()->second) {
 	length=s;
 	std::cout << "Truncating further due to very small singular values." <<std::endl; 
 	break;
       }
-
-      //otherwise
-      while (length<UnsortedValues.size() && ((UnsortedValues[length-1].second-UnsortedValues[length].second)/UnsortedValues[length-1].second <1.0e-3)){
-	  ++length;
-	  std::cout << "Increasing bond dimension, due to degeneracies." <<std::endl; 
-      }
-
+      //sortindices.push_back(UnsortedValues[s].first);
+      //kept_weight+=UnsortedValues[s].second*UnsortedValues[s].second;
+      //Values.push_back(UnsortedValues[s].second);
+    }
+    //check for degeneracies
+    while (length<UnsortedValues.size() && ((UnsortedValues[length-1].second-UnsortedValues[length].second)/UnsortedValues[length-1].second <1.0e-3)){
+      ++length;
+      std::cout << "Increasing bond dimension, due to degeneracies." <<std::endl; 
+    }
+    for (size_t s=1;s<length;++s){
       sortindices.push_back(UnsortedValues[s].first);
       kept_weight+=UnsortedValues[s].second*UnsortedValues[s].second;
       Values.push_back(UnsortedValues[s].second);
