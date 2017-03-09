@@ -1099,7 +1099,18 @@ namespace ajaj {
 	std::ofstream LambdaOutfile;
 	LambdaOutfile.open(LambdaName.str().c_str(),ios::out | ios::trunc | ios::binary);
 	if (MPX_matrix(LeftMatrix.GetPhysicalSpectrum(),LeftMatrix.Index(2),Values).fprint_binary(LambdaOutfile)){return 1;}
-	else return 0;
+	else {
+	  //now do one vertex density matrix
+	  std::ofstream rhofile;
+	  std::stringstream rhoName;
+	  rhoName << "fDMRGRho_"<<nl <<".dat";
+	  rhofile.open(rhoName.str().c_str(),ios::out | ios::trunc);
+	  if (rhofile.is_open()){
+	    OutputOneVertexDensityMatrix(rhofile);
+	    return 0;
+	  }
+	  else return 1;
+	}
       }
     }
   }
@@ -1123,6 +1134,14 @@ namespace ajaj {
 	d << real(i) << " ";
       }
       d << std::endl;
+    }
+  }
+
+  void MPSDecomposition::OutputOneVertexDensityMatrix(std::ofstream& d) const {
+    if (d.is_open()){
+      MPX_matrix L(LeftMatrix.basis(),LeftMatrix.Index(2),Values);
+      MPX_matrix temp(contract(LeftMatrix,0,L,0,contract20));
+      contract_to_sparse(temp,1,temp,0,contract1122).fprint(d);
     }
   }
 

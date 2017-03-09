@@ -483,6 +483,9 @@ namespace ajaj {
     const Basis& basis() const {
       return LeftMatrix.basis();
     }
+
+    void OutputOneVertexDensityMatrix(std::ofstream& d) const;
+
   };
 
   /** A class to hold a unit cell of arbitrary length
