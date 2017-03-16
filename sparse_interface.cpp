@@ -1431,21 +1431,34 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     Values.push_back(UnsortedValues[0].second);
     double kept_weight(UnsortedValues[0].second*UnsortedValues[0].second);
 
+    if (UnsortedValues[length-1].second < SPARSETOL*UnsortedValues.begin()->second){//if we are at a tiny s val, check for sligtly larger 'degenerate' singular values and remove them
+      while (length>1 && ((UnsortedValues[length-2].second-UnsortedValues[length-1].second)/UnsortedValues[length-2].second <1.0e-3)){
+	--length;
+	std::cout << "Truncating further due to very small singular values. s_val: " << UnsortedValues[length-1].second << std::endl;
+      }
+    }
+    else { //if not tiny, then check for slightly smaller 'degenerate' s vals.
+      while (length<UnsortedValues.size() && ((UnsortedValues[length-1].second-UnsortedValues[length].second)/UnsortedValues[length-1].second <1.0e-3)){
+      ++length;
+      std::cout << "Increasing bond dimension, due to degeneracies. s_val: " << UnsortedValues[length-1].second << std::endl;
+      }
+    }
+
+    /*
     for (size_t s=1;s<length;++s){
       if (UnsortedValues[s].second < SPARSETOL*UnsortedValues.begin()->second) {
 	length=s;
-	std::cout << "Truncating further due to very small singular values." <<std::endl; 
+	std::cout << "Truncating further due to very small singular values." <<std::endl;
+
 	break;
       }
-      //sortindices.push_back(UnsortedValues[s].first);
-      //kept_weight+=UnsortedValues[s].second*UnsortedValues[s].second;
-      //Values.push_back(UnsortedValues[s].second);
     }
-    //check for degeneracies
+    //check for degeneracies if we are truncating
     while (length<UnsortedValues.size() && ((UnsortedValues[length-1].second-UnsortedValues[length].second)/UnsortedValues[length-1].second <1.0e-3)){
       ++length;
-      std::cout << "Increasing bond dimension, due to degeneracies." <<std::endl; 
-    }
+      std::cout << "Increasing bond dimension, due to degeneracies. s_val: " << UnsortedValues[length-1].second << std::endl;
+      
+    }*/
     for (size_t s=1;s<length;++s){
       sortindices.push_back(UnsortedValues[s].first);
       kept_weight+=UnsortedValues[s].second*UnsortedValues[s].second;
