@@ -520,28 +520,43 @@ namespace ajaj{
       std::cout <<"2nd order time step evolution" <<std::endl;
       //bond order grows rapidly, so need to compress after each application of a set of bond operators
       //first step
+      std::cout << "Odd bonds" <<std::endl;
       apply_to_odd_bonds(EvolutionOps_.getU(0),EvolutionOps_.getUbar(0));
+      std::cout << "Right canonize" <<std::endl;
       right_canonise(minS);
+      std::cout << "Left canonize" <<std::endl;
       left_canonise(bond_dimension,minS);
 
       for (uMPXInt n=0;n<num_steps;++n){
 	++m_current_time_step;
 	std::cout << "Time " << current_time() << std::endl;
+	std::cout << "Even bonds" <<std::endl;
 	apply_to_even_bonds(EvolutionOps_.getU(1),EvolutionOps_.getUbar(1));
+	std::cout << "Right canonize" <<std::endl;
 	right_canonise(minS);
+	std::cout << "Left canonize" <<std::endl;
 	left_canonise(bond_dimension,minS);
 
 	if (m_current_time_step % measurement_interval==0) /*make measurement*/ {
+	  std::cout << "Odd bonds" <<std::endl;
 	  apply_to_odd_bonds(EvolutionOps_.getU(2),EvolutionOps_.getUbar(2));
+	  std::cout << "Right canonize" <<std::endl;
 	  right_canonise(minS);
+	  std::cout << "Left canonize measure" <<std::endl;
 	  left_canonise_measure(bond_dimension,minS,measurements);//measurement
+	  std::cout << "Odd bonds" <<std::endl;
 	  apply_to_odd_bonds(EvolutionOps_.getU(0),EvolutionOps_.getUbar(0));
+	  std::cout << "Right canonize" <<std::endl;
 	  right_canonise(minS);
+	  std::cout << "Left canonize" <<std::endl;
 	  left_canonise(bond_dimension,minS);
 	}
 	else {
+	  std::cout << "Odd bonds" <<std::endl;
 	  apply_to_odd_bonds(EvolutionOps_.getU(1),EvolutionOps_.getUbar(1));
+	  std::cout << "Right canonize" <<std::endl;
 	  right_canonise(minS);
+	  std::cout << "Left canonize" <<std::endl;
 	  left_canonise(bond_dimension,minS);
 	}
       }
