@@ -111,6 +111,8 @@ namespace ajaj {
 
   bool CheckMPSFilesExist(const std::string& MPSName,uMPXInt NumVertices);
 
+#include "temp_TEBD.hpp"
+
 }
 
 #endif
