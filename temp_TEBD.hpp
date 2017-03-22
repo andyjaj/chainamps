@@ -8,9 +8,25 @@ private:
   //MPX_matrix apply_and_decompose(const MPX_matrix& BondOp,uMPXInt  bond_dimension, double minS); //returns an MPX to apply right
   //void left_canonise_measure(uMPXInt chi,double minS,std::vector<MultiVertexMeasurement>& measurements);
   
+  MPX_matrix apply_to_odd_bonds(const MPX_matrix& BondOp,uMPXInt  bond_dimension, double minS){
+    //stages
+    //state should be right canonical
+
+    //1. start at left end, apply to first bond
+    //2. decompose and truncate
+    //3. then combine S and V and multiply right...
+    //4. move to next bond and repeat
+
+    //At end state is left canonical but truncated.
+
+  }
+
+
+
 public:
   //LM_TEBD(const MPO_matrix& H, const std::string& MPSName, uMPXInt NumVertices, double time_step_size, DataOutput& results, uMPXInt order=1); //load from file
   //LM_TEBD(const MPO_matrix& H, const std::string& MPSName, const MPS_matrix& InitialMPS_matrix, uMPXInt NumVertices, double time_step_size, DataOutput& results, uMPXInt order=1); //use repeating simple MPS_matrix defined by InitialMPS_matrix
+  //void evolve(uMPXInt num_steps, std::vector<MultiVertexMeasurement>& measurements, uMPXInt bond_dimension=0, double minS=0.0, uMPXInt measurement_interval=1);
 
   LM_TEBD(const MPO_matrix& H, const std::string& MPSName, uMPXInt NumVertices, double time_step_size, DataOutput& results, uMPXInt order=1) : TimeBase(time_step_size,results),MPSName_(MPSName),Basis_(H.basis()),NumVertices_(NumVertices),SingleVertexOp_(MakeSingleSiteEvolutionOperator(H,time_step_size)),m_EvolutionOperators(TrotterDecomposition(H,time_step_size,order)) {
 
@@ -71,7 +87,9 @@ public:
     }
   }
 
-  void evolve(uMPXInt num_steps, std::vector<MultiVertexMeasurement>& measurements, uMPXInt bond_dimension=0, double minS=0.0, uMPXInt measurement_interval=1);
+  void evolve(uMPXInt num_steps, std::vector<MultiVertexMeasurement>& measurements, uMPXInt bond_dimension=0, double minS=0.0, uMPXInt measurement_interval=1){
+
+  }
   //void left_info();
   //void right_info();
   
