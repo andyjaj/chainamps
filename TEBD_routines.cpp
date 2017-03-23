@@ -225,7 +225,7 @@ namespace ajaj{
       std::stringstream LNameStream;
       LNameStream << "Evolving_" << MPSName_ << "_Left_" << v-1 << ".MPS_matrix";
       MPSDecomposition decomp(reorder(contract(BondOp,0,contract(load_MPS_matrix(LNameStream.str(),Basis_),0,R,0,contract21),0,contract2032),0,reorder0213,2).SVD(bond_dimension,minS));
-      
+      if (decomp.Truncation>max_truncation_) max_truncation_=decomp.Truncation;
       //overwrite with new right part of pair
       {
 	std::stringstream StoreNameStream;
@@ -237,6 +237,7 @@ namespace ajaj{
 	std::stringstream StoreNameStream;
 	StoreNameStream << "Evolving_" << MPSName_ << "_Right_" << NumVertices_+2-v << ".MPS_matrix";
 	MPXDecomposition rot(MPS_matrix(contract(decomp.LeftMatrix,0,MPX_matrix(Basis_,decomp.LeftMatrix.Index(2),decomp.Values),0,contract20)).right_shape().SVD());
+	if (rot.Truncation>max_truncation_) max_truncation_=rot.Truncation;
 	rot.RowMatrix.store(StoreNameStream.str()); //now should be right canonical
 	if (v>2){
 	  std::stringstream NewNameStream;
@@ -268,6 +269,8 @@ namespace ajaj{
     
     MPXDecomposition rot(MPS_matrix(std::move(contract(SingleVertexOp_,0,load_MPS_matrix(SpecialNameStream.str(),Basis_),0,contract10).CombineSimilarMatrixIndices())).right_shape().SVD());
     rot.RowMatrix.store(StoreNameStream.str()); //now should be right canonical
+    if (rot.Truncation>max_truncation_) max_truncation_=rot.Truncation;
+
       
     std::stringstream StartNameStream;
     StartNameStream << "Evolving_" << MPSName_ << "_Left_" << NumVertices_-1 << ".MPS_matrix";
@@ -280,7 +283,8 @@ namespace ajaj{
 	std::stringstream LNameStream;
 	LNameStream << "Evolving_" << MPSName_ << "_Left_" << v-1 << ".MPS_matrix";
 	MPSDecomposition decomp(reorder(contract(BondOp,0,contract(load_MPS_matrix(LNameStream.str(),Basis_),0,R,0,contract21),0,contract2032),0,reorder0213,2).SVD(bond_dimension,minS));
-	
+	if (decomp.Truncation>max_truncation_) max_truncation_=decomp.Truncation;
+
 	//overwrite with new right part of pair
 	{
 	  std::stringstream StoreNameStream;
@@ -293,6 +297,8 @@ namespace ajaj{
 	std::stringstream StoreNameStream;
 	StoreNameStream << "Evolving_" << MPSName_ << "_Right_" << NumVertices_+1-v+1 << ".MPS_matrix";
 	MPXDecomposition rot(MPS_matrix(contract(decomp.LeftMatrix,0,MPX_matrix(Basis_,decomp.LeftMatrix.Index(2),decomp.Values),0,contract20)).right_shape().SVD());
+	if (rot.Truncation>max_truncation_) max_truncation_=rot.Truncation;
+
 	rot.RowMatrix.store(StoreNameStream.str()); //now should be right canonical
 	if (v>2){ //this should be true as long as N/2 is even
 	  std::stringstream NewNameStream;
@@ -308,7 +314,8 @@ namespace ajaj{
     //need to canonize first vertex still
     
     MPXDecomposition decomp(R.right_shape().SVD());
-    
+    if (decomp.Truncation>max_truncation_) max_truncation_=decomp.Truncation;
+
     std::stringstream FirstNameStream;
     FirstNameStream << "Evolving_" << MPSName_ << "_Right_" << NumVertices_ << ".MPS_matrix";
     decomp.RowMatrix.store(FirstNameStream.str());
@@ -370,8 +377,8 @@ namespace ajaj{
       RightEnddecomp.SquareRescale(1.0);
       std::cout << "Bond dimension: " << RightEnddecomp.Values.size() << std::endl;
       if (NumVertices_==2){ //special case for two vertices only
-	//measure truncation and entropy
-	real_results.push_back(RightEnddecomp.Truncation);
+	//record truncation and entropy
+	real_results.push_back(max_truncation_);
 	real_results.push_back(entropy(RightEnddecomp.Values));
       }
       for (auto&& m : measurements){
