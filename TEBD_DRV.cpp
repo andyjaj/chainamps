@@ -122,7 +122,7 @@ int main(int argc, char** argv){
     //TEBD stuff
     if (RuntimeArgs.initial_state_name()!=""){
       if (ajaj::CheckMPSFilesExist(RuntimeArgs.initial_state_name(),number_of_vertices)){
-	ajaj::TEBD finrun(myModel.H_MPO,RuntimeArgs.initial_state_name(),number_of_vertices,time_step,results,trotter_order);
+	ajaj::LM_TEBD finrun(myModel.H_MPO,RuntimeArgs.initial_state_name(),number_of_vertices,time_step,results,trotter_order);
 	finrun.evolve(number_of_time_steps,measurements,CHI/*bond dimension*/,minS/*min s val*/,measurement_interval);
       }
       else {
@@ -134,7 +134,7 @@ int main(int argc, char** argv){
       SpM.entry(0,0,1.0);
       SpM.cheap_finalise();
       ajaj::MPS_matrix A(myModel.basis(),std::vector<ajaj::MPXIndex>({{ajaj::MPXIndex(1,myModel.basis()),ajaj::MPXIndex(1,ajaj::StateArray(1,myModel.basis()[0])),ajaj::MPXIndex(0,ajaj::StateArray(1,myModel.basis()[0]))}}),SpM);
-      ajaj::TEBD finrun(myModel.H_MPO,std::string("TEBDState"),A,number_of_vertices,time_step,results,trotter_order); //use the provided MPS_matrix A, give state the name "TEBDState"
+      ajaj::LM_TEBD finrun(myModel.H_MPO,std::string("TEBDState"),A,number_of_vertices,time_step,results,trotter_order); //use the provided MPS_matrix A, give state the name "TEBDState"
       finrun.evolve(number_of_time_steps,measurements,CHI/*bond dimension*/,minS/*min s val*/,measurement_interval);
     }
     return 0;
