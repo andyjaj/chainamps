@@ -97,32 +97,26 @@ private:
 	StoreNameStream << "Evolving_" << MPSName_ << "_Right_" << NumVertices_+1-v+1 << ".MPS_matrix";
 	MPXDecomposition rot(MPS_matrix(contract(decomp.LeftMatrix,0,MPX_matrix(Basis_,decomp.LeftMatrix.Index(2),decomp.Values),0,contract20)).right_shape().SVD());
 	rot.RowMatrix.store(StoreNameStream.str()); //now should be right canonical
-	if (v>2){
+	if (v>2){ //this should be true as long as N/2 is even
 	  std::stringstream NewNameStream;
 	  NewNameStream << "Evolving_" << MPSName_ << "_Left_" << v-2 << ".MPS_matrix";
 	  RightName=NewNameStream.str();
 	  R=std::move(MPS_matrix(contract(load_MPS_matrix(RightName,Basis_),0,contract(rot.ColumnMatrix,0,MPX_matrix(Basis_,rot.ColumnMatrix.Index(1),rot.Values),0,contract10),0,contract20)));
 	}
-	else {
-	  //check norm
-	  std::cout << "Norm at end of even bonds, right canonise: " << contract(rot.ColumnMatrix,0,MPX_matrix(Basis_,rot.ColumnMatrix.Index(1),rot.Values),0,contract10).Trace() <<std::endl;
-	}
       }
     }
     else {
       std::cout <<"Only two vertices, no even bonds" <<std::endl;
-
-      //need to canonize first vertex still
-
-      MPXDecomposition decomp(R.right_shape().SVD());
-
-      std::stringstream StoreNameStream;
-      StoreNameStream << "Evolving_" << MPSName_ << "_Right_" << NumVertices_ << ".MPS_matrix";
-      decomp.RowMatrix.store(StoreNameStream.str());
-
-      std::cout << "Norm at end of even bonds, right canonise: " << contract(decomp.ColumnMatrix,0,MPX_matrix(Basis_,decomp.ColumnMatrix.Index(1),decomp.Values),0,contract10).Trace() <<std::endl;
-
     }
+    //need to canonize first vertex still
+    
+    MPXDecomposition decomp(R.right_shape().SVD());
+    
+    std::stringstream FirstNameStream;
+    FirstNameStream << "Evolving_" << MPSName_ << "_Right_" << NumVertices_ << ".MPS_matrix";
+    decomp.RowMatrix.store(FirstNameStream.str());
+    
+    std::cout << "Norm at end of even bonds, right canonise: " << contract(decomp.ColumnMatrix,0,MPX_matrix(Basis_,decomp.ColumnMatrix.Index(1),decomp.Values),0,contract10).Trace() <<std::endl;
   }
   void left_canonise(uMPXInt chi=0,double minS=0){
     std::cout << "Begin left canonisation" << std::endl; 
