@@ -416,7 +416,7 @@ namespace ajaj{
       std::cout << "Bond dimension: " << decomp.Values.size() << std::endl;
       if (v==NumVertices_/2){ //if we only have two chains, this is never obeyed...
 	//measure truncation and entropy
-	real_results.push_back(decomp.Truncation);
+	real_results.push_back(max_truncation_);
 	real_results.push_back(entropy(decomp.Values));
       }
       for (auto&& m : measurements){
