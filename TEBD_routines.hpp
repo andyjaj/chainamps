@@ -79,7 +79,7 @@ namespace ajaj {
     uMPXInt order() const {return m_EvolutionOperators.order();}
   };
 
-  class TEBD : public TimeBase {
+  /*class TEBD : public TimeBase {
   private:
     const std::string MPSName_;
     const EigenStateArray& Spectrum_;
@@ -101,7 +101,28 @@ namespace ajaj {
     void left_info();
     void right_info();
 
-  };
+  };*/
+
+class TEBD : public TimeBase {
+private:
+  const std::string MPSName_;
+  const EigenStateArray& Basis_;
+  const uMPXInt NumVertices_;
+  const MPX_matrix SingleVertexOp_; //for open boundary conditions
+  const TrotterDecomposition m_EvolutionOperators;
+  void apply_to_odd_bonds(const MPX_matrix& BondOp,uMPXInt  bond_dimension, double minS);
+  void apply_to_even_bonds(const MPX_matrix& BondOp,uMPXInt  bond_dimension, double minS);
+  void left_canonise(uMPXInt chi=0,double minS=0);
+  void left_canonise_measure(std::vector<MultiVertexMeasurement>& measurements,uMPXInt chi=0,double minS=0);
+
+public:
+  TEBD(const MPO_matrix& H, const std::string& MPSName, uMPXInt NumVertices, double time_step_size, DataOutput& results, uMPXInt order=1); //load from file
+  TEBD(const MPO_matrix& H, const std::string& MPSName, const MPS_matrix& InitialMPS_matrix, uMPXInt NumVertices, double time_step_size, DataOutput& results, uMPXInt order=1); //use repeating simple MPS_matrix defined by InitialMPS_matrix
+  void evolve(uMPXInt num_steps, std::vector<MultiVertexMeasurement>& measurements, uMPXInt bond_dimension=0, double minS=0.0, uMPXInt measurement_interval=1);
+  void left_info();
+  void right_info();
+};
+
   UnitCell MakeProductStateUnitCell(const Basis& basis, const std::vector<std::pair<uMPXInt,double> >& state_index_vec, State leftstate, uMPXInt length=2);
   UnitCell MakeProductStateUnitCell(const Basis& basis, uMPXInt state_index, State leftstate, uMPXInt length=2);
 
@@ -111,7 +132,7 @@ namespace ajaj {
 
   bool CheckMPSFilesExist(const std::string& MPSName,uMPXInt NumVertices);
 
-#include "temp_TEBD.hpp"
+  //#include "temp_TEBD.hpp"
 
 }
 

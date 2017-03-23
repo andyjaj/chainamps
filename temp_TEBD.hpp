@@ -10,7 +10,6 @@ private:
   //void left_canonise(uMPXInt chi=0,double minS=0);
   //void left_canonise_measure(std::vector<MultiVertexMeasurement>& measurements,uMPXInt chi=0,double minS=0);
 
-
   void apply_to_odd_bonds(const MPX_matrix& BondOp,uMPXInt  bond_dimension, double minS){
     //Start state should be left canonical
     //At end state is right canonical but truncated.

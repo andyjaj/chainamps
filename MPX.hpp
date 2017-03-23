@@ -134,6 +134,8 @@ namespace ajaj {
     MPX_matrix(MPX_matrix&& rhs) noexcept : m_SpectrumPtr(rhs.m_SpectrumPtr) {swap(*this,rhs);}
     MPX_matrix(const MPX_matrix& rhs) : m_SpectrumPtr(rhs.m_SpectrumPtr), m_Indices(rhs.m_Indices), m_NumRowIndices(rhs.m_NumRowIndices), m_Matrix(copy(rhs.m_Matrix)){}
 
+    bool isEmpty() const {return !(m_SpectrumPtr);} /**< Check to see if null.*/
+
     const MPXIndex& Index(Sparseint i) const {return m_Indices.at(i);} /**< Lookup the StateArray corresponding to a particular index, interface to storage.*/
     const EigenStateArray& GetPhysicalSpectrum() const {return *m_SpectrumPtr;} /**< Return ref to the Physical spectrum, needs renaming to match convention */
     const EigenStateArray& getPhysicalSpectrum() const {return *m_SpectrumPtr;} /**< Return ref to the Physical spectrum */
