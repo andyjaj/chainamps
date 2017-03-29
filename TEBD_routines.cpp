@@ -528,6 +528,7 @@ namespace ajaj{
 	else {
 	  left_canonise();
 	}
+	max_truncation_=0.0; //reset
       }
     }
     else if (m_EvolutionOperators.order()==2){
@@ -555,6 +556,7 @@ namespace ajaj{
 	  std::cout << "Left canonize" <<std::endl;
 	  left_canonise();
 	}
+	max_truncation_=0.0; //reset
       }
     }
     else {
