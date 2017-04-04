@@ -48,11 +48,11 @@
  * @code
  * UNITCELL_MEASURE.bin -O operator1.SPARSEMATRIX -O operator2.SPARSEMATRIX@n@r -S l input_file.
  * @endcode
- * where operator1 and operator2 are stored local operators, -S l indicates the separation between the vertices at which they are applied should be l, and the \@n\@r notation performs a unitary transformation of the latter operator, using the nth quantum number, with coefficient r:
+ * where operator1 and operator2 are stored local operators, -S l indicates the separation between the vertices at which they are applied should be l, and the \@n\@r notation performs a unitary transformation of the latter operator, using the nth quantum number, \f$ \hat{Q}_n \f$ with coefficient r:
  *
- * \f$ e^{i n r} \mathcal{O}_2 e^{-i n r}. \f$
+ * \f$ e^{i \hat{Q}_n r} \mathcal{O}_2 e^{-i \hat{Q}_n r}. \f$
  *
- * This can be useful if the vertex is an object that has physical extent itself (e.g. a chain with periodic boundary conditions). For example on a chain of length \f$ R \f$, the above measurement corresponds to measuring the correlator
+ * This can be useful if the vertex is an object that has physical extent itself (e.g. a chain with periodic boundary conditions). For example on a chain of length \f$ R \f$, if the quantum number for chain momentum is chosen, the above measurement corresponds to measuring the correlator
  *
  * \f$\mathcal{O}_1(i,0) \mathcal{O}_2(i+l,x), \quad  r=2\pi x /R. \f$
  *
