@@ -113,6 +113,11 @@ void matrix_dump(const dense_int rows,  const dense_int cols, const complex<doub
   double* w= new double[lineardim];
   /* Negative abstol means using the default value */
   abstol = -1.0; 
+
+#ifndef NDEBUG
+  std::cout << "Calling zheevr on matrix " << lineardim  << "*" << lineardim << std::endl;
+#endif
+
   /* Query and allocate the optimal workspace */
 #if defined(__APPLE__) && defined(__MACH__)
   dense_int lwork=-1;
@@ -180,6 +185,11 @@ void diagonalise_with_lapack_nh(dense_int lineardim, complex<double> *matrixin, 
   dense_int n=lineardim;
   dense_int info=0;
   std::complex<double>* dummy_ptr=0;
+
+#ifndef NDEBUG
+  std::cout << "Calling zgeev on matrix " << lineardim  << "*" << lineardim << std::endl;
+#endif
+
   /* Query and allocate the optimal workspace */
 #if defined(__APPLE__) && defined(__MACH__)
   char NO[]={'N','\0'};
@@ -221,6 +231,11 @@ void diagonalise_with_lapack_nh(dense_int lineardim, complex<double> *matrixin, 
   dense_int n=lineardim;
   dense_int info=0;
   complex<double>* dummy_ptr=0;
+
+#ifndef NDEBUG
+  std::cout << "Calling zgeev on matrix " << lineardim  << "*" << lineardim << std::endl;
+#endif
+
   /* Query and allocate the optimal workspace */
 #if defined(__APPLE__) && defined(__MACH__)
   char NO[]={'N','\0'};
@@ -426,6 +441,11 @@ void inverse_with_lapack(const dense_int lineardim, complex<double> *matrixin, c
   }
   dense_int info=0;
   dense_int* ipiv=new dense_int[lineardim];
+
+#ifndef NDEBUG
+  std::cout << "Calling zgetri on matrix " << lineardim  << "*" << lineardim << std::endl;
+#endif
+
 #if defined(__APPLE__) && defined(__MACH__)
   zgetrf_(&lda,&lda,reinterpret_cast<__CLPK_doublecomplex*>(matrixout),&lda,ipiv,&info);
   if (info < 0){cout << "illegal argument to zgetrf, " << abs(info) << endl; exit(1);}
