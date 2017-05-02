@@ -1,5 +1,5 @@
-/** @file MPX_specials.hpp
- * MPS_matrix and MPO_matrix classes, derived from MPX_matrix.
+/** @file MPO_matrix.hpp
+ * MPO_matrix class, derived from MPX_matrix.
  * Essentially a container for a SparseMatrix, with lots of bells and whistles so that they can be blocked by good quantum numbers, and reshaped according
  * to their indices.
  */
@@ -59,7 +59,7 @@ namespace ajaj{
     return MPO_matrix(spectrum,dummy,std::vector<complex<double> >(spectrum.size(),1.0));  //create diagonal matrix
   }
 
-  MPO_matrix UnitaryTransformMPO_matrix(const Basis&, const std::vector<MPXIndex>&, const SparseMatrix&, size_t, double);
+  MPO_matrix UnitaryTransformMPO_matrix(const Basis&, const std::vector<MPXIndex>&, const SparseMatrix&, size_t, double);/**< To unitarily transform a local operator*/
 
   MPO_matrix load_MPO_matrix(const std::string& filename,const Basis& spectrum);
 

@@ -55,7 +55,7 @@ if(TBB)
 endif(TBB)
 
 add_library(MATRIX_LIB STATIC sparse_interface.cpp dense_interface.cpp arpack_interface.cpp dense_matrix_functions.cpp)
-add_library(MPX_LIB STATIC MPX.cpp MPS_matrix.cpp MPO_matrix.cpp MPX_matrix.cpp MPXIndex.cpp states.cpp)
+add_library(MPX_LIB STATIC FiniteMPS.cpp UnitCell.cpp MPS_matrix.cpp MPO_matrix.cpp MPX_matrix.cpp MPXIndex.cpp states.cpp)
 add_library(DMRG STATIC DMRG_routines.cpp measurement.cpp)
 add_library(TIME STATIC TEBD_routines.cpp measurement.cpp)
 add_library(MEAS STATIC measurement.cpp)
