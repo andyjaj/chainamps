@@ -11,7 +11,6 @@
 #include <string>
 #include <complex>
 
-//#include "ajaj_common.hpp" //defines basic types
 #include "vertex.hpp"
 #include "MPX.hpp"
 #include "states.hpp"

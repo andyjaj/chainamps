@@ -8,9 +8,9 @@
 #include <utility>
 #include <iostream>
 #include <cs.h>
-#include "ajaj_common.hpp"
+#include "common_defs.hpp"
 #include "dense_interface.hpp"
-#include "arpack_interface.hpp"
+//#include "arpack_interface.hpp"
 
 #define FILEPREC 16 //used when outputting as text
 #define SPARSETOL std::numeric_limits<double>::epsilon()

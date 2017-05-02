@@ -9,7 +9,7 @@
 #include <deque>
 #include <utility>
 #include <iostream>
-#include "ajaj_common.hpp"
+#include "common_defs.hpp"
 
 namespace ajaj {
 

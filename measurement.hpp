@@ -13,7 +13,7 @@
 #include <complex>
 
 
-#include "ajaj_common.hpp"
+#include "common_defs.hpp"
 #include "sparse_interface.hpp"
 #include "states.hpp"
 #include "MPX.hpp"

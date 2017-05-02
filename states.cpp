@@ -6,7 +6,6 @@
 #include <list>
 
 #include <algorithm>
-#include "ajaj_common.hpp"
 #include "states.hpp"
 
 namespace ajaj {

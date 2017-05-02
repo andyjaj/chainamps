@@ -1,12 +1,12 @@
-/** @file ajaj_common.hpp
+/** @file common_defs.hpp
  *Some common type definitions. 
  *These are defined here to be used in multiple files.
  */
-#ifndef AJAJ_COMMON_H
-#define AJAJ_COMMON_H
-#include <utility>
-#include <vector>
-#include <cs.h>
+#ifndef COMMON_H
+#define COMMON_H
+#include <utility> //for std::pair
+#include <vector> //for std::vector
+#include <cs.h> //for SuiteSparse_long
 
 /**
  * @namespace ajaj

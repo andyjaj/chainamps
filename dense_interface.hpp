@@ -2,12 +2,11 @@
 #define DMAT_H
 
 #include <complex>
-//#include <algorithm>
 #include <vector>
 #include <iostream>
 #include <cs.h>
 
-#include "ajaj_common.hpp" //defines int types
+#include "common_defs.hpp" //defines int types
 #include "dense_matrix_functions.hpp"
 
 namespace ajaj {
@@ -120,10 +119,6 @@ namespace ajaj {
       Values=new T[L];
     }
     DenseDecompositionBase(const DenseDecompositionBase& other) : lineardim(other.lineardim),Values(lineardim > 0 ? new T[lineardim] : nullptr){
-      /*Values=new T[lineardim];
-      for (Denseint i=0;i<lineardim;++i){
-	Values[i]=other.Values[i];
-      }*/
       std::copy(other.Values,other.Values+lineardim,Values);
     }
     DenseDecompositionBase(DenseDecompositionBase&& other) : lineardim(other.lineardim),Values(other.Values){

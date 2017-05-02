@@ -8,6 +8,7 @@
 #include <utility>
 #include <algorithm>
 #include <complex> //std::complex<double>
+#include <iostream>
 #include <cs.h> //cs_cl* type
 
 namespace arpack {

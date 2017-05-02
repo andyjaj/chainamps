@@ -8,7 +8,7 @@
 #include <numeric>
 #include <limits>
 
-#include "ajaj_common.hpp"
+#include "common_defs.hpp"
 #include "vertex.hpp"
 #include "MPX.hpp"
 #include "TEBD_routines.hpp"

@@ -1,11 +1,12 @@
 #include <vector>
+#include <array>
 #include <string>
 #include <sstream>
 #include <cstdlib>
 #include <chrono>
 #include <iomanip>
 
-#include "ajaj_common.hpp" //MPXInt MPXPair
+#include "arpack_interface.hpp" //arpack
 #include "sparse_interface.hpp" //SparseHED
 #include "states.hpp" //EigenStateArray etc.
 #include "MPX.hpp" //MPX_matrix etc.

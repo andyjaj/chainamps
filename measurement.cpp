@@ -1,8 +1,8 @@
 #include <vector>
+#include <array>
 
-#include "ajaj_common.hpp"
-#include "sparse_interface.hpp"
 #include "arpack_interface.hpp"
+#include "sparse_interface.hpp"
 #include "states.hpp"
 #include "MPX.hpp"
 #include "measurement.hpp"

@@ -21,7 +21,6 @@ message (STATUS "LAPACK found:" ${LAPACK_LIBRARIES})
 
 get_filename_component(LIB_HINT ${BLAS_LIBRARIES} PATH)
 #message (STATUS "LIBRARIES_DIR HINT:" ${LIB_HINT})
-
 set(INCLUDE_HINT "${LIB_HINT}/../include")
 #message (STATUS "INCLUDE_DIR HINT:" ${INCLUDE_HINT})
 
@@ -55,25 +54,28 @@ if(TBB)
   include_directories(${TBB_INCLUDE_DIRS})
 endif(TBB)
 
-add_library(DMRG STATIC DMRG_routines.cpp measurement.cpp MPX.cpp sparse_interface.cpp dense_interface.cpp arpack_interface.cpp dense_matrix_functions.cpp states.cpp)
-add_library(TIME STATIC TEBD_routines.cpp measurement.cpp MPX.cpp sparse_interface.cpp dense_interface.cpp arpack_interface.cpp dense_matrix_functions.cpp states.cpp)
-add_library(MEAS STATIC measurement.cpp MPX.cpp sparse_interface.cpp dense_interface.cpp arpack_interface.cpp dense_matrix_functions.cpp states.cpp)
-add_library(STORE STATIC MPX.cpp sparse_interface.cpp dense_interface.cpp arpack_interface.cpp dense_matrix_functions.cpp states.cpp)
+add_library(MATRIX_LIB STATIC sparse_interface.cpp dense_interface.cpp arpack_interface.cpp dense_matrix_functions.cpp)
+add_library(MPX_LIB STATIC MPX.cpp MPS_matrix.cpp MPO_matrix.cpp MPX_matrix.cpp MPXIndex.cpp states.cpp)
+add_library(DMRG STATIC DMRG_routines.cpp measurement.cpp)
+add_library(TIME STATIC TEBD_routines.cpp measurement.cpp)
+add_library(MEAS STATIC measurement.cpp)
+
+set (COMMON_LIBS MPX_LIB MATRIX_LIB ${EXTERNAL_LIBS})
 
 add_executable(iDMRG_DRV.bin iDMRG_DRV.cpp)
-target_link_libraries(iDMRG_DRV.bin DMRG ${EXTERNAL_LIBS})
+target_link_libraries(iDMRG_DRV.bin DMRG ${COMMON_LIBS})
 
 add_executable(fDMRG_DRV.bin fDMRG_DRV.cpp)
-target_link_libraries(fDMRG_DRV.bin DMRG ${EXTERNAL_LIBS})
+target_link_libraries(fDMRG_DRV.bin DMRG ${COMMON_LIBS})
 
 add_executable(iTEBD_DRV.bin iTEBD_DRV.cpp)
-target_link_libraries(iTEBD_DRV.bin TIME ${EXTERNAL_LIBS})
+target_link_libraries(iTEBD_DRV.bin TIME ${COMMON_LIBS})
 
 add_executable(TEBD_DRV.bin TEBD_DRV.cpp)
-target_link_libraries(TEBD_DRV.bin TIME ${EXTERNAL_LIBS})
+target_link_libraries(TEBD_DRV.bin TIME ${COMMON_LIBS})
 
 add_executable(UNITCELL_MEASURE.bin UNITCELL_MEASURE.cpp)
-target_link_libraries(UNITCELL_MEASURE.bin MEAS ${EXTERNAL_LIBS})
+target_link_libraries(UNITCELL_MEASURE.bin MEAS ${COMMON_LIBS})
 
 add_executable(STORE_MODEL.bin STORE_MODEL.cpp)
-target_link_libraries(STORE_MODEL.bin STORE ${EXTERNAL_LIBS})
+target_link_libraries(STORE_MODEL.bin ${COMMON_LIBS})

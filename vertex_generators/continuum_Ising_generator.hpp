@@ -9,8 +9,8 @@
 #include <iostream>
 #include <sstream>
 
-#include "../ajaj_common.hpp"
-#include "../sparse_interface.hpp"
+//#include "../common_defs.hpp"
+//#include "../sparse_interface.hpp"
 
 namespace continuumIsing {
 

@@ -16,7 +16,7 @@
 #include <sstream>
 #include <utility>
 
-#include "ajaj_common.hpp"
+#include "common_defs.hpp" //for uMPXInt
 
 namespace ajaj {
 

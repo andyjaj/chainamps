@@ -7,7 +7,7 @@
 #include <utility>
 #include <numeric>
 
-#include "ajaj_common.hpp"
+#include "common_defs.hpp"
 #include "vertex.hpp"
 #include "MPX.hpp"
 #include "DMRG_routines.hpp"

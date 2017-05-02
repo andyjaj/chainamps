@@ -8,7 +8,7 @@
 #include <string>
 #include <iostream>
 
-#include "ajaj_common.hpp" //defines basic types
+#include "common_defs.hpp" //defines basic types
 #include "states.hpp" //Spectrum etc.
 #include "sparse_interface.hpp" //for VertexOperators
 #include "dense_interface.hpp"
@@ -16,6 +16,9 @@
 
 namespace ajaj{
 
+/** ShiftedOperatorInfo struct for holding information about a unitarily transformed (shifted) vertex operator.
+ *
+ */
   struct ShiftedOperatorInfo{
   public:
     std::string Name;

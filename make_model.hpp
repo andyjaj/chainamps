@@ -11,7 +11,7 @@
 #include <complex>
 
 #include "command_line_input.hpp"
-#include "ajaj_common.hpp"
+#include "common_defs.hpp"
 #include "model.hpp"
 #include "vertex.hpp"
 #include "MPX.hpp"
@@ -19,7 +19,7 @@
 
 //builtin models
 #include "vertex_generators/continuum_Ising_generator.hpp"
-#include "vertex_generators/continuum_Ising_generator_no_sector.hpp"
+//#include "vertex_generators/continuum_Ising_generator_no_sector.hpp"
 #include "vertex_generators/continuum_ff_generator.hpp"
 #include "vertex_generators/ll_generator.hpp"
 #include "vertex_generators/spin_half_generator.hpp"

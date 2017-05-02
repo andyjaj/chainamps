@@ -12,7 +12,7 @@
 #include <sstream>
 
 
-#include "ajaj_common.hpp"
+#include "common_defs.hpp"
 #include "MPX.hpp"
 #include "sparse_interface.hpp"
 #include "data.hpp"

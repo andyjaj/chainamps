@@ -7,8 +7,8 @@
 #include <vector>
 #include <sstream>
 
-#include "../ajaj_common.hpp"
-#include "../sparse_interface.hpp"
+//#include "../ajaj_common.hpp"
+//#include "../sparse_interface.hpp"
 namespace spin_half {
 ajaj::MPO_matrix MakeHamiltonian(const ajaj::Vertex& modelvertex, const ajaj::VertexParameterArray& couplingparams){
   //Lower triangular MPO

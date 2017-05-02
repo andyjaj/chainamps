@@ -5,7 +5,7 @@
 
 #include "dense_interface.hpp"
 #include "dense_matrix_functions.hpp"
-#include "arpack_interface.hpp"
+//#include "arpack_interface.hpp"
 
 namespace ajaj {
 
@@ -21,12 +21,6 @@ namespace ajaj {
     std::swap(m_array,*array_ptr);
   }
 
-  //rare that this should be needed?
-  /*DenseMatrix::DenseMatrix(const DenseMatrix& other) : nrows(other.nrows),ncols(other.ncols),m_array(nrows >0 && ncols > 0 ? new std::complex<double>[other.nrows*other.ncols] : nullptr){ //COPY constructor, does a DEEP copy
-    std::copy(other.m_array,other.m_array+(nrows*ncols),m_array);
-
-  }*/
-
   DenseMatrix::DenseMatrix(DenseMatrix&& other) noexcept : m_array(nullptr) {swap(*this,other);}//move
 
   DenseMatrix& DenseMatrix::operator=(DenseMatrix&& other) {
@@ -36,9 +30,6 @@ namespace ajaj {
 
   DenseMatrix::DenseMatrix(Denseint param_rows,Denseint param_cols, const std::complex<double>* array ) : size_(param_rows*param_cols),nrows(param_rows), ncols(param_cols), m_array(size_>0 ? new std::complex<double>[nrows*ncols] : nullptr){
     std::copy(array,array+(nrows*ncols),m_array);
-    /*for (Denseint d=0;d<nrows*ncols;++d){
-      m_array[d]=array[d];
-      }*/
   }
 
   DenseMatrix::~DenseMatrix(){

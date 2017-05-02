@@ -8,10 +8,10 @@
 #include <sstream>
 #include <limits>
 
-#include "../ajaj_common.hpp"
-#include "../sparse_interface.hpp"
-#include "../vertex.hpp"
-#include "../MPX.hpp"
+//#include "../common_defs.hpp"
+//#include "../sparse_interface.hpp"
+//#include "../vertex.hpp"
+//#include "../MPX.hpp"
 
 namespace oldxxx {
   ajaj::MPO_matrix MakeHamiltonian(const ajaj::Vertex& modelvertex, const ajaj::VertexParameterArray& couplingparams){
