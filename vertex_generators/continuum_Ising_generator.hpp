@@ -165,6 +165,7 @@ namespace continuumIsing {
     const double spectrum_cutoff=inputs[2].Value;
 
     bool use_sector(1); //default true
+    double transverse_field(0.0);
     if (inputs.size()>3){
       use_sector=static_cast<int>(inputs[3].Value);
     }
@@ -883,51 +884,75 @@ namespace continuumIsing {
       M.entry(i+offset_to_last_block,i+offset_to_last_block,1.0);
     }
     //now the more annoying pieces
+    if (couplingparams[1].Value!=0.0){
+      //must check that use sector is turned off, or quit
+      if (modelvertex.Spectrum.getChargeRules().size()!=1){
+	std::cout << "Error: if a local longitudinal field is applied the CONSERVE_SECTOR flag must be 0!" <<std::endl;
+	exit(1);
+      }
+
+      //also put in a longitudinal field
+      const double long_field(couplingparams[1].Value);
+      //loop over Operators[0] and multiply by param
+      const ajaj::SparseMatrix& spin=modelvertex.Operators[0].MatrixElements;
+      for (ajaj::Sparseint col=0;col<spin.cols();++col){
+	for (ajaj::Sparseint p=spin.get_p(col);p<spin.get_p(col+1);++p){
+	  ajaj::MPXInt row=spin.get_i(p);
+	  if (modelvertex.Spectrum[row]==modelvertex.Spectrum[col]){ //check momenta are equal
+	    M.entry(row+offset_to_last_block,col,long_field*spin.get_x(p));
+	  }
+	}
+      }
+    }
+
+
     //for each coupling operator
-    for (size_t c=0;c<couplingparams.size();++c){ //assume each of the coupling params refers to an operator
+    for (size_t c=0;c<1;++c){ //assume each of the coupling params refers to an operator
       ajaj::Sparseint operator_col_offset=c*differencecombinations.size()+1; //+1 for identity matrix in first block
       ajaj::Sparseint operator_row_offset=(couplingparams.size()-c-1)*differencecombinations.size()+1; //reversal, +1 for identity
 
       double operatorparam=couplingparams[c].Value;
-      for (ajaj::Sparseint col=0;col<modelvertex.Operators[c].MatrixElements.cols();++col){
-	for (ajaj::Sparseint p=modelvertex.Operators[c].MatrixElements.get_p(col);p<modelvertex.Operators[c].MatrixElements.get_p(col+1);++p){
-	  ajaj::Sparseint i=modelvertex.Operators[c].MatrixElements.get_i(p);
-	  //
-	  //this could easily be a lookup function for QNCombinations
-	  ajaj::State diffstate=modelvertex.Spectrum[i]-modelvertex.Spectrum[col];
-	  //now look through charge groups to find MPO indices
-	  ajaj::Sparseint MPO_subcol=0;
-	  ajaj::Sparseint MPO_subrow=0;
-	  if (diffstate==-diffstate){ //involution block
-	    for (size_t l=0;l<differencecombinations.InvolutionPairs.size();++l){
-	      if (diffstate==differencecombinations.InvolutionPairs[l].PairState){
-		MPO_subcol=l;
-		MPO_subrow=l; //involution pairs don't get reversed
-		break;
+      if (operatorparam!=0.0){
+	for (ajaj::Sparseint col=0;col<modelvertex.Operators[c].MatrixElements.cols();++col){
+	  for (ajaj::Sparseint p=modelvertex.Operators[c].MatrixElements.get_p(col);p<modelvertex.Operators[c].MatrixElements.get_p(col+1);++p){
+	    ajaj::Sparseint i=modelvertex.Operators[c].MatrixElements.get_i(p);
+	    //
+	    //this could easily be a lookup function for QNCombinations
+	    ajaj::State diffstate=modelvertex.Spectrum[i]-modelvertex.Spectrum[col];
+	    //now look through charge groups to find MPO indices
+	    ajaj::Sparseint MPO_subcol=0;
+	    ajaj::Sparseint MPO_subrow=0;
+	    if (diffstate==-diffstate){ //involution block
+	      for (size_t l=0;l<differencecombinations.InvolutionPairs.size();++l){
+		if (diffstate==differencecombinations.InvolutionPairs[l].PairState){
+		  MPO_subcol=l;
+		  MPO_subrow=l; //involution pairs don't get reversed
+		  break;
+		}
 	      }
 	    }
-	  }
-	  else {
-	    for (size_t l=0;l<differencecombinations.OrderedPairs.size();++l){
-	      if (diffstate==differencecombinations.OrderedPairs[l].PairState){
-		MPO_subcol=l+differencecombinations.InvolutionPairs.size();
-		MPO_subrow=differencecombinations.size()-l-1; //reversed
-		break;
+	    else {
+	      for (size_t l=0;l<differencecombinations.OrderedPairs.size();++l){
+		if (diffstate==differencecombinations.OrderedPairs[l].PairState){
+		  MPO_subcol=l+differencecombinations.InvolutionPairs.size();
+		  MPO_subrow=differencecombinations.size()-l-1; //reversed
+		  break;
+		}
 	      }
 	    }
+	    //end of possible lookup function
+	    
+	    std::complex<double> x=modelvertex.Operators[c].MatrixElements.get_x(p);
+	    //lowest block row
+	    M.entry(offset_to_last_block+i,modelvertex.Spectrum.size()*(operator_col_offset+MPO_subcol)+col,x);
+	    //first block col
+	    M.entry(modelvertex.Spectrum.size()*(operator_row_offset+MPO_subrow)+i,col,x*operatorparam*modelvertex.Parameters[0].Value);
 	  }
-	  //end of possible lookup function
-
-	  std::complex<double> x=modelvertex.Operators[c].MatrixElements.get_x(p);
-	  //lowest block row
-	  M.entry(offset_to_last_block+i,modelvertex.Spectrum.size()*(operator_col_offset+MPO_subcol)+col,x);
-	  //first block col
-	  M.entry(modelvertex.Spectrum.size()*(operator_row_offset+MPO_subrow)+i,col,x*operatorparam*modelvertex.Parameters[0].Value);
 	}
       }
     }
-    ajaj::StateArray b;
 
+    ajaj::StateArray b;
     b.push_back(ajaj::State(modelvertex.Spectrum[0].getChargeRules())); //push back 'zero state'
     for (size_t c=0;c<couplingparams.size();++c){ //do for each operator
       for (size_t l=0;l<differencecombinations.InvolutionPairs.size();++l){

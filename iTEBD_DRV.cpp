@@ -61,9 +61,6 @@ int main(int argc, char** argv){
 
     ajaj::DataOutput results(ajaj::OutputName(Rss.str(),"Evolution.dat"),"Index, Time, Truncation, Entropy, abs(Overlap), Real(Overlap), Im(Overlap)");
 
-      //ajaj::UnitCell Initial(MakeProductStateUnitCell(myModel.basis(),0,ajaj::State(myModel.basis().getChargeRules())));
-    //const ajaj::UnitCell Initial(MakeProductStateUnitCell(myModel.basis(),std::vector<std::pair<ajaj::uMPXInt,double> > ({{0,1.0/sqrt(2.0)},{1,1.0/sqrt(2.0)}}),ajaj::State(myModel.basis().getChargeRules())));
-
     ajaj::iTEBD infrun(myModel.H_MPO,Initial,time_step,results,Name,trotter_order);
     infrun.evolve(number_of_time_steps,measured_operators,CHI/*bond dimension*/,minS/*min s val*/,measurement_interval);
     return 0;

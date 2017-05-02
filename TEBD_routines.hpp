@@ -79,30 +79,6 @@ namespace ajaj {
     uMPXInt order() const {return m_EvolutionOperators.order();}
   };
 
-  /*class TEBD : public TimeBase {
-  private:
-    const std::string MPSName_;
-    const EigenStateArray& Spectrum_;
-    const uMPXInt NumVertices_;
-    const MPX_matrix SingleVertexOp_;
-    const SeparatedTrotterDecomposition EvolutionOps_;
-
-    void left_canonise(uMPXInt chi=0, double minS=0.0);
-    void left_canonise_measure(uMPXInt chi,double minS,std::vector<MultiVertexMeasurement>& measurements);
-
-    void right_canonise(double minS=0.0);
-    void apply_to_odd_bonds(const MPX_matrix& U, const MPX_matrix&  Ubar);
-    void apply_to_even_bonds(const MPX_matrix& U, const MPX_matrix&  Ubar);
-
-  public:
-    TEBD(const MPO_matrix& H, const std::string& MPSName, uMPXInt NumVertices, double time_step_size, DataOutput& results, uMPXInt order=1);
-    TEBD(const MPO_matrix& H, const std::string& MPSName, const MPS_matrix& InitialMPS_matrix, uMPXInt NumVertices, double time_step_size, DataOutput& results, uMPXInt order=1);
-    void evolve(uMPXInt num_steps, std::vector<MultiVertexMeasurement>& measurements, uMPXInt bond_dimension=0, double minS=0.0, uMPXInt measurement_interval=1);
-    void left_info();
-    void right_info();
-
-  };*/
-
 class TEBD : public TimeBase {
 private:
   const std::string MPSName_;
