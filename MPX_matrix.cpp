@@ -278,8 +278,7 @@ namespace ajaj{
       rows*=m_Indices.at(i).size();
     }
     for (size_t i=m_NumRowIndices;i<m_Indices.size();++i){
-      cols*=m_Indices.at(i).size();
-      
+      cols*=m_Indices.at(i).size();    
     }
     if (rows!=m_Matrix.rows()){std::cout << "Incorrect row dimensions: " << rows << " " << m_Matrix.rows() << std::endl; return 0;}
     if (cols!=m_Matrix.cols()){std::cout << "Incorrect col dimensions: " << cols << " " << m_Matrix.cols() << std::endl; return 0;}
@@ -602,11 +601,9 @@ namespace ajaj{
       for (size_t i=0;i<numindices;++i){
 	indices.push_back(load_MPXIndex_binary(infile,spectrum));
       }
-      MPX_matrix ans(spectrum,indices,numrowindices,load_SparseMatrix_binary(infile));
-      //ans.print_indices();
-      return ans;
+      return MPX_matrix(spectrum,indices,numrowindices,load_SparseMatrix_binary(infile));
     }
-    else return MPX_matrix(spectrum);
+    return MPX_matrix(); //return null if it didn't work
   }
 
   MPX_matrix load_MPX_matrix(const std::string& filename,const Basis& spectrum){

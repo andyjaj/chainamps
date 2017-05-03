@@ -57,7 +57,7 @@ namespace ajaj{
     check();
   }
   /*MPS_matrix::MPS_matrix(const MPX_matrix& MPXref) : MPX_matrix(MPXref)
-  {
+    {
     check();
     }*/
 
@@ -66,10 +66,73 @@ namespace ajaj{
     check();
   }
 
-  /*MPS_matrix::MPS_matrix(MPS_matrix&& rhs) noexcept : MPS_matrix()
-  {
-    MPS_swap(*this,rhs);
-    }*/
+  const MPXIndex& MPS_matrix::getInwardMatrixIndex() const {
+    const MPXIndex* Indexptr(nullptr);
+    for (auto&& i : m_Indices){
+      if (i.Ingoing() && !i.Physical()) {Indexptr=&i; break;}
+    }
+    return *Indexptr;
+  }
+  const MPXIndex& MPS_matrix::getOutwardMatrixIndex() const {
+    const MPXIndex* Indexptr(nullptr);
+    for (auto&& i : m_Indices){
+      if (i.Outgoing() && !i.Physical()) {Indexptr=&i; break;}
+    }
+    return *Indexptr;
+  }
+  const MPXIndex& MPS_matrix::getPhysicalIndex() const {
+    const MPXIndex* Indexptr(nullptr);
+    for (auto&& i : m_Indices){
+      if (i.Physical()) {Indexptr=&i; break;}
+    }
+    return *Indexptr;
+  }
+
+  MPXInt MPS_matrix::InwardMatrixIndexNumber() const {
+    for (uMPXInt i=0; i< m_Indices.size() ;++i){
+      if (m_Indices[i].Ingoing() && !m_Indices[i].Physical()) {return i;}
+    }
+    return -1;//should never happen!
+  }
+
+  MPXInt MPS_matrix::OutwardMatrixIndexNumber() const {
+    for (uMPXInt i=0; i< m_Indices.size() ;++i){
+      if (m_Indices[i].Outgoing() && !m_Indices[i].Physical()) {return i;}
+    }
+    return -1;//should never happen!
+  }
+  MPXInt MPS_matrix::PhysicalIndexNumber() const {
+    for (uMPXInt i=0; i< m_Indices.size() ;++i){
+      if (m_Indices[i].Physical()) {return i;}
+    }
+    return -1;//should never happen!
+  }
+
+  MPS_matrix&& MPS_matrix::left_shape() {
+    if (is_left_shape()){
+      return std::move(*this);
+    }
+    else { //assume it was right shaped
+      std::vector<MPXInt> olddims(dimsvector());
+      swap(m_Indices[0],m_Indices[1]);
+      m_Matrix=std::move(reshape(m_Matrix,m_NumRowIndices,2,olddims,reorder102,0));
+      m_NumRowIndices=2;
+      return std::move(*this);
+    }
+  }
+
+  MPS_matrix&& MPS_matrix::right_shape() {
+    if (is_right_shape()){
+      return std::move(*this);
+    }
+    else { //assume it was left shaped
+      std::vector<MPXInt> olddims(dimsvector());
+      swap(m_Indices[0],m_Indices[1]);
+      m_Matrix=std::move(reshape(m_Matrix,m_NumRowIndices,1,olddims,reorder102,0));
+      m_NumRowIndices=1;
+      return std::move(*this);
+    }
+  }
 
   bool MPSDecomposition::store(const std::string& LeftName, const std::string& RightName) const {
     std::ofstream LeftOutfile;
@@ -118,7 +181,7 @@ namespace ajaj{
   }
 
   bool MPSDecomposition::store_right(const std::string& Name, uMPXInt nr) const{
-      return RightMatrix.store(RightName(Name,nr));
+    return RightMatrix.store(RightName(Name,nr));
   }
 
   void MPSDecomposition::OutputPhysicalIndexDensities(std::ofstream& d) const {
@@ -147,7 +210,7 @@ namespace ajaj{
     return MPS_matrix(std::move(load_MPX_matrix_binary(filename,spectrum)));
   }
 
-  MPS_matrix MakeProductState(const Basis& spectrum, const std::vector<std::pair<uMPXInt,double > >& state_index_vec,State leftstate){
+  MPS_matrix MakeProductState(const Basis& spectrum, const std::vector<std::pair<uMPXInt,std::complex<double> > >& state_index_vec,State leftstate){
     if (state_index_vec.size()){
       std::vector<MPXIndex> indices;
       indices.emplace_back(1,spectrum);
@@ -171,7 +234,7 @@ namespace ajaj{
   }
 
   MPS_matrix MakeProductState(const Basis& spectrum, uMPXInt state_index, State leftstate){
-    return MakeProductState(spectrum,std::vector<std::pair <uMPXInt,double> >(1,std::pair<uMPXInt,double> (state_index,1.0)),leftstate);
+    return MakeProductState(spectrum,std::vector<std::pair <uMPXInt,std::complex<double> > >(1,std::pair<uMPXInt,std::complex<double> > (state_index,1.0)),leftstate);
   }
 
 }

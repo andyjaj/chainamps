@@ -81,6 +81,18 @@ namespace ajaj {
     return is;
   }
 
+  typedef std::vector<std::vector<std::pair<size_t,std::complex<double> > > > C_Spec;
+
+  /* std::istream& operator>>(std::istream& is, C_Spec& c)
+  {
+    //drop initial whitespace
+    is >> std::ws;
+    C_Spec temp;
+    bool failure(0);
+    std::string s;
+
+    } */ 
+
   struct Arg: public option::Arg
   {
     static option::ArgStatus Unknown(const option::Option& option, bool msg)
@@ -166,7 +178,7 @@ namespace ajaj {
     }
   };
 
-  enum optionIndex {UNKNOWN,CHI,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET,FINITE_MEASUREMENT,NEV,ENTANGLEMENT,VERTEX_ENTANGLEMENT};
+  enum optionIndex {UNKNOWN,CHI,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET,FINITE_MEASUREMENT,NEV,ENTANGLEMENT,VERTEX_ENTANGLEMENT,C_SPECIFIER};
 
   const option::Descriptor store_usage[2] =
     {

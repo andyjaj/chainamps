@@ -11,7 +11,7 @@
 
 namespace ajaj{
 
-  UnitCell MakeProductStateUnitCell(const Basis& basis, const std::vector<std::pair<uMPXInt,double> >& state_index_vec, State leftstate, uMPXInt length){
+  UnitCell MakeProductStateUnitCell(const Basis& basis, const std::vector<std::pair<uMPXInt,std::complex<double> > >& state_index_vec, State leftstate, uMPXInt length){
     UnitCell ans(basis);
     if (state_index_vec.size()){
       for (uMPXInt u=0;u<length;++u){
@@ -24,7 +24,7 @@ namespace ajaj{
   }
 
   UnitCell MakeProductStateUnitCell(const Basis& basis, uMPXInt state_index, State leftstate, uMPXInt length){
-    return MakeProductStateUnitCell(basis,std::vector<std::pair<uMPXInt,double> >({{state_index,1.0}}),leftstate,length);
+    return MakeProductStateUnitCell(basis,std::vector<std::pair<uMPXInt,std::complex<double> > >({{state_index,1.0}}),leftstate,length);
   }
 
 

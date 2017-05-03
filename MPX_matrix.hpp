@@ -68,7 +68,7 @@ namespace ajaj{
     //1st arg is a ref to the vertex spectrum,
     //2nd arg is a ref to where all the state arrays are stored
     MPX_matrix() noexcept : m_SpectrumPtr(nullptr) {}; 
-    MPX_matrix(const Basis& spectrum) noexcept; /**< Default constructor. All tensors need to know about the physical spectrum. This might be a design flaw.*/
+    MPX_matrix(const Basis& spectrum) noexcept; /**< All tensors need to know about the physical spectrum. This might be a design flaw.*/
     MPX_matrix(const Basis& spectrum, const std::vector<MPXIndex>& indices, const Sparseint numrowindices, const SparseMatrix& matrix); /**< Constructor, indices are listed in order from left to right. numrowindices lets the object know how many of the indices are associated with rows of the SparseMatrix. */
     MPX_matrix(const Basis& spectrum, const std::vector<MPXIndex>& indices, const Sparseint numrowindices, SparseMatrix&& matrix);
     MPX_matrix(const Basis& spectrum, const MPXIndex& index, const std::vector<std::complex<double> >& values,bool inverse=0); /**< Diagonal constructor, with possible inversion of values.*/
@@ -80,6 +80,8 @@ namespace ajaj{
     MPX_matrix(const MPX_matrix& rhs) : m_SpectrumPtr(rhs.m_SpectrumPtr), m_Indices(rhs.m_Indices), m_NumRowIndices(rhs.m_NumRowIndices), m_Matrix(copy(rhs.m_Matrix)){}
 
     bool isEmpty() const {return !(m_SpectrumPtr);} /**< Check to see if null.*/
+    bool empty() const {return !(m_SpectrumPtr);} /**< Check to see if null.*/
+
 
     const MPXIndex& Index(Sparseint i) const {return m_Indices.at(i);} /**< Lookup the StateArray corresponding to a particular index, interface to storage.*/
     const Basis& GetPhysicalSpectrum() const {return *m_SpectrumPtr;} /**< Return ref to the Physical spectrum, needs renaming to match convention */

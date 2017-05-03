@@ -6,6 +6,7 @@
 #define COMMON_H
 #include <utility> //for std::pair
 #include <vector> //for std::vector
+#include <complex>
 #include <cs.h> //for SuiteSparse_long
 
 /**
@@ -21,6 +22,9 @@ namespace ajaj {
   typedef size_t uMPXInt; //unsigned ptr size type so 32bit on a 32bit machine and 64bit otherwise
   /** Type used for pairing indices. Lots of functions take a pair of MPX indices as arguments.*/
   typedef std::pair<MPXInt,MPXInt> MPXPair;
+  typedef std::pair<uMPXInt,std::complex<double> > c_specifier;
+  typedef std::vector<c_specifier> c_specifier_vector;
+  typedef std::vector<c_specifier_vector> c_specifier_array;
 
   static const std::vector<MPXPair> contract00 {{MPXPair(0,0)}};
   static const std::vector<MPXPair> contract01(1,MPXPair(0,1));
