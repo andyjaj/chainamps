@@ -95,8 +95,6 @@ int main(int argc, char** argv){
 
     //go through and make pointers
 
-    
-
     std::vector<ajaj::MPO_matrix> measured_operators(1,myModel.vertex.make_one_site_operator(1)); //for Ising this is the fermion occupation number on a chain
     //ajaj::DataOutput results(ajaj::OutputName(RuntimeArgs.filename(),"Evolution.dat"),"Index, Time, Truncation, Entropy, abs(Overlap), Real(Overlap), Im(Overlap), Re(Op1), Im(Op1), ...");
     std::ostringstream commentline;
@@ -119,28 +117,33 @@ int main(int argc, char** argv){
       }
     }
 
-    //TEBD stuff
+    //TEBD, select between files, product state definition by c numbers, or default
+
+    std::string StateName;
+    ajaj::c_specifier_array CSpec;
+
     if (RuntimeArgs.initial_state_name()!=""){
-      if (ajaj::CheckMPSFilesExist(RuntimeArgs.initial_state_name(),number_of_vertices)){
-	ajaj::TEBD finrun(myModel.H_MPO,RuntimeArgs.initial_state_name(),number_of_vertices,time_step,results,trotter_order);
-	finrun.evolve(number_of_time_steps,measurements,CHI/*bond dimension*/,minS/*min s val*/,measurement_interval);
-      }
-      else {
-	return 1;
-      }
+      StateName=RuntimeArgs.initial_state_name();
+    }
+    else if (RuntimeArgs.c_number_filename()!=""){
+      StateName=RuntimeArgs.c_number_filename();
+      CSpec=ajaj::LoadCNumbers(RuntimeArgs.c_number_filename());
     }
     else {
-      ajaj::SparseMatrix SpM(myModel.basis().size(),1,1);
-      SpM.entry(0,0,1.0);
-      SpM.cheap_finalise();
-      ajaj::MPS_matrix A(myModel.basis(),std::vector<ajaj::MPXIndex>({{ajaj::MPXIndex(1,myModel.basis()),ajaj::MPXIndex(1,ajaj::StateArray(1,myModel.basis()[0])),ajaj::MPXIndex(0,ajaj::StateArray(1,myModel.basis()[0]))}}),SpM);
-      ajaj::TEBD finrun(myModel.H_MPO,std::string("TEBDState"),A,number_of_vertices,time_step,results,trotter_order); //use the provided MPS_matrix A, give state the name "TEBDState"
-      finrun.evolve(number_of_time_steps,measurements,CHI/*bond dimension*/,minS/*min s val*/,measurement_interval);
+      //default case, product state of vertex states in
+      std::cout << "No initial state specified." << std::endl <<"Defaulting to product state of local basis [0] states." <<std::endl; 
+      StateName="DefaultState";
+      CSpec=ajaj::c_specifier_array(1,ajaj::c_specifier_vector(1,ajaj::c_specifier(0,1.0)));
     }
-    return 0;
-  }
-  else {
-    return 1;
-  }
 
+    std::cout << "Using initial state '" << StateName << "'." <<std::endl; 
+
+    ajaj::FiniteMPS F(myModel.basis(),StateName,number_of_vertices,CSpec); //if CSpec is empty, nothing is changed.
+    ajaj::TEBD finrun(myModel.H_MPO,F,time_step,results,trotter_order);
+    finrun.evolve(number_of_time_steps,measurements,CHI/*bond dimension*/,minS/*min s val*/,measurement_interval);
+    if (finrun.good()){
+      return 0;
+    }
+  }
+  return 1;
 }

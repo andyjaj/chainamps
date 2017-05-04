@@ -17,40 +17,36 @@ namespace ajaj{
 
   FiniteMPS::FiniteMPS(const Basis& model_basis, const std::string& name, uMPXInt num, bool canon, uMPXInt mix_idx): Basis_(model_basis),MPSName_(name),NumVertices_(num),Current_(std::pair<uMPXInt,MPS_matrix>(0,MPS_matrix(model_basis))),Canonical_(canon),MixPoint_(mix_idx){}
 
-  FiniteMPS::FiniteMPS(const Basis& model_basis, const std::string& name, uMPXInt num,const c_specifier_array& coeffs) : Basis_(model_basis),MPSName_(name),NumVertices_(num),Current_(std::pair<uMPXInt,MPS_matrix>(0,MPS_matrix(model_basis))),Canonical_(1),MixPoint_(num) {
-
-    //check coeffs for legality first?
-      
-    if (coeffs.size()==0){
-      std::cout << "Error: Empty c number specification for state!" <<std::endl; exit(1);
-    }
-    for (auto&& c_vect : coeffs){
-      if (c_vect.size()==0){
-	std::cout << "Error: Empty c number specification for vertex!" <<std::endl; exit(1);
-      }
-      State test_state(Basis_[c_vect.begin()->first]);
-      for (auto&& c_pair : c_vect){
-	if (Basis_[c_pair.first]!=test_state){
-	  std::cout << "Error: Inconsistent c numbers for vertex state: " << c_vect.begin()->first << " " << c_pair.first  << std::endl; exit(1);
+  FiniteMPS::FiniteMPS(const Basis& model_basis, const std::string& name, uMPXInt num,const c_specifier_array& coeffs) : Basis_(model_basis),MPSName_(name),NumVertices_(num),Current_(std::pair<uMPXInt,MPS_matrix>(0,MPS_matrix(model_basis))),Canonical_(0),MixPoint_(num+1) {
+    //if coeffs is empty, then nothing is changed
+    if (coeffs.size()){
+      for (auto&& c_vect : coeffs){
+	if (c_vect.size()==0){
+	  std::cout << "Error: Empty c number specification for vertex!" <<std::endl; exit(1);
 	}
-	else {std::cout << "(" << c_pair.first << " : " << c_pair.second << ") ";}
+	State test_state(Basis_[c_vect.begin()->first]);
+	for (auto&& c_pair : c_vect){
+	  if (Basis_[c_pair.first]!=test_state){ //check for charge consistency (i.e. preservation of good quantum numbers)
+	    std::cout << "Error: Inconsistent c numbers for vertex state conservation laws: " << c_vect.begin()->first << " " << c_pair.first  << std::endl; exit(1);
+	  }
+	  else {std::cout << "(" << c_pair.first << " : " << c_pair.second << ") ";}
+	}
+	std::cout << std::endl;
       }
-      std::cout << std::endl;
-    }
-
-    State LeftState(Basis_.getChargeRules()); //dummy state (all zeros)
-    size_t counter=0;
-    for (uMPXInt n=1;n<=NumVertices_;++n){
-      auto& c_vec=coeffs[counter++];
-      Current_=std::pair<uMPXInt,MPS_matrix>(n,MakeProductState(Basis_,c_vec,LeftState));
-      LeftState+=Basis_[c_vec.begin()->first];
-      if(counter==coeffs.size()){
-	counter=0;//back to beginning of c number defns
+      
+      State LeftState(Basis_.getChargeRules()); //dummy state (all zeros)
+      size_t counter=0;
+      for (uMPXInt n=1;n<=NumVertices_;++n){
+	auto& c_vec=coeffs[counter++];
+	Current_=std::pair<uMPXInt,MPS_matrix>(n,MakeProductState(Basis_,c_vec,LeftState));
+	LeftState+=Basis_[c_vec.begin()->first];
+	if(counter==coeffs.size()){
+	  counter=0;//back to beginning of c number defns
+	}
+	Current_.second.store(filename(position(),1/*Left*/));
       }
-      Current_.second.store(filename(position(),1/*Left*/));
+      //can't guarantee that we are canonical
     }
-    Canonical_=1;
-    MixPoint_=NumVertices_;
   }
 			      
   void FiniteMPS::fetch_matrix(uMPXInt i, bool Left){
@@ -98,6 +94,11 @@ namespace ajaj{
   }																		 
 
   std::complex<double> FiniteMPS::makeLC(const std::string& name){
+    std::cout << "Left canonising initial state..." <<std::endl;
+    //do a check
+    if (CheckFilesExist()==CanonicalType::Error){
+      return 0.0;
+    }
 
     MPX_matrix Vd;
     if (Canonical_ && MixPoint_ < NumVertices_ && MixPoint_ > 0){ //lambda should exist and be used
@@ -134,5 +135,99 @@ namespace ajaj{
       return Vd.Trace();
     }
   }
+
+  CanonicalType FiniteMPS::CheckFilesExist(){ //checks files exist for left, right or mixed, doesn't establish canon
+    //assume nothing about defined Canonical_ or MixPoint_
+
+    //check for a lambda file
+    bool LAMBDA(0);
+    uMPXInt MP(NumVertices_+1);
+
+    for (uMPXInt L=1;L<=NumVertices_;++L){
+      std::stringstream Lambdanamestream;
+      Lambdanamestream << MPSName_ << "_Lambda_" << L << "_" << NumVertices_-L << ".MPX_matrix";
+      std::ifstream lambdafile;
+      lambdafile.open(Lambdanamestream.str().c_str(),ios::in);
+      if (lambdafile.is_open()){
+	LAMBDA=1;
+	MP=L;
+      }
+    }
+
+    //then check for left and right parts
+    uMPXInt LMAX(0);
+    uMPXInt RMAX(0);
+
+    for (uMPXInt L=1;L<=NumVertices_;++L){
+      std::ifstream Lfile;
+      Lfile.open(filename(L,1));
+      if (Lfile.is_open()){
+	LMAX=L;
+      }
+      else {
+	break;
+      }
+    }
+
+    for (uMPXInt R=1;R<=NumVertices_;++R){
+      std::ifstream Rfile;
+      Rfile.open(filename(R,0));
+      if (Rfile.is_open()){
+	RMAX=R;
+      }
+      else {
+	break;
+      }
+    }
+
+    //if lambda exists, then we assume mixed over all other types
+
+    if (LAMBDA && LMAX>=MP && RMAX >=NumVertices_-MP){
+      //by assumption...
+      Canonical_=1;
+      MixPoint_=MP;
+      return CanonicalType::Mixed;
+    }
+    else if (LMAX==NumVertices_){
+      //assume nothing
+      MixPoint_=NumVertices_+1;
+      return CanonicalType::Left;
+    }
+    else if (RMAX==NumVertices_){ //unlikely case, as drivers don't output right canonical files alone
+      //by assumption...
+      Canonical_=1;
+      MixPoint_=0;
+      return CanonicalType::Right;
+    }
+    else {
+      //missing files
+      std::cout <<"Error: Missing files for specified Finite MPS state!" <<std::endl;
+      return CanonicalType::Error;
+    }
+    
+  }
+
+  c_specifier_array LoadCNumbers(const std::string& filename){
+    std::ifstream infile;
+    infile.open(filename.c_str(),ios::in);
+    if (infile.is_open()){
+      c_specifier_array c;
+      std::string s;
+      while (getline(infile,s)){
+	if (s.empty()) continue;
+	std::stringstream ss(s);
+	if (ss.peek()=='#') continue;
+	c.push_back(c_specifier_vector());
+	uMPXInt idx;
+	std::complex<double> value;
+	while (ss >> idx >> value){ //take in pairs
+	  c.back().push_back(c_specifier(idx,value));
+	}
+      }
+      return c;
+    }
+    return c_specifier_array();
+  }
+
 
 }

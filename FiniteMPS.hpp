@@ -21,6 +21,8 @@
 
 namespace ajaj{
 
+  enum class CanonicalType : unsigned short int {Left, Right, Mixed, Non, Error};
+
   class FiniteMPS{
   private:
     const Basis& Basis_;
@@ -33,6 +35,7 @@ namespace ajaj{
     void fetch_matrix(uMPXInt i,bool Left=1); /**<Get a specific matrix*/
     std::string filename(uMPXInt i,bool Left=1,const std::string& name=std::string()) const;
     void store_current();
+    CanonicalType CheckFilesExist();
 
   public:
 
@@ -41,20 +44,21 @@ namespace ajaj{
     FiniteMPS(const Basis& model_basis, const std::string& name, uMPXInt num,const c_specifier_array& coeffs); /**< Specify a finite MPS product state, makes it left canonical*/
     
     uMPXInt position() const {return Current_.first;}
+
     const MPS_matrix& matrix() const {return Current_.second;} //const function to get const ref to current buffered matrix
     const MPS_matrix& matrix(uMPXInt p,bool Left=1) { //non const function to buffer a particular matrix
       fetch_matrix(p,Left); //buffer matrix
       return matrix(); //return const ref
     }
+
     uMPXInt size() const {return NumVertices_;}
+    const std::string& name() {return MPSName_;}
 
-    std::complex<double> makeLC(const std::string& new_name=std::string());
-
-    //friend FiniteMPS MakeLeftCanonicalMPS(FiniteMPS& oldF, const std::string& new_name);
+    std::complex<double> makeLC(const std::string& new_name=std::string()); /**< 'Ensures' left canonical, and makes an optional copy, returns 0.0 if there is an error. */
 
   };
 
-  //FiniteMPS MakeLeftCanonicalMPS(FiniteMPS& oldF const std::string& new_name=std::string());
+  c_specifier_array LoadCNumbers(const std::string& filename);
 
 }
 

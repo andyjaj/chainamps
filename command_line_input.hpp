@@ -9,6 +9,7 @@
 #include <sstream>
 #include <limits>
 #include <vector>
+#include <complex>
 #include "optionparser/optionparser.h" //The Lean Mean C++ Option Parser. See .h file for license info.
 
 namespace ajaj {
@@ -80,18 +81,6 @@ namespace ajaj {
 
     return is;
   }
-
-  typedef std::vector<std::vector<std::pair<size_t,std::complex<double> > > > C_Spec;
-
-  /* std::istream& operator>>(std::istream& is, C_Spec& c)
-  {
-    //drop initial whitespace
-    is >> std::ws;
-    C_Spec temp;
-    bool failure(0);
-    std::string s;
-
-    } */ 
 
   struct Arg: public option::Arg
   {
@@ -176,6 +165,20 @@ namespace ajaj {
       if (msg) std::cout << "Option '" << std::string(option.name,option.namelen) << "' requires a comma separated list of measurements (operator,position,operator,position,...)" <<std::endl;
       return option::ARG_ILLEGAL;
     }
+
+    /*static option::ArgStatus CNumberSpecifier(const option::Option& option, bool msg)
+    {
+      if (option.arg != 0 && option.arg[0] && option.arg[0] != '-'){
+	C_Spec check;
+	std::istringstream ss(option.arg);
+	ss >>check;
+	if (check.size()) return option::ARG_OK;
+      }
+
+      if (msg) std::cout << "Option '" << std::string(option.name,option.namelen) << "' requires list of c number specifications." <<std::endl;
+      return option::ARG_ILLEGAL;
+    }*/
+
   };
 
   enum optionIndex {UNKNOWN,CHI,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET,FINITE_MEASUREMENT,NEV,ENTANGLEMENT,VERTEX_ENTANGLEMENT,C_SPECIFIER};
@@ -234,7 +237,7 @@ namespace ajaj {
       { 0, 0, 0, 0, 0, 0 }
     };
 
-  const option::Descriptor TEBD_usage[9] =
+  const option::Descriptor TEBD_usage[10] =
     {
       {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: TEBD_DRV.bin [-B <number> -n <number> -s <number> -O <number> -i <initial_state_name>] <model_filename> <number of vertices(chains)> \n  <number of vertices/chains> must be EVEN.\n"},
       {CHI,0,"B","bond-dimension",Arg::PositiveNumeric,"  -B <number>, \t--bond-dimension=<number>"
@@ -251,6 +254,10 @@ namespace ajaj {
        "  \tSpecify an initial state." },
       {FINITE_MEASUREMENT,0,"M","finite-measurement",Arg::FiniteMeasurementInfo,"  -M <opfile1>,<vertex1>[,<opfile2>,<vertex2>], \t--finite-measurement=<opfile1>,<vertex1>[,<opfile2>,<vertex2>]"
        "  \tSpecify a one or two point measurement."},
+      //{C_SPECIFIER,0,"c","c-number-specifier",Arg::CNumberSpecifier," -c {<idx>,<c-value>,<idx>,<c-value>,...},{...},"
+      // "  \tSpecify c-numbers for initial state."},
+      {C_SPECIFIER,0,"c","c-number-file",Arg::NonEmpty," -c <c-specifier-file>,"
+       "  \tFile with c-numbers for initial state."},
       { 0, 0, 0, 0, 0, 0 }
     };
 
@@ -482,6 +489,7 @@ namespace ajaj {
     std::string initial_state_name_;
     unsigned int N_; //used by finite codes
     std::vector<StringIndexPairs> finite_measurements_;
+    std::string c_number_filename_;
 
   public:
     TEBD_Args(int argc, char* argv[]) : Base_Args(argc,argv,TEBD_usage), num_steps_(1), step_size_(0.1), trotter_order_(2), measurement_interval_(1),N_(0){
@@ -527,6 +535,16 @@ namespace ajaj {
 	      finite_measurements_.emplace_back(temp);
 	  }
 	}
+	if (options[C_SPECIFIER]){
+	  c_number_filename_=std::string(options[C_SPECIFIER].arg);
+	}
+
+	if (options[C_SPECIFIER] && options[INITIAL_STATE_NAME]){
+	  valid_=0;
+	  std::cout <<"Cannot specify initial state through option -c and -i simultaneously!"<<std::endl;
+	}
+	  
+
       }
       print();
     }
@@ -553,6 +571,11 @@ namespace ajaj {
     const std::vector<StringIndexPairs>& finite_measurements() const {
       return finite_measurements_;
     }
+
+    const std::string& c_number_filename() const {
+      return c_number_filename_;
+    }
+
   };
 
   class iMEAS_Args : public Base_Args{

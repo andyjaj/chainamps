@@ -449,7 +449,18 @@ namespace ajaj{
     std::cout << "Norm at end of left canonisation: " << abs(Vd.Trace()) << std::endl; 
   }
 
-  TEBD::TEBD(const MPO_matrix& H, const std::string& MPSName, uMPXInt NumVertices, double time_step_size, DataOutput& results, uMPXInt order) : TimeBase(time_step_size,results),MPSName_(MPSName),Basis_(H.basis()),NumVertices_(NumVertices),SingleVertexOp_(MakeSingleSiteEvolutionOperator(H,time_step_size)),m_EvolutionOperators(TrotterDecomposition(H,time_step_size,order)) {
+  TEBD::TEBD(const MPO_matrix& H, FiniteMPS& F, double time_step_size, DataOutput& results, uMPXInt order) : TimeBase(time_step_size,results),MPSName_(F.name()),Basis_(H.basis()),NumVertices_(F.size()),SingleVertexOp_(MakeSingleSiteEvolutionOperator(H,time_step_size)),m_EvolutionOperators(TrotterDecomposition(H,time_step_size,order)),GoodInitial_(0) {
+    std::stringstream Evolvingnamestream;
+    Evolvingnamestream << "Evolving_" << MPSName_;
+    std::complex<double> initial_weight(F.makeLC(Evolvingnamestream.str())); //combination of initial state norm and overall phase
+
+    std::cout << "Initial state weight was " << initial_weight <<std::endl;
+
+    if (initial_weight!=0.0)
+      GoodInitial_=1;
+  }
+
+  /*TEBD::TEBD(const MPO_matrix& H, const std::string& MPSName, uMPXInt NumVertices, double time_step_size, DataOutput& results, uMPXInt order) : TimeBase(time_step_size,results),MPSName_(MPSName),Basis_(H.basis()),NumVertices_(NumVertices),SingleVertexOp_(MakeSingleSiteEvolutionOperator(H,time_step_size)),m_EvolutionOperators(TrotterDecomposition(H,time_step_size,order)) {
 
     //canonize and store
     for (uMPXInt n=1;n<=NumVertices_/2;++n){
@@ -488,9 +499,9 @@ namespace ajaj{
     //at end Vd should be really trivial, and give sqrt(normalisation) factor
     std::cout << "Norm: " << Vd.Trace() <<std::endl;
 
-  }
+  }*/
 
-  TEBD::TEBD(const MPO_matrix& H, const std::string& MPSName, const MPS_matrix& InitialMPS_matrix, uMPXInt NumVertices, double time_step_size, DataOutput& results, uMPXInt order) : TimeBase(time_step_size,results),MPSName_(MPSName),Basis_(H.basis()),NumVertices_(NumVertices),SingleVertexOp_(MakeSingleSiteEvolutionOperator(H,time_step_size)),m_EvolutionOperators(TrotterDecomposition(H,time_step_size,order)) {
+  /*TEBD::TEBD(const MPO_matrix& H, const std::string& MPSName, const MPS_matrix& InitialMPS_matrix, uMPXInt NumVertices, double time_step_size, DataOutput& results, uMPXInt order) : TimeBase(time_step_size,results),MPSName_(MPSName),Basis_(H.basis()),NumVertices_(NumVertices),SingleVertexOp_(MakeSingleSiteEvolutionOperator(H,time_step_size)),m_EvolutionOperators(TrotterDecomposition(H,time_step_size,order)) {
     
     if (!InitialMPS_matrix.Index(0).Physical() || !InitialMPS_matrix.Index(0).Ingoing() || !InitialMPS_matrix.Index(1).Ingoing() || !InitialMPS_matrix.Index(2).Outgoing()){
       std::cout << "Initial matrix needs to be left shaped" << std::endl; exit(1);
@@ -507,58 +518,64 @@ namespace ajaj{
       }
     }
 
-  }
+    }*/
 
   void TEBD::evolve(uMPXInt num_steps, std::vector<MultiVertexMeasurement>& measurements, uMPXInt bond_dimension, double minS, uMPXInt measurement_interval){
     //do the evolution
-    if (m_EvolutionOperators.order()==1){
-      std::cout <<"1st order time step evolution" <<std::endl;
-      for (uMPXInt n=0;n<num_steps;++n){
-	++m_current_time_step;
-	std::cout << "Time " << current_time() << std::endl;
-	//this is the first half of the time step....
-	apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
-	left_canonise();
-	apply_to_even_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
-	if (m_current_time_step % measurement_interval==0) /*make measurement*/ {
-	  left_canonise_measure(measurements);
-	}
-	else {
-	  left_canonise();
-	}
-	max_truncation_=0.0; //reset
-      }
-    }
-    else if (m_EvolutionOperators.order()==2){
-      std::cout <<"2nd order time step evolution" <<std::endl;
-      //bond order grows rapidly, so need to compress after each application of a set of bond operators
-      //first step
-      std::cout << "Odd bonds" <<std::endl;
-      apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS); //half step
-      left_canonise();
-      for (uMPXInt n=0;n<num_steps;++n){
-	++m_current_time_step;
-	std::cout << "Time " << current_time() << std::endl;
-	apply_to_even_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS);
-	left_canonise();
-	if (m_current_time_step % measurement_interval==0) /*make measurement*/ {
-	  apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[2]),bond_dimension,minS);
-	  std::cout << "Left canonize measure" <<std::endl;
-	  left_canonise_measure(measurements);//measurement
+    if (GoodInitial_){
+
+      if (m_EvolutionOperators.order()==1){
+	std::cout <<"1st order time step evolution" <<std::endl;
+	for (uMPXInt n=0;n<num_steps;++n){
+	  ++m_current_time_step;
+	  std::cout << "Time " << current_time() << std::endl;
+	  //this is the first half of the time step....
 	  apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
-	  std::cout << "Left canonize" <<std::endl;
 	  left_canonise();
+	  apply_to_even_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
+	  if (m_current_time_step % measurement_interval==0) /*make measurement*/ {
+	    left_canonise_measure(measurements);
+	  }
+	  else {
+	    left_canonise();
+	  }
+	  max_truncation_=0.0; //reset
 	}
-	else {
-	  apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS);
-	  std::cout << "Left canonize" <<std::endl;
+      }
+      else if (m_EvolutionOperators.order()==2){
+	std::cout <<"2nd order time step evolution" <<std::endl;
+	//bond order grows rapidly, so need to compress after each application of a set of bond operators
+	//first step
+	std::cout << "Odd bonds" <<std::endl;
+	apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS); //half step
+	left_canonise();
+	for (uMPXInt n=0;n<num_steps;++n){
+	  ++m_current_time_step;
+	  std::cout << "Time " << current_time() << std::endl;
+	  apply_to_even_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS);
 	  left_canonise();
+	  if (m_current_time_step % measurement_interval==0) /*make measurement*/ {
+	    apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[2]),bond_dimension,minS);
+	    std::cout << "Left canonize measure" <<std::endl;
+	    left_canonise_measure(measurements);//measurement
+	    apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
+	    std::cout << "Left canonize" <<std::endl;
+	    left_canonise();
+	  }
+	  else {
+	    apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS);
+	    std::cout << "Left canonize" <<std::endl;
+	    left_canonise();
+	  }
+	  max_truncation_=0.0; //reset
 	}
-	max_truncation_=0.0; //reset
+      }
+      else {
+	std::cout << "Haven't implemented higher orders yet in TEBD::evolve(), doing nothing." << std::endl;
       }
     }
     else {
-      std::cout << "Haven't implemented higher orders yet in TEBD::evolve()" << std::endl; exit(1);
+      std::cout << "Bad initial state, doing nothing. " <<std::endl;
     }
   }
 
