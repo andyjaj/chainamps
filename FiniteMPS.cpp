@@ -169,11 +169,11 @@ namespace ajaj{
       }
     }
 
-    for (uMPXInt R=1;R<=NumVertices_;++R){
+    for (uMPXInt R=NumVertices_;R>=1;--R){
       std::ifstream Rfile;
       Rfile.open(filename(R,0));
       if (Rfile.is_open()){
-	RMAX=R;
+	RMAX=NumVertices_-R+1;
       }
       else {
 	break;
@@ -201,7 +201,9 @@ namespace ajaj{
     }
     else {
       //missing files
-      std::cout <<"Error: Missing files for specified Finite MPS state!" <<std::endl;
+      std::cout <<"Error: Missing files for specified Finite MPS state '" << MPSName_<< "'" << std::endl;
+      std::cout << "LAMBDA "<< MP << ", " << LMAX << " " << RMAX << std::endl;
+
       return CanonicalType::Error;
     }
     

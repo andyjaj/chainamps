@@ -460,66 +460,6 @@ namespace ajaj{
       GoodInitial_=1;
   }
 
-  /*TEBD::TEBD(const MPO_matrix& H, const std::string& MPSName, uMPXInt NumVertices, double time_step_size, DataOutput& results, uMPXInt order) : TimeBase(time_step_size,results),MPSName_(MPSName),Basis_(H.basis()),NumVertices_(NumVertices),SingleVertexOp_(MakeSingleSiteEvolutionOperator(H,time_step_size)),m_EvolutionOperators(TrotterDecomposition(H,time_step_size,order)) {
-
-    //canonize and store
-    for (uMPXInt n=1;n<=NumVertices_/2;++n){
-      std::stringstream Initialnamestream;
-      Initialnamestream << MPSName_ << "_Left_" << n << ".MPS_matrix";
-      std::stringstream Evolvingnamestream;
-      Evolvingnamestream << "Evolving_" << MPSName_ << "_Left_" << n << ".MPS_matrix";
-      MPS_matrix current(load_MPS_matrix(Initialnamestream.str(),Basis_));
-      current.store(Evolvingnamestream.str());
-    }
-    //do something with lambda
-    std::stringstream Lambdanamestream;
-    Lambdanamestream << MPSName_ << "_Lambda_" << NumVertices_/2 << "_" << NumVertices_/2 << ".MPX_matrix";
-    MPX_matrix Vd(load_MPX_matrix(Lambdanamestream.str(),Basis_));
-    //left canonize the right hand parts
-    for (uMPXInt n=NumVertices_/2;n>0;--n){
-      std::stringstream Initialnamestream;
-      Initialnamestream << MPSName_ << "_Right_" << n << ".MPS_matrix";
-      //contract Vd onto current
-      //and reshape to left form
-      //do SVD
-      MPXDecomposition decomp(MPS_matrix(contract(Vd,0,load_MPS_matrix(Initialnamestream.str(),Basis_),0,contract10)).left_shape().SVD());
-     
-      //record row vectors (Vdagger part) as new Vd
-      Vd=std::move(contract(MPX_matrix(Basis_,decomp.RowMatrix.Index(0),decomp.Values),0,decomp.RowMatrix,0,contract10));
-
-      //store for calculating overlap...
-      std::stringstream Leftnamestream;
-      Leftnamestream << MPSName_ << "_Left_" << NumVertices_-n+1 << ".MPS_matrix";
-      decomp.ColumnMatrix.store(Leftnamestream.str());
-      //store updated 'current' vertex matrix
-      std::stringstream Evolvingnamestream;
-      Evolvingnamestream << "Evolving_" << MPSName_ << "_Left_" << NumVertices_-n+1 << ".MPS_matrix";
-      decomp.ColumnMatrix.store(Evolvingnamestream.str());
-    }
-    //at end Vd should be really trivial, and give sqrt(normalisation) factor
-    std::cout << "Norm: " << Vd.Trace() <<std::endl;
-
-  }*/
-
-  /*TEBD::TEBD(const MPO_matrix& H, const std::string& MPSName, const MPS_matrix& InitialMPS_matrix, uMPXInt NumVertices, double time_step_size, DataOutput& results, uMPXInt order) : TimeBase(time_step_size,results),MPSName_(MPSName),Basis_(H.basis()),NumVertices_(NumVertices),SingleVertexOp_(MakeSingleSiteEvolutionOperator(H,time_step_size)),m_EvolutionOperators(TrotterDecomposition(H,time_step_size,order)) {
-    
-    if (!InitialMPS_matrix.Index(0).Physical() || !InitialMPS_matrix.Index(0).Ingoing() || !InitialMPS_matrix.Index(1).Ingoing() || !InitialMPS_matrix.Index(2).Outgoing()){
-      std::cout << "Initial matrix needs to be left shaped" << std::endl; exit(1);
-    }
-    else {
-      for (uMPXInt n=1;n<=NumVertices_;++n){
-	std::stringstream Initialnamestream;
-	Initialnamestream << MPSName_ << "_Left_" << n << ".MPS_matrix";
-	std::stringstream Evolvingnamestream;
-	Evolvingnamestream << "Evolving_" << MPSName_ << "_Left_" << n << ".MPS_matrix";
-	
-	InitialMPS_matrix.store(Initialnamestream.str()); //store a copy of initial state for later
-	InitialMPS_matrix.store(Evolvingnamestream.str()); //store a copy for evolving
-      }
-    }
-
-    }*/
-
   void TEBD::evolve(uMPXInt num_steps, std::vector<MultiVertexMeasurement>& measurements, uMPXInt bond_dimension, double minS, uMPXInt measurement_interval){
     //do the evolution
     if (GoodInitial_){
