@@ -74,6 +74,11 @@ namespace ajaj {
   UnitCell load_UnitCell_binary(std::ifstream& infile, QNVector& charge_rules, Basis& basis);
   UnitCell load_UnitCell_binary(std::ifstream& infile, const QNVector& charge_rules, const Basis& basis);
 
+  //UnitCell MakeProductStateUnitCell(const Basis& basis, const std::vector<std::pair<uMPXInt,std::complex<double> > >& state_index_vec, State leftstate, uMPXInt length=2);
+  UnitCell MakeProductStateUnitCell(const Basis& basis, const c_specifier_array& c_spec, State leftstate, uMPXInt length=2);
+  UnitCell MakeProductStateUnitCell(const Basis& basis, uMPXInt state_index, State leftstate, uMPXInt length=2);
+
+
 }
 
 #endif

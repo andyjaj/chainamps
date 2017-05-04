@@ -11,23 +11,6 @@
 
 namespace ajaj{
 
-  UnitCell MakeProductStateUnitCell(const Basis& basis, const std::vector<std::pair<uMPXInt,std::complex<double> > >& state_index_vec, State leftstate, uMPXInt length){
-    UnitCell ans(basis);
-    if (state_index_vec.size()){
-      for (uMPXInt u=0;u<length;++u){
-	ans.Matrices.emplace_back(MakeProductState(basis,state_index_vec,leftstate));
-	ans.Lambdas.emplace_back(std::vector<double>(1,1.0));
-	leftstate+=basis[state_index_vec.back().first];
-      }
-    }
-    return ans;
-  }
-
-  UnitCell MakeProductStateUnitCell(const Basis& basis, uMPXInt state_index, State leftstate, uMPXInt length){
-    return MakeProductStateUnitCell(basis,std::vector<std::pair<uMPXInt,std::complex<double> > >({{state_index,1.0}}),leftstate,length);
-  }
-
-
   TrotterDecomposition::TrotterDecomposition(const MPO_matrix& H,double time_step_size,uMPXInt order) : m_H_ptr(&H), m_time_step_size(time_step_size), m_order(order){
 //make bond operator
     if (m_order>2){std::cout <<"Higher than 2nd order Trotter decomposition not curtrently implemented. Aborting..." << std::endl; exit(1);}

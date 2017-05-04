@@ -32,10 +32,44 @@ int main(int argc, char** argv){
     std::vector<ajaj::MPO_matrix> measured_operators;// can insert runtime measurements here
 
     ajaj::UnitCell Initial(myModel.basis());
-    std::string Name;
+    std::string InitialStateName;
+
+    if (!RuntimeArgs.initial_unit_cell().empty()){
+      InitialStateName=RuntimeArgs.initial_unit_cell();
+      std::ifstream infile;
+      infile.open(RuntimeArgs.initial_unit_cell().c_str(),ios::in | ios::binary);
+      if (infile.is_open()){
+	Initial=ajaj::load_UnitCell_binary(infile,myModel.basis().getChargeRules(),myModel.basis());//populates basis
+      }
+      else {
+	std::cout << "Failed to open " << RuntimeArgs.initial_unit_cell() << std::endl;
+	return 1;
+      }
+    }
+    else if (!RuntimeArgs.c_number_filename().empty()) {
+      InitialStateName=RuntimeArgs.c_number_filename();
+      Initial=MakeProductStateUnitCell(myModel.basis(),ajaj::LoadCNumbers(RuntimeArgs.c_number_filename()),ajaj::State(myModel.basis().getChargeRules()));
+    }
+    else {
+      std::cout << "No initial state specified, generating default state." << std::endl;
+      InitialStateName="DefaultState";
+      Initial=MakeProductStateUnitCell(myModel.basis(),0,ajaj::State(myModel.basis().getChargeRules()));
+    }
+
+    std::istringstream fnss(InitialStateName);
+    getline(fnss,InitialStateName,'.');
+    InitialStateName=ajaj::StripName(InitialStateName);
+    if (!RuntimeArgs.initial_unit_cell().empty()){
+      Initial.store(InitialStateName);
+    }
+
     std::stringstream Rss;
     Rss<<RuntimeArgs.filename();
-    if (!RuntimeArgs.initial_unit_cell().empty()){
+    Rss<<"_"<<InitialStateName;
+
+    std::cout << "Using initial state '" << InitialStateName << "'" <<std::endl;
+
+    /*if (!RuntimeArgs.initial_unit_cell().empty()){
       std::ifstream infile;
       infile.open(RuntimeArgs.initial_unit_cell().c_str(),ios::in | ios::binary);
       if (infile.is_open()){
@@ -56,12 +90,12 @@ int main(int argc, char** argv){
       Name="Ortho";
       Initial=MakeProductStateUnitCell(myModel.basis(),0,ajaj::State(myModel.basis().getChargeRules()));
       //Initial=MakeProductStateUnitCell(myModel.basis(),std::vector<std::pair<ajaj::uMPXInt,double> > ({{0,1.0/sqrt(2.0)},{1,1.0/sqrt(2.0)}}),ajaj::State(myModel.basis().getChargeRules()));
-    }
+    }*/
 
 
     ajaj::DataOutput results(ajaj::OutputName(Rss.str(),"Evolution.dat"),"Index, Time, Truncation, Entropy, abs(Overlap), Real(Overlap), Im(Overlap)");
 
-    ajaj::iTEBD infrun(myModel.H_MPO,Initial,time_step,results,Name,trotter_order);
+    ajaj::iTEBD infrun(myModel.H_MPO,Initial,time_step,results,InitialStateName,trotter_order);
     infrun.evolve(number_of_time_steps,measured_operators,CHI/*bond dimension*/,minS/*min s val*/,measurement_interval);
     return 0;
   }

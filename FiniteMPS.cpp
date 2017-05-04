@@ -209,27 +209,4 @@ namespace ajaj{
     
   }
 
-  c_specifier_array LoadCNumbers(const std::string& filename){
-    std::ifstream infile;
-    infile.open(filename.c_str(),ios::in);
-    if (infile.is_open()){
-      c_specifier_array c;
-      std::string s;
-      while (getline(infile,s)){
-	if (s.empty()) continue;
-	std::stringstream ss(s);
-	if (ss.peek()=='#') continue;
-	c.push_back(c_specifier_vector());
-	uMPXInt idx;
-	std::complex<double> value;
-	while (ss >> idx >> value){ //take in pairs
-	  c.back().push_back(c_specifier(idx,value));
-	}
-      }
-      return c;
-    }
-    return c_specifier_array();
-  }
-
-
 }

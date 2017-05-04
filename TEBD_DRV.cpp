@@ -122,10 +122,10 @@ int main(int argc, char** argv){
     std::string StateName;
     ajaj::c_specifier_array CSpec;
 
-    if (RuntimeArgs.initial_state_name()!=""){
+    if (!RuntimeArgs.initial_state_name().empty()){
       StateName=RuntimeArgs.initial_state_name();
     }
-    else if (RuntimeArgs.c_number_filename()!=""){
+    else if (!RuntimeArgs.c_number_filename().empty()){
       StateName=RuntimeArgs.c_number_filename();
       CSpec=ajaj::LoadCNumbers(RuntimeArgs.c_number_filename());
     }

@@ -186,4 +186,28 @@ namespace ajaj {
     }
   }
 
+  //UnitCell MakeProductStateUnitCell(const Basis& basis, const std::vector<std::pair<uMPXInt,std::complex<double> > >& state_index_vec, State leftstate, uMPXInt length){
+  UnitCell MakeProductStateUnitCell(const Basis& basis, const c_specifier_array& c_spec, State leftstate, uMPXInt length){
+    UnitCell ans(basis);
+
+    if (c_spec.size()){
+      uMPXInt counter(0);
+      for (uMPXInt m=0;m<length;++m){
+	auto& v(c_spec[counter++]);
+	ans.Matrices.emplace_back(MakeProductState(basis,v,leftstate));
+	ans.Lambdas.emplace_back(std::vector<double>(1,1.0));
+	leftstate+=basis[v.back().first];
+	if (counter==c_spec.size()) counter=0;
+      }
+    }
+    ans.Matrices[0].print_matrix();
+    ans.Matrices[1].print_matrix();
+
+    return ans;
+  }
+
+  UnitCell MakeProductStateUnitCell(const Basis& basis, uMPXInt state_index, State leftstate, uMPXInt length){
+    return MakeProductStateUnitCell(basis,c_specifier_array({{c_specifier_vector({{state_index,1.0}})}}),leftstate,length);
+  }
+
 }

@@ -210,7 +210,7 @@ namespace ajaj{
     return MPS_matrix(std::move(load_MPX_matrix_binary(filename,spectrum)));
   }
 
-  MPS_matrix MakeProductState(const Basis& spectrum, const std::vector<std::pair<uMPXInt,std::complex<double> > >& state_index_vec,State leftstate){
+  MPS_matrix MakeProductState(const Basis& spectrum, const c_specifier_vector& state_index_vec,State leftstate){
     if (state_index_vec.size()){
       std::vector<MPXIndex> indices;
       indices.emplace_back(1,spectrum);
@@ -234,7 +234,29 @@ namespace ajaj{
   }
 
   MPS_matrix MakeProductState(const Basis& spectrum, uMPXInt state_index, State leftstate){
-    return MakeProductState(spectrum,std::vector<std::pair <uMPXInt,std::complex<double> > >(1,std::pair<uMPXInt,std::complex<double> > (state_index,1.0)),leftstate);
+    return MakeProductState(spectrum,c_specifier_vector(1,c_specifier(state_index,1.0)),leftstate);
+  }
+
+  c_specifier_array LoadCNumbers(const std::string& filename){
+    std::ifstream infile;
+    infile.open(filename.c_str(),ios::in);
+    if (infile.is_open()){
+      c_specifier_array c;
+      std::string s;
+      while (getline(infile,s)){
+	if (s.empty()) continue;
+	std::stringstream ss(s);
+	if (ss.peek()=='#') continue;
+	c.push_back(c_specifier_vector());
+	uMPXInt idx;
+	std::complex<double> value;
+	while (ss >> idx >> value){ //take in pairs
+	  c.back().push_back(c_specifier(idx,value));
+	}
+      }
+      return c;
+    }
+    return c_specifier_array();
   }
 
 }

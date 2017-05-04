@@ -101,8 +101,10 @@ namespace ajaj{
   //////////
 
   MPS_matrix load_MPS_matrix(const std::string& filename,const Basis& spectrum);
-  MPS_matrix MakeProductState(const Basis& spectrum, const std::vector<std::pair<uMPXInt,std::complex<double> > >& state_index_vec,State leftstate);
+  MPS_matrix MakeProductState(const Basis& spectrum, const c_specifier_vector& state_index_vec,State leftstate);
   MPS_matrix MakeProductState(const Basis& spectrum, uMPXInt state_index,State leftstate);
+  
+  c_specifier_array LoadCNumbers(const std::string& filename);
 
 
 }

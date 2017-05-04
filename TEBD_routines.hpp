@@ -104,9 +104,6 @@ public:
   bool good() const {return GoodInitial_;}
 };
 
-  UnitCell MakeProductStateUnitCell(const Basis& basis, const std::vector<std::pair<uMPXInt,std::complex<double> > >& state_index_vec, State leftstate, uMPXInt length=2);
-  UnitCell MakeProductStateUnitCell(const Basis& basis, uMPXInt state_index, State leftstate, uMPXInt length=2);
-
   MPX_matrix MakeBondHamiltonian(const MPO_matrix& H); //Returns part of hamiltonian that refers to a single bond (no double counting of vertex part).
   MPX_matrix MakeBondEvolutionOperator(const MPX_matrix& BondH, double timestep);//Forms exponential bond update operator
   MPX_matrix MakeSingleSiteEvolutionOperator(const MPO_matrix& H, double timestep);

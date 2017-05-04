@@ -58,9 +58,6 @@ namespace ajaj{
 
   };
 
-  //helper function
-  c_specifier_array LoadCNumbers(const std::string& filename);
-
 }
 
 #endif
