@@ -623,45 +623,4 @@ namespace ajaj{
     return MPX_matrix(H.GetPhysicalSpectrum(),H.Index(0),phase);
   }
 
-  bool CheckMPSFilesExist(const std::string& MPSName,uMPXInt NumVertices){
-    //open 
-    
-    for (auto n=1;n<=NumVertices/2;++n){
-      std::stringstream Initialnamestream;
-      Initialnamestream << MPSName << "_Left_" << n << ".MPS_matrix";
-      std::ofstream infile;
-      infile.open(Initialnamestream.str().c_str(),ios::in | ios::binary); 
-      if (!infile.is_open()) {
-	std::cout << "Couldn't open file: " << Initialnamestream.str() <<std::endl;
-	return 0;
-      }
-      infile.close();
-    }
-    //open check opens
-
-    std::stringstream Lambdanamestream;
-    Lambdanamestream << MPSName << "_Lambda_" << NumVertices/2 << "_" << NumVertices/2 << ".MPX_matrix";
-    std::ofstream Lfile;
-    Lfile.open(Lambdanamestream.str().c_str(),ios::in | ios::binary); 
-    if (!Lfile.is_open()) {
-      std::cout << "Couldn't open file: " << Lambdanamestream.str() <<std::endl;
-      return 0;
-    }
-    Lfile.close();
-
-    for (auto n=1;n<=NumVertices/2;++n){
-      std::stringstream Initialnamestream;
-      Initialnamestream << MPSName << "_Right_" << n << ".MPS_matrix";
-      std::ofstream infile;
-      infile.open(Initialnamestream.str().c_str(),ios::in | ios::binary); 
-      if (!infile.is_open()) {
-	std::cout << "Couldn't open file: " << Initialnamestream.str() <<std::endl;
-	return 0;
-      }
-      infile.close();
-    }
-    return 1;
-  }
-
-
 }
