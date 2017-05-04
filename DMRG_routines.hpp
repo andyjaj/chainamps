@@ -10,7 +10,7 @@
 #include <utility>
 #include <string>
 #include <sstream>
-
+#include <array>
 
 #include "common_defs.hpp"
 #include "MPX.hpp"

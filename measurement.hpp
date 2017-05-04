@@ -11,7 +11,7 @@
 #include <iomanip>
 #include <cstdlib>
 #include <complex>
-
+#include <array>
 
 #include "common_defs.hpp"
 #include "sparse_interface.hpp"
