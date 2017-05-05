@@ -7,6 +7,8 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <iterator>
+
 
 #include "common_defs.hpp" //defines basic types
 #include "states.hpp" //Spectrum etc.

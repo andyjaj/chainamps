@@ -169,18 +169,18 @@ namespace oldxxx {
     std::string ending1(".dat");
     std::string ending2("_2sp.dat");
     std::ostringstream spectrumnamestream;
-    spectrumnamestream << "../examples/Heisdmrg_states_N" << xxx_chain_length <<ending1.c_str();
+    spectrumnamestream << "./xxx_files/Heisdmrg_states_N" << xxx_chain_length <<ending1.c_str();
     //std::cout << spectrumnamestream.str() << std::endl;
     std::ostringstream MEnamestream;
-    MEnamestream << "../examples/Heisdmrg_MESzmp_N" << xxx_chain_length<<ending1.c_str();
+    MEnamestream << "./xxx_files/Heisdmrg_MESzmp_N" << xxx_chain_length<<ending1.c_str();
     //std::cout << MEnamestream.str() << std::endl;
+
+    std::cout << "Generating vertex spectrum" << std::endl;
 
     std::ifstream spectruminfile;
     spectruminfile.open(spectrumnamestream.str().c_str(),ios::in);
-    if (!spectruminfile.is_open()){
-      std::cout << "Couldn't open state file!" <<std::endl; exit(1);
-    }
     if (spectruminfile.is_open()){
+      
       std::cout << spectrumnamestream.str() << std::endl;
       //populate spectrum
       ajaj::MPXInt ID,SpnNum,S,Sz,P;
@@ -198,9 +198,10 @@ namespace oldxxx {
       std::cout << "End generating chain spectrum, generated " << ModelVertex.Spectrum.size() << " states" << std::endl;
     }
     else {
-      std::cout << "Couldn't open data file!" << std::endl; exit(1);
+      std::cout << "Couldn't open state file " << spectrumnamestream.str() << std::endl; exit(1);
+
     }
-    std::cout << "Starting Matrix Elements" << std::endl;
+    std::cout << "Generating matrix elements" << std::endl;
 
     std::ifstream MEinfile;
     MEinfile.open(MEnamestream.str().c_str(),ios::in);
@@ -227,7 +228,7 @@ namespace oldxxx {
       }
     }
     else {
-      std::cout << "Couldn't open data file!" << std::endl; exit(1);
+      std::cout << "Couldn't open state file " << MEnamestream.str() << std::endl; exit(1);
     }
     MEinfile.close();
 

@@ -29,13 +29,13 @@ namespace ajaj{
 
   enum class BuiltinModels : std::size_t {
     cm_ising,
-    cm_ff, 
-    xxx,
-    ll, 
-    spin_half,
-    user,
-    last
-  };
+      cm_ff, 
+      xxx,
+      ll, 
+      spin_half,
+      user,
+      last
+      };
 
   struct NameGroup{
     BuiltinModels int_name;
@@ -73,7 +73,7 @@ namespace ajaj{
     OpBlockInfo(std::string r, std::string c, std::complex<double> v) : row_block(r), col_block(c), value(v) {}
   };
 
-  Model MakeUserModel(const std::string& vertex_basis_filename,const std::string& vertex_hamiltonian_filename,const std::string& vertex_operators_filename,const CouplingArray& couplings);
+  Model MakeUserModel(const std::string& vertex_basis_filename,const std::string& vertex_hamiltonian_filename,const std::vector<std::string>& vertex_operator_filenames,const CouplingArray& couplings);
   MPO_matrix MakeGeneralHMPO(const Vertex& v, const CouplingArray& couplings);
 
   Model MakeModelFromArgs(Base_Args& cmdln) {
@@ -116,8 +116,12 @@ namespace ajaj{
 	    std::istringstream iss1(stringbuffer.at(1));
 	    std::string Vertex_Basis_Filename;
 	    std::string Vertex_Hamiltonian_Filename;
-	    std::string Vertex_Operators_Filename;
-	    if (iss1 >> Vertex_Basis_Filename && iss1 >> Vertex_Hamiltonian_Filename && iss1 >> Vertex_Operators_Filename ) { //better be 3 filenames on this line
+	    std::vector<std::string> Vertex_Operator_Filenames;
+	    if (iss1 >> Vertex_Basis_Filename && iss1 >> Vertex_Hamiltonian_Filename){
+	      std::string op_filename;
+	      while (iss1 >> op_filename){
+		Vertex_Operator_Filenames.push_back(op_filename);
+	      }
 	      //also read in coupling params
 	      std::istringstream iss2(stringbuffer.at(2));
 	      Coupling c;
@@ -130,7 +134,7 @@ namespace ajaj{
 	      }
 	      //what if couplings didn't read in correctly?
 	      //won't be able to find them and will error below
-	      return MakeUserModel(Vertex_Basis_Filename,Vertex_Hamiltonian_Filename,Vertex_Operators_Filename,cpa);
+	      return MakeUserModel(Vertex_Basis_Filename,Vertex_Hamiltonian_Filename,Vertex_Operator_Filenames,cpa);
 	    }
 	    //didn't work
 	    std::cout << "Not enough files specified." <<std::endl;
@@ -198,7 +202,7 @@ namespace ajaj{
   //user defined model, using file input
   //uses NRVO
   //really important not to mess this up, as it can invalidate the ref to ChargeRules used by all the states.
-  Model MakeUserModel(const std::string& vertex_basis_filename,const std::string& vertex_hamiltonian_filename,const std::string& vertex_operators_filename,const CouplingArray& couplings){
+  Model MakeUserModel(const std::string& vertex_basis_filename,const std::string& vertex_hamiltonian_filename,const std::vector<std::string>& vertex_operator_filenames,const CouplingArray& couplings){
     //construct model_vertex
     //read in basis file
     ajaj::Model UserModel;
@@ -218,6 +222,10 @@ namespace ajaj{
 	    int readinteger;
 	    while (basis_iss >> readinteger) {
 	      UserModel.vertex.ChargeRules.push_back(static_cast<QuantumNumberInt>(readinteger));
+	    }
+	    if (UserModel.vertex.ChargeRules.size()==0){
+	      std::cout <<"No charge rules, assuming no conserved Abelian charges..." <<std::endl;
+	      UserModel.vertex.ChargeRules.push_back(static_cast<QuantumNumberInt>(0));
 	    }
 	  }
 	  else if (word[0]=='#') {
@@ -243,120 +251,130 @@ namespace ajaj{
 	}
       }
 
+      int dummyinteger(0);
       while (getline(basisfile,basisfileline)){
 	std::istringstream basis_iss(basisfileline);
-	int readinteger;
-	if (basis_iss >> readinteger){ //dummy index
+	if (basis_iss >> dummyinteger){ //first is a dummy index
 	  //read all charges
 	  ajaj::QNVector charge_values;
+	  int readinteger;
 	  while (basis_iss >> readinteger) {
 	    charge_values.push_back(static_cast<QuantumNumberInt>(readinteger));
 	  }
-	  UserModel.vertex.Spectrum.push_back(ajaj::EigenState(UserModel.vertex.ChargeRules,charge_values,0.0));
+	  if (charge_values.size())
+	    UserModel.vertex.Spectrum.push_back(ajaj::EigenState(UserModel.vertex.ChargeRules,charge_values,0.0));
 	}
       }
       basisfile.close();
 
+      if (!UserModel.vertex.Spectrum.size() && UserModel.vertex.ChargeRules.size() && UserModel.vertex.ChargeRules[0]==1){
+	std::cout << "No charges defined, interpreting first integer as number of states, " << dummyinteger <<std::endl;
+	UserModel.vertex.Spectrum=ajaj::Basis(ajaj::StateArray(dummyinteger,ajaj::State(UserModel.vertex.ChargeRules)),std::vector<double>(dummyinteger,0.0));
+      }
+      if (!UserModel.vertex.Spectrum.size()){ //still zero?
+	std::cout << "No states defined? Returning empty model." <<std::endl;
+	UserModel=Model(); 
+	return UserModel;
+      }
+
       std::cout << "MODEL'S LOCAL BASIS" <<std::endl;
       UserModel.basis().print();
 
-      std::ifstream operatorsfile;
-      operatorsfile.open(vertex_operators_filename.c_str(),std::ios::in);
-      if (operatorsfile.is_open()){
-	//read in operator names
-	std::string operatorsfileline;
-	if (getline(operatorsfile,operatorsfileline)){
-	  std::istringstream operators_iss(operatorsfileline);
-	  std::string word;
-	  while (operators_iss >> word) {
-	    UserModel.vertex.Operators.push_back(VertexOperator(word,UserModel.vertex.basis().size()));
-	  }
-	}
-	//next M flag
-	std::vector<bool>is_Measured;
-	if (getline(operatorsfile,operatorsfileline)){
-	  std::istringstream operators_iss(operatorsfileline);
-	  std::string Mflag;
-	  while (operators_iss >> Mflag) {
-	    if (Mflag=="M"){
-	      is_Measured.push_back(1);
-	    }
-	    else {
-	      is_Measured.push_back(0);
-	    }
-	  }
-	}
-	if (is_Measured.size()!=UserModel.vertex.Operators.size()){std::cout << "Wrong number of Measured flags specified" << std::endl; UserModel=Model(); return UserModel;}
+      for (auto&& f : vertex_operator_filenames){
+	
+	std::cout <<"Opening operator file " << f <<std::endl;
 
-	//now entries
-	while (getline(operatorsfile,operatorsfileline)){
-	  std::istringstream operators_iss(operatorsfileline);
-	  int row;
-	  int col;
-	  std::complex<double> value;
-	  if (operators_iss >> row && operators_iss >> col){
-	    size_t increment(0);
-	    while (operators_iss >> value){
-	      //std::cout << value << " " ;
-	      if (value!=0.0){
-		UserModel.vertex.Operators.at(increment).MatrixElements.entry(row,col,value);
-	      }
-	      ++increment;
+	std::ifstream operatorfile;
+	operatorfile.open(f.c_str(),std::ios::in);
+	if (operatorfile.is_open()){
+	  //read in operator names
+	  std::string operatorfileline;
+	  if (getline(operatorfile,operatorfileline)){
+	    std::istringstream operators_iss(operatorfileline);
+	    std::string word;
+	    while (operators_iss >> word) {
+	      UserModel.vertex.Operators.push_back(VertexOperator(word,UserModel.vertex.basis().size()));
 	    }
-	    if (increment!= UserModel.vertex.Operators.size()){
-	      std::cout << "Incorrect number of operator values specified, " << increment << " : " << UserModel.vertex.Operators.size() << std::endl; UserModel=Model(); return UserModel;
-	    }  
 	  }
-	}
-	operatorsfile.close();
-	//finalise operators
-	for (auto&& O : UserModel.vertex.Operators){
-	  O.MatrixElements.finalise();
-	  //O.MatrixElements.print();
-	}
+	  //next, possible dummy line
+	  std::vector<std::string>opt_filenames;
+	  if (getline(operatorfile,operatorfileline)){
+	    std::istringstream operators_iss(operatorfileline);
+	    std::string name;
+	    while (operators_iss >> name) {
+	      opt_filenames.push_back(name);
+	    }
+	  }
 
-	//open vertex_hamiltonian,
-	std::ifstream hamiltonianfile;
-	hamiltonianfile.open(vertex_hamiltonian_filename.c_str(),std::ios::in);
-	if (hamiltonianfile.is_open()){
-	  UserModel.vertex.Operators.push_back(VertexOperator("Vertex_Hamiltonian",UserModel.vertex.basis().size()));
-	  is_Measured.push_back(0);
-	  SparseMatrix& h_array=UserModel.vertex.Operators.back().MatrixElements;
-	  //ajaj::SparseMatrix h_array(UserModel.vertex.Spectrum.size(),UserModel.vertex.Spectrum.size());
-	  std::string hfileline;
-	  while (getline(hamiltonianfile,hfileline)){
-	    std::istringstream hss(hfileline);
-	    MPXInt row;
-	    MPXInt col;
+	  //now entries
+	  while (getline(operatorfile,operatorfileline)){
+	    std::istringstream operators_iss(operatorfileline);
+	    int row;
+	    int col;
 	    std::complex<double> value;
-	    if (hss >> row && hss >> col && hss >> value){
-	      if (value!=0.0){
-		h_array.entry(row,col,value);
+	    if (operators_iss >> row && operators_iss >> col){
+	      size_t increment(0);
+	      while (operators_iss >> value){
+		//std::cout << value << " " ;
+		if (value!=0.0){
+		  UserModel.vertex.Operators.at(increment).MatrixElements.entry(row,col,value);
+		}
+		++increment;
+	      }
+	      if (increment!= UserModel.vertex.Operators.size()){
+		std::cout << "Incorrect number of operator values specified, " << increment << " : " << UserModel.vertex.Operators.size() << std::endl; UserModel=Model(); return UserModel;
 	      }
 	    }
-	    else {
-	      std::cout << "Malformed vertex hamiltonian" << std::endl;
-	      UserModel=Model();
-	      return UserModel;
-	    }
 	  }
-	  h_array.finalise();
-	  //build MPO
-	  UserModel.H_MPO=MakeGeneralHMPO(UserModel.vertex,couplings);
-	  std::cout << "MPO matrix info:" <<std::endl;
-	  UserModel.H_MPO.print_indices();
-	  return UserModel;
-
+	  operatorfile.close();
 	}
 	else {
-	  std::cout << "Couldn't open vertex hamiltonian file" <<std::endl;
-	  UserModel=Model(); 
+	  std::cout << "Couldn't open operators file" <<std::endl;
+	  UserModel=Model();
 	  return UserModel;
 	}
       }
+      //finalise operators
+      for (auto&& O : UserModel.vertex.Operators){
+	O.MatrixElements.finalise();
+	//O.MatrixElements.print();
+      }
+      
+      //open vertex_hamiltonian,
+      std::ifstream hamiltonianfile;
+      hamiltonianfile.open(vertex_hamiltonian_filename.c_str(),std::ios::in);
+      if (hamiltonianfile.is_open()){
+	UserModel.vertex.Operators.push_back(VertexOperator("Vertex_Hamiltonian",UserModel.vertex.basis().size()));
+	SparseMatrix& h_array=UserModel.vertex.Operators.back().MatrixElements;
+	//ajaj::SparseMatrix h_array(UserModel.vertex.Spectrum.size(),UserModel.vertex.Spectrum.size());
+	std::string hfileline;
+	while (getline(hamiltonianfile,hfileline)){
+	  std::istringstream hss(hfileline);
+	  MPXInt row;
+	  MPXInt col;
+	  std::complex<double> value;
+	  if (hss >> row && hss >> col && hss >> value){
+	    if (value!=0.0){
+	      h_array.entry(row,col,value);
+	    }
+	  }
+	  else {
+	    std::cout << "Malformed vertex hamiltonian" << std::endl;
+	    UserModel=Model();
+	    return UserModel;
+	  }
+	}
+	h_array.finalise();
+	//build MPO
+	UserModel.H_MPO=MakeGeneralHMPO(UserModel.vertex,couplings);
+	std::cout << "MPO matrix info:" <<std::endl;
+	UserModel.H_MPO.print_indices();
+	return UserModel;
+
+      }
       else {
-	std::cout << "Couldn't open operators file" <<std::endl;
-	UserModel=Model();
+	std::cout << "Couldn't open vertex hamiltonian file" <<std::endl;
+	UserModel=Model(); 
 	return UserModel;
       }
     }
@@ -364,7 +382,7 @@ namespace ajaj{
       std::cout << "Couldn't open basis file" << std::endl;
     }
     return UserModel;
-   }
+  }
 
   MPO_matrix MakeGeneralHMPO(const Vertex& v, const CouplingArray& couplings){
     //v has the basis info and the operators, including  the vertex hamiltonian
