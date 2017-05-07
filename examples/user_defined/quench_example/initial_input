@@ -1,0 +1,3 @@
+USER DEFINED
+./initial_defs/vertex_basis.in ./initial_defs/vertex_hamiltonian.in ./initial_defs/vertex_operators.in
+Jx,(Sx,Sx):0.0

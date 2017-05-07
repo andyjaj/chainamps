@@ -1,4 +1,4 @@
-#HOW TO USE THESE EXAMPLES
+# HOW TO USE THESE EXAMPLES #
 
 Copy the contents of the chosen example directory *making sure to preserve any subdirectory structure*  into the directory containing the compiled binaries.
 
@@ -34,6 +34,7 @@ The current set of built in vertex models includes:
 * Luttinger liquid `LL`
 * xxx lattice chains `OLD_XXX`
 In each case the vertex itself is a single instance of the named model.
+Alternatively the string `USER DEFINED` informs the driver that the vertex model is user defined.
 
 Further example documentation, for both built in and user defined models, is included in the individual subdirectories.
 
