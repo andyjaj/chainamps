@@ -19,7 +19,6 @@
 
 //builtin models
 #include "vertex_generators/continuum_Ising_generator.hpp"
-//#include "vertex_generators/continuum_Ising_generator_no_sector.hpp"
 #include "vertex_generators/continuum_ff_generator.hpp"
 #include "vertex_generators/ll_generator.hpp"
 #include "vertex_generators/spin_half_generator.hpp"
@@ -65,13 +64,6 @@ namespace ajaj{
     }
     return m_names[static_cast<std::size_t>(BuiltinModels::last)];
   }
-
-  struct OpBlockInfo{
-    std::string row_block;
-    std::string col_block;
-    std::complex<double> value;
-    OpBlockInfo(std::string r, std::string c, std::complex<double> v) : row_block(r), col_block(c), value(v) {}
-  };
 
   Model MakeUserModel(const std::string& vertex_basis_filename,const std::string& vertex_hamiltonian_filename,const std::vector<std::string>& vertex_operator_filenames,const CouplingArray& couplings);
   MPO_matrix MakeGeneralHMPO(const Vertex& v, const CouplingArray& couplings);
@@ -130,7 +122,8 @@ namespace ajaj{
 	      }
 	      //print error if no couplings, but proceed
 	      if (cpa.size()==0){
-		std::cout << "No inter vertex couplings defined!" << std::endl;
+		std::cout << "NO INTER-VERTEX COUPLINGS DEFINED!" << std::endl;
+		std::cout << "This is allowed, but is it what you intended?" <<std::endl;
 	      }
 	      //what if couplings didn't read in correctly?
 	      //won't be able to find them and will error below
@@ -287,6 +280,7 @@ namespace ajaj{
 	std::ifstream operatorfile;
 	operatorfile.open(f.c_str(),std::ios::in);
 	if (operatorfile.is_open()){
+	  size_t previous_num_ops(UserModel.vertex.Operators.size());
 	  //read in operator names
 	  std::string operatorfileline;
 	  if (getline(operatorfile,operatorfileline)){
@@ -296,13 +290,17 @@ namespace ajaj{
 	      UserModel.vertex.Operators.push_back(VertexOperator(word,UserModel.vertex.basis().size()));
 	    }
 	  }
+	  size_t ops_in_file(UserModel.vertex.Operators.size()-previous_num_ops);
 	  //next, possible dummy line
-	  std::vector<std::string>opt_filenames;
-	  if (getline(operatorfile,operatorfileline)){
-	    std::istringstream operators_iss(operatorfileline);
-	    std::string name;
-	    while (operators_iss >> name) {
-	      opt_filenames.push_back(name);
+	  if (!std::isdigit(operatorfile.peek())){
+	    std::vector<std::string>dummy_names;;
+	    if (getline(operatorfile,operatorfileline)){
+	      std::istringstream operators_iss(operatorfileline);
+	      std::string name;
+	      while (operators_iss >> name) {
+		dummy_names.push_back(name);
+		std::cout << name << std::endl;
+	      }
 	    }
 	  }
 
@@ -317,11 +315,11 @@ namespace ajaj{
 	      while (operators_iss >> value){
 		//std::cout << value << " " ;
 		if (value!=0.0){
-		  UserModel.vertex.Operators.at(increment).MatrixElements.entry(row,col,value);
+		  UserModel.vertex.Operators.at(increment+previous_num_ops).MatrixElements.entry(row,col,value);
 		}
 		++increment;
 	      }
-	      if (increment!= UserModel.vertex.Operators.size()){
+	      if (increment!= ops_in_file){
 		std::cout << "Incorrect number of operator values specified, " << increment << " : " << UserModel.vertex.Operators.size() << std::endl; UserModel=Model(); return UserModel;
 	      }
 	    }
@@ -369,6 +367,7 @@ namespace ajaj{
 	UserModel.H_MPO=MakeGeneralHMPO(UserModel.vertex,couplings);
 	std::cout << "MPO matrix info:" <<std::endl;
 	UserModel.H_MPO.print_indices();
+	UserModel.H_MPO.print_matrix();
 	return UserModel;
 
       }
@@ -388,23 +387,25 @@ namespace ajaj{
     //v has the basis info and the operators, including  the vertex hamiltonian
     //couplings tells us which to incude in MPO, and with what parameters
 
-    //first we assemble row and col lists of used coupling operators
-    std::vector<OpBlockInfo> CouplingBlocks;
+    CouplingArray InterVertexCouplings;
+    CouplingArray LocalTerms;
 
     for (auto&& c : couplings){
-      std::cout << "Coupling: " << c <<std::endl; 
-      CouplingBlocks.emplace_back(c.Op1Name,c.Op2Name,c.Value);
-
+      if (c.two_vertex()){
+	std::cout << "Inter vertex coupling: " << c <<std::endl; 
+	InterVertexCouplings.push_back(c);
+      }
+      else {
+	std::cout << "Single vertex term: " << c <<std::endl; 
+	LocalTerms.push_back(c);
+      }
     }
+
     QNCombinations differencecombinations(v.basis(),1); //1 means use difference
 
-    //std::cout << "Diff pairs: " << differencecombinations.InvolutionPairs.size() << " " << differencecombinations.OrderedPairs.size() << std::endl;
-    //differencecombinations.print();
-
-    MPXInt lineardim((2+CouplingBlocks.size()*differencecombinations.size())*v.basis().size());
-
-    SparseMatrix harray(lineardim,lineardim,(2+couplings.size())*v.basis().size());
-    MPXInt offset_to_last_block((1+CouplingBlocks.size()*differencecombinations.size())*v.basis().size());
+    MPXInt lineardim((2+InterVertexCouplings.size()*differencecombinations.size())*v.basis().size());
+    SparseMatrix harray(lineardim,lineardim,(2+InterVertexCouplings.size())*v.basis().size());
+    MPXInt offset_to_last_block((1+InterVertexCouplings.size()*differencecombinations.size())*v.basis().size());
     //std::cout << "offset " << offset_to_last_block<<std::endl;
     //start with the really easy bits, the Identities
     for (size_t i=0;i<v.basis().size();++i){
@@ -413,10 +414,22 @@ namespace ajaj{
     }
 
     //now vertex_hamiltonian
-    const SparseMatrix& vh(v.get_operator_matrix("Vertex_Hamiltonian"));
-    for (size_t col=0; col<vh.cols();++col){
-      for (size_t p=vh.get_p(col); p<vh.get_p(col+1);++p){
-	harray.entry(offset_to_last_block+vh.get_i(p),col,vh.get_x(p));
+    //plus any local terms...
+    {
+      const SparseMatrix& vh(v.get_operator_matrix("Vertex_Hamiltonian"));
+      for (size_t col=0; col<vh.cols();++col){
+	for (size_t p=vh.get_p(col); p<vh.get_p(col+1);++p){
+	  harray.entry(offset_to_last_block+vh.get_i(p),col,vh.get_x(p));
+	}
+      }
+    }
+
+    for (auto&& l : LocalTerms){
+      const SparseMatrix& op(v.get_operator_matrix(l.Op1Name));
+      for (size_t col=0; col<op.cols();++col){
+	for (size_t p=op.get_p(col); p<op.get_p(col+1);++p){
+	  harray.entry(offset_to_last_block+op.get_i(p),col,l.Value*op.get_x(p));
+	}
       }
     }
 
@@ -424,10 +437,15 @@ namespace ajaj{
 
     //loop through each operator pair
 
-    for (auto b=0;b<CouplingBlocks.size();++b){
-      const SparseMatrix& row_sp=v.get_operator_matrix(CouplingBlocks[b].row_block);
-      const SparseMatrix& col_sp=v.get_operator_matrix(CouplingBlocks[b].col_block);
-      const bool sameflag(CouplingBlocks[b].row_block==CouplingBlocks[b].col_block);
+    for (auto b=0;b<InterVertexCouplings.size();++b){
+      //const SparseMatrix& row_sp=v.get_operator_matrix(CouplingBlocks[b].row_block);
+      //const SparseMatrix& col_sp=v.get_operator_matrix(CouplingBlocks[b].col_block);
+      //const bool sameflag(CouplingBlocks[b].row_block==CouplingBlocks[b].col_block);
+
+      const SparseMatrix& row_sp=v.get_operator_matrix(InterVertexCouplings[b].Op1Name);
+      const SparseMatrix& col_sp=v.get_operator_matrix(InterVertexCouplings[b].Op2Name);
+      const bool sameflag(InterVertexCouplings[b].Op1Name==InterVertexCouplings[b].Op2Name);
+
       const MPXInt row_block_row_offset=(1+b*differencecombinations.size())*v.basis().size();
       const MPXInt row_block_col_offset=0;
       const MPXInt col_block_row_offset=offset_to_last_block;
@@ -463,7 +481,7 @@ namespace ajaj{
 
 	  harray.entry(i+row_block_row_offset+row_block_d_offset,col,row_sp.get_x(p));
 	  if (sameflag)
-	    harray.entry(i+col_block_row_offset,col+col_block_col_offset+col_block_d_offset,CouplingBlocks[b].value*row_sp.get_x(p));
+	    harray.entry(i+col_block_row_offset,col+col_block_col_offset+col_block_d_offset,InterVertexCouplings[b].Value*row_sp.get_x(p));
 	}
       }
 
@@ -489,7 +507,7 @@ namespace ajaj{
 		}
 	      }
 	    }
-	    harray.entry(i+col_block_row_offset,col+col_block_col_offset+col_block_d_offset,CouplingBlocks[b].value*col_sp.get_x(p));
+	    harray.entry(i+col_block_row_offset,col+col_block_col_offset+col_block_d_offset,InterVertexCouplings[b].Value*col_sp.get_x(p));
 	  }
 	}
       }
@@ -498,7 +516,7 @@ namespace ajaj{
     //assemble charges
     StateArray s;
     s.push_back(State(v.basis().getChargeRules())); //identity is block diagonal in charges
-    for (auto&& c : CouplingBlocks){
+    for (auto&& c : InterVertexCouplings){
       for (size_t l=0;l<differencecombinations.InvolutionPairs.size();++l){
 	s.push_back(differencecombinations.InvolutionPairs[l].PairState);
       }

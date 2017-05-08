@@ -46,9 +46,29 @@ namespace ajaj{
     std::string Op1Name;
     std::string Op2Name;
     std::complex<double> Value;
+    
+    bool single_vertex() const {
+      return Op2Name.empty();
+    }
+
+    bool two_vertex() const {
+      return !Op2Name.empty();
+    }
+
   };
 
   typedef std::vector<Coupling> CouplingArray;
+
+  std::string trim(const std::string& s){
+    size_t start = s.find_first_not_of(' ');
+
+    if (start == string::npos) return std::string();
+
+    size_t end = s.find_last_not_of(' ');
+
+    return s.substr(start, (end-start+1));
+  }
+
 
   std::istream& operator>>(std::istream& is, Coupling& c)
   {
@@ -63,11 +83,34 @@ namespace ajaj{
     bool failure(0);
     Coupling temp;
 
-
     if (!getline(is,temp.Name,',')) failure=1;
     if (!is.get(check) || check!='(') failure=1;
-    if (!getline(is,temp.Op1Name,',')) failure=1;
-    if (!getline(is,temp.Op2Name,')')) failure=1;
+
+    //Now inside parenthesis
+    //need to check if there are two names (comma separated) or one
+    std::string opnames;
+    if (!getline(is,opnames,')')) failure=1;
+    
+    size_t comma_pos=opnames.find(",");
+    if (comma_pos==std::string::npos){
+      //only one name
+      temp.Op1Name=trim(opnames);
+    }
+    else { //two names
+      //check for more commas...
+      size_t more=opnames.find(",",comma_pos+1);
+      if (more==std::string::npos){
+	temp.Op1Name=trim(opnames.substr(0,comma_pos));
+	temp.Op2Name=trim(opnames.substr(comma_pos+1,opnames.length()));
+      }
+      else {
+	std::cout << "ERROR: Too many comma separated operator names specified. " << opnames << std::endl;
+	std::cout << "Leaving couplings undefined." <<std::endl;
+	failure=1;
+      }
+    }
+
+    is >> std::ws;
     if (!is.get(check) || check!=':') failure=1;
     if (!(is >>temp.Value)) failure=1;
 
@@ -80,9 +123,12 @@ namespace ajaj{
   }
 
   std::ostream& operator<<(std::ostream& os, const Coupling& c){
-
-    os << c.Name <<",("<<c.Op1Name<<","<<c.Op2Name<<"):"<<c.Value;
-
+    if (c.Op2Name.empty()){
+      os << c.Name <<",("<<c.Op1Name<<"):"<<c.Value;
+    }
+    else {
+      os << c.Name <<",("<<c.Op1Name<<","<<c.Op2Name<<"):"<<c.Value;
+    }
     return os;
   }
 
