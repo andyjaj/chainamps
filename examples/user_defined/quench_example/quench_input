@@ -1,3 +1,4 @@
 USER DEFINED
 ./quench_defs/vertex_basis.in ./quench_defs/vertex_hamiltonian.in ./quench_defs/vertex_operators.in
-Jx,(Sx,Sx):1.0
+0.0 Jx,(Sx,Sx):1.0
+0.1 

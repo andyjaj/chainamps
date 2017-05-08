@@ -10,6 +10,7 @@
 #include <fstream>
 #include <string>
 #include <complex>
+#include <utility>
 
 #include "vertex.hpp"
 #include "MPX.hpp"
@@ -17,28 +18,6 @@
 
 
 namespace ajaj{
-
-  struct Model{
-  public:    
-    Vertex vertex;
-    MPO_matrix H_MPO;
-
-    Model() {};
-    Model(const VertexParameterArray& vp, Vertex (*generator) (const VertexParameterArray&), const VertexParameterArray& cp,  MPO_matrix (*makeH) (const Vertex&, const VertexParameterArray&)) : vertex(generator(vp)),H_MPO(makeH(vertex,cp)) {
-      std::cout << "MODEL'S LOCAL BASIS" <<std::endl;
-      basis().print();
-      std::cout << "MPO MATRIX INFO" <<std::endl;
-      H_MPO.print_indices();
-      H_MPO.print_sparse_info();
-    }
-
-    const Basis& basis() const {return vertex.basis();}
-
-    State make_target(const QNVector& vec) const {
-      std::cout <<"Setting target quantum numbers" <<std::endl;
-      return State(basis().getChargeRules(),vec);
-    }
-  };
 
   struct Coupling{
   public:
@@ -58,6 +37,37 @@ namespace ajaj{
   };
 
   typedef std::vector<Coupling> CouplingArray;
+
+  struct Model{
+  public:    
+    Vertex vertex;
+    MPO_matrix H_MPO;
+
+    Model() {};//default, used by user defined
+    Model(const VertexParameterArray& vp, Vertex (*generator) (const VertexParameterArray&), const VertexParameterArray& cp,  MPO_matrix (*makeH) (const Vertex&, const VertexParameterArray&)) : vertex(generator(vp)),H_MPO(makeH(vertex,cp)) { //used by built in models
+      std::cout << "MODEL'S LOCAL BASIS" <<std::endl;
+      basis().print();
+      std::cout << "MPO MATRIX INFO" <<std::endl;
+      H_MPO.print_indices();
+      H_MPO.print_sparse_info();
+    }
+    Model(const std::vector<CouplingArray>& CAs, const std::vector<double>& t) : CAs_(CAs), times_(t){};//default, used by user defined
+
+    const Basis& basis() const {return vertex.basis();}
+
+    State make_target(const QNVector& vec) const {
+      std::cout <<"Setting target quantum numbers" <<std::endl;
+      return State(basis().getChargeRules(),vec);
+    }
+
+    const std::vector<double>& times() const {return times_;}
+    const std::vector<CouplingArray>& coupling_arrays() const {return CAs_;}
+
+  private:
+    std::vector<double> times_;
+    std::vector<CouplingArray> CAs_;
+
+  };
 
   std::string trim(const std::string& s){
     size_t start = s.find_first_not_of(' ');

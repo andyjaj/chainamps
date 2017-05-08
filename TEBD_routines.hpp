@@ -57,12 +57,13 @@ namespace ajaj {
     double m_time_step_size;
     DataOutput& m_results;
     double m_truncation;
+    double m_current_time;
+    double update_time() {++m_current_time_step; return m_current_time+=m_time_step_size;}
   public:
-    TimeBase(double time_step_size, DataOutput& results) : m_current_time_step(0),m_time_step_size(time_step_size),m_results(results),m_truncation(0.0){}
+    TimeBase(double time_step_size, DataOutput& results) : m_current_time_step(0),m_time_step_size(time_step_size),m_results(results),m_truncation(0.0),m_current_time(0.0){}
 
-    //uMPXInt order() const {return m_EvolutionOperators.order();}
     double time_step_size() const {return m_time_step_size;}
-    double current_time() const {return m_current_time_step*m_time_step_size;}
+    double current_time() const {return m_current_time;}
   };
 
   class iTEBD : public TimeBase {
@@ -84,8 +85,8 @@ private:
   const std::string MPSName_;
   const EigenStateArray& Basis_;
   const uMPXInt NumVertices_;
-  const MPX_matrix SingleVertexOp_; //for open boundary conditions
-  const TrotterDecomposition m_EvolutionOperators;
+  MPX_matrix SingleVertexOp_; //for open boundary conditions
+  TrotterDecomposition m_EvolutionOperators;
   bool GoodInitial_;
 
   void apply_to_odd_bonds(const MPX_matrix& BondOp,uMPXInt  bond_dimension, double minS);
@@ -97,6 +98,8 @@ private:
 
 public:
   TEBD(const MPO_matrix& H, FiniteMPS& F, double time_step_size, DataOutput& results, uMPXInt order=1); //use FiniteMPS class
+
+  void change_bond_operator(const MPO_matrix& H, double time_step_size);
 
   void evolve(uMPXInt num_steps, std::vector<MultiVertexMeasurement>& measurements, uMPXInt bond_dimension=0, double minS=0.0, uMPXInt measurement_interval=1);
   void left_info();

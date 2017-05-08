@@ -443,6 +443,12 @@ namespace ajaj{
       GoodInitial_=1;
   }
 
+  void TEBD::change_bond_operator(const MPO_matrix& H, double time_step_size){
+    m_time_step_size=time_step_size;
+    SingleVertexOp_=MakeSingleSiteEvolutionOperator(H,time_step_size);
+    m_EvolutionOperators=TrotterDecomposition(H,time_step_size,m_EvolutionOperators.order());
+  }
+
   void TEBD::evolve(uMPXInt num_steps, std::vector<MultiVertexMeasurement>& measurements, uMPXInt bond_dimension, double minS, uMPXInt measurement_interval){
     //do the evolution
     if (GoodInitial_){
@@ -450,7 +456,8 @@ namespace ajaj{
       if (m_EvolutionOperators.order()==1){
 	std::cout <<"1st order time step evolution" <<std::endl;
 	for (uMPXInt n=0;n<num_steps;++n){
-	  ++m_current_time_step;
+	  //++m_current_time_step;
+	  update_time();
 	  std::cout << "Time " << current_time() << std::endl;
 	  //this is the first half of the time step....
 	  apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
@@ -473,7 +480,8 @@ namespace ajaj{
 	apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS); //half step
 	left_canonise();
 	for (uMPXInt n=0;n<num_steps;++n){
-	  ++m_current_time_step;
+	  update_time();
+	  //	  ++m_current_time_step;
 	  std::cout << "Time " << current_time() << std::endl;
 	  apply_to_even_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS);
 	  left_canonise();
