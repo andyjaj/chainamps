@@ -68,7 +68,7 @@ namespace ajaj {
 
   class iTEBD : public TimeBase {
   private:
-    const TrotterDecomposition m_EvolutionOperators;
+    TrotterDecomposition m_EvolutionOperators;
     const UnitCell& m_initial_unit;
     UnitCell m_unit;
     std::string Name_;
@@ -78,6 +78,8 @@ namespace ajaj {
     iTEBD(const MPO_matrix& H,const UnitCell& C, double time_step_size, DataOutput& results, const std::string& Name, uMPXInt order=1);
     const UnitCell& evolve(uMPXInt num_steps, const std::vector<MPO_matrix>& measuredMPOs, uMPXInt bond_dimension=0, double minS=0.0, uMPXInt measurement_interval=1);
     uMPXInt order() const {return m_EvolutionOperators.order();}
+    void change_bond_operator(const MPO_matrix& H, double time_step_size);
+
   };
 
 class TEBD : public TimeBase {

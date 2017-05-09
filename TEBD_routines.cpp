@@ -95,7 +95,8 @@ namespace ajaj{
     if (order()==1){
       std::cout <<"1st order time step evolution" <<std::endl;
       for (uMPXInt n=0;n<num_steps;++n){
-	++m_current_time_step;
+	//++m_current_time_step;
+	update_time();
 	std::cout << "Time " << current_time() << std::endl;
 	//this is the first half of the time step....
 	apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
@@ -118,7 +119,8 @@ namespace ajaj{
       //2nd order special start
       apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
       for (uMPXInt n=0;n<num_steps;++n){
-	++m_current_time_step;
+	//++m_current_time_step;
+	update_time();
 	std::cout << "Time " << current_time() << std::endl;
 	apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS);
 	if (m_current_time_step % measurement_interval==0) /*make measurement*/ {
@@ -187,6 +189,11 @@ namespace ajaj{
     std::cout << "Return new unit cell" << std::endl;
 #endif
     return m_unit;
+  }
+
+  void iTEBD::change_bond_operator(const MPO_matrix& H, double time_step_size){
+    m_time_step_size=time_step_size;
+    m_EvolutionOperators=TrotterDecomposition(H,time_step_size,m_EvolutionOperators.order());
   }
   
   void TEBD::apply_to_odd_bonds(const MPX_matrix& BondOp,uMPXInt  bond_dimension, double minS){

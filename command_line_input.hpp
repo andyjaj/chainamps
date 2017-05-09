@@ -181,7 +181,7 @@ namespace ajaj {
 
   };
 
-  enum optionIndex {UNKNOWN,CHI,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET,FINITE_MEASUREMENT,NEV,ENTANGLEMENT,VERTEX_ENTANGLEMENT,C_SPECIFIER};
+  enum optionIndex {UNKNOWN,CHI,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET,FINITE_MEASUREMENT,NEV,ENTANGLEMENT,VERTEX_ENTANGLEMENT,C_SPECIFIER,TIMEFILE};
 
   const option::Descriptor store_usage[2] =
     {
@@ -263,7 +263,7 @@ namespace ajaj {
       { 0, 0, 0, 0, 0, 0 }
     };
 
-  const option::Descriptor iMEAS_usage[9] =
+  const option::Descriptor iMEAS_usage[10] =
     {
       {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: UNITCELL_MEASURE.bin [OPTIONS] <unitcell_filename1> ... \n"},
       {OPERATORFILE,0,"O","operator filename",Arg::NonEmpty,"  -O <filename>, \t--operator-file=<filename>"
@@ -280,6 +280,8 @@ namespace ajaj {
        "  \tCalculate the bipartite entanglement for the infinite system."},
       {VERTEX_ENTANGLEMENT,0,"V","Multi Vertex Entanglement",Arg::PositiveDefiniteNumeric,"  -V <number>, \t--vertex-entanglement=<number>"
        "  \tCalculate the entanglement entropy for <number> consecutive vertices in the infinite system."},
+      {TIMEFILE,0,"t","time-filename",Arg::NonEmpty," -t <filename>, \t--time-filename=<filename>"
+       "  \tUse time data from <filename> to include times in output file."},
       { 0, 0, 0, 0, 0, 0 }
     };
 
@@ -604,9 +606,10 @@ namespace ajaj {
     std::vector<std::string> operator_filenames_;
     std::vector<std::string> files_;
     std::vector<short int> target_;
+    std::string timefile_;
 
   public:
-    iMEAS_Args(int argc, char* argv[]) : Base_Args(argc,argv,iMEAS_usage),separation_(0),nev_(0),use_filename_index_(1),two_point_(0),calc_entanglement_(0),vert_entanglement_(0){
+    iMEAS_Args(int argc, char* argv[]) : Base_Args(argc,argv,iMEAS_usage),separation_(0),nev_(0),use_filename_index_(1),two_point_(0),calc_entanglement_(0),vert_entanglement_(0),timefile_(std::string()){
       if (valid_){
 	if (parse.nonOptionsCount()<1 || std::string(parse.nonOption(0))==std::string("-")) {std::cout << "No files to process?" << std::endl<<std::endl; valid_=0;}
 	else {
@@ -639,6 +642,8 @@ namespace ajaj {
 	    calc_entanglement_=1;
 	  if (options[VERTEX_ENTANGLEMENT])
 	    vert_entanglement_=stoul(options[VERTEX_ENTANGLEMENT].arg);
+	  if (options[TIMEFILE])
+	    timefile_=std::string(options[TIMEFILE].arg);
 	}
       }
       else valid_=0;
@@ -654,6 +659,7 @@ namespace ajaj {
     bool calc_entanglement() const {return calc_entanglement_;}
     unsigned long vert_entanglement() const {return vert_entanglement_;}
     const std::vector<short int>& target() const {return target_;}
+    const std::string& time_filename() const {return timefile_;}
   };
 
   class Store_Args : public Base_Args{

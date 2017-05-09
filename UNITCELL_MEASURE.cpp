@@ -29,6 +29,29 @@ int main(int argc, char** argv){
     //operator_filenames() (can be 1 or 2 at the moment, indicates measurement at multiple locations, specified by distance).
     //use_filename_index(), strip and index from filename and use it to order results, default true
 
+    //if we want to add time info, this is where we should do it
+    std::vector<double> times;
+    if (!RuntimeArgs.time_filename().empty()){
+      std::ifstream time_file;
+      time_file.open(RuntimeArgs.time_filename().c_str(),ios::in);
+      
+      if (time_file.is_open()){
+	size_t idx;
+	double time;
+	std::string sdump;
+	time_file >> std::ws;
+	if (time_file.peek()=='#'){getline(time_file,sdump);}
+	while (time_file >> idx >> time){
+	  getline(time_file,sdump);
+	  times.push_back(time);
+	}
+      }
+      else {
+	std::cout <<"Could open specified time data file '" << RuntimeArgs.time_filename() << "'." <<std::endl;
+	return 1;
+      }
+    }
+
     ajaj::Vertex iMEAS_vertex; // a dummy vertex
     std::vector<ajaj::ShiftedOperatorInfo> opinfo;
 
@@ -120,6 +143,9 @@ int main(int argc, char** argv){
 	  m.print_sparse_info();
 	}
 	indexed_results.emplace_back(Index,ajaj::Data());
+	if (!RuntimeArgs.time_filename().empty()){
+	  indexed_results.back().second.Real_measurements.emplace_back(times.at(Index-1));
+	}
 	if (RuntimeArgs.calc_entanglement()){
 	  indexed_results.back().second.Real_measurements.emplace_back(AA.Entropy());
 	}
@@ -195,6 +221,7 @@ int main(int argc, char** argv){
     outfilename << ".dat";
 
     std::ostringstream commentstream;
+
     if (RuntimeArgs.nev()){
       commentstream << "Transfer Matrix EigenValues for Target State: ";
       for (auto t : RuntimeArgs.target()){
@@ -202,7 +229,11 @@ int main(int argc, char** argv){
       }
       commentstream << "\n";
     }
+
     commentstream << "Index";
+    if (!RuntimeArgs.time_filename().empty()){
+      commentstream <<",time";
+    }
     if (RuntimeArgs.calc_entanglement()){
       commentstream << ",S_E";
     }
