@@ -321,7 +321,7 @@ namespace ajaj{
       }
       basisfile.close();
 
-      if (!UserModel.vertex.Spectrum.size() && UserModel.vertex.ChargeRules.size() && UserModel.vertex.ChargeRules[0]==1){
+      if (!UserModel.vertex.Spectrum.size() && UserModel.vertex.ChargeRules.size() && UserModel.vertex.ChargeRules[0]==0){
 	std::cout << "No charges defined, interpreting first integer as number of states, " << dummyinteger <<std::endl;
 	UserModel.vertex.Spectrum=ajaj::Basis(ajaj::StateArray(dummyinteger,ajaj::State(UserModel.vertex.ChargeRules)),std::vector<double>(dummyinteger,0.0));
       }
