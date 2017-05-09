@@ -99,9 +99,7 @@ int main(int argc, char** argv){
     //ajaj::DataOutput results(ajaj::OutputName(RuntimeArgs.filename(),"Evolution.dat"),"Index, Time, Truncation, Entropy, abs(Overlap), Real(Overlap), Im(Overlap), Re(Op1), Im(Op1), ...");
     std::ostringstream commentline;
     commentline << "Index, Time, Truncation, Entropy, abs(Overlap), Real(Overlap), Im(Overlap)";
-    if (measurement_lookups.size()) commentline << measurednames.str();  
-    ajaj::DataOutput results(ajaj::OutputName(RuntimeArgs.filename(),"Evolution.dat"),commentline.str());
-    //measurements.emplace_back(ajaj::MultiVertexMeasurement(number_of_vertices/2/*first measurement position*/,&measured_operators[0],number_of_vertices/2+1/* second measurement position*/,&measured_operators[0]));
+    if (measurement_lookups.size()) commentline << measurednames.str(); 
 
     std::vector<ajaj::MultiVertexMeasurement> measurements;
     for (auto&& m : measurement_lookups){
@@ -136,6 +134,13 @@ int main(int argc, char** argv){
     }
 
     std::cout << "Using initial state '" << StateName << "'." <<std::endl; 
+
+    std::stringstream Rss;
+    Rss<<RuntimeArgs.filename()<<"_TEBD_"<<number_of_vertices<<"_"<<StateName;
+
+ 
+    ajaj::DataOutput results(ajaj::OutputName(Rss.str(),"Evolution.dat"),commentline.str());
+    //measurements.emplace_back(ajaj::MultiVertexMeasurement(number_of_vertices/2/*first measurement position*/,&measured_operators[0],number_of_vertices/2+1/* second measurement position*/,&measured_operators[0]));
 
     ajaj::FiniteMPS F(myModel.basis(),StateName,number_of_vertices,CSpec); //if CSpec is empty, nothing is changed.
     

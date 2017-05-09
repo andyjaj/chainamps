@@ -64,8 +64,7 @@ int main(int argc, char** argv){
     }
 
     std::stringstream Rss;
-    Rss<<RuntimeArgs.filename();
-    Rss<<"_"<<InitialStateName;
+    Rss<<RuntimeArgs.filename()<<"_iTEBD_"<<InitialStateName;
 
     std::cout << "Using initial state '" << InitialStateName << "'" <<std::endl;
 

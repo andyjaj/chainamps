@@ -101,9 +101,7 @@ namespace ajaj{
     }
 
     if (!getline(is,temp.Name,',')) failure=1;
-    std::cout << failure <<std::endl;
     if (!is.get(check) || check!='(') failure=1;
-    std::cout << failure <<std::endl;
     //Now inside parenthesis
     //need to check if there are two names (comma separated) or one
     std::string opnames;
@@ -114,11 +112,9 @@ namespace ajaj{
     if (comma_pos==std::string::npos){
       //only one name
       temp.Op1Name=trim(opnames);
-      std::cout << "S 1" <<std::endl;
 
     }
     else { //two names
-      std::cout << "S 2" <<std::endl;
 
       //check for more commas...
       size_t more=opnames.find(",",comma_pos+1);
@@ -132,15 +128,11 @@ namespace ajaj{
 	failure=1;
       }
     }
-    std::cout << failure <<std::endl;
 
     is >> std::ws;
     if (!is.get(check) || check!=':') failure=1;
-    std::cout << failure <<std::endl;
 
     if (!(is >>temp.Value)) failure=1;
-    std::cout << failure <<std::endl;
-    std::cout << "Done" <<std::endl;
 
     if( failure )
       is.setstate(std::ios::failbit);

@@ -47,7 +47,7 @@ int main(int argc, char** argv){
 	}
       }
       else {
-	std::cout <<"Could open specified time data file '" << RuntimeArgs.time_filename() << "'." <<std::endl;
+	std::cout <<"Could not open specified time data file '" << RuntimeArgs.time_filename() << "'." <<std::endl;
 	return 1;
       }
     }
