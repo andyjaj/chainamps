@@ -866,7 +866,7 @@ namespace continuumIsing {
     return ModelVertex;
   }
 
-  ajaj::MPO_matrix MakeHamiltonian(const ajaj::Vertex& modelvertex, const ajaj::VertexParameterArray& couplingparams){
+  ajaj::MPO_matrix MakeHamiltonian(const ajaj::Vertex& modelvertex, const ajaj::CouplingArray& couplingparams){
     //Lower triangular MPO
     // I   0   0
     // JK  0   0
@@ -892,7 +892,11 @@ namespace continuumIsing {
       }
 
       //also put in a longitudinal field
-      const double long_field(couplingparams[1].Value);
+      if (couplingparams[1].Value.imag()!=0.0){
+	std::cout << "ERROR: applied local field must be real, imaginary part="<<couplingparams[1].Value.imag()<<std::endl;
+	exit(1);
+      }
+      const double long_field(couplingparams[1].Value.real());
       //loop over Operators[0] and multiply by param
       const ajaj::SparseMatrix& spin=modelvertex.Operators[0].MatrixElements;
       for (ajaj::Sparseint col=0;col<spin.cols();++col){
@@ -911,7 +915,10 @@ namespace continuumIsing {
       ajaj::Sparseint operator_col_offset=c*differencecombinations.size()+1; //+1 for identity matrix in first block
       ajaj::Sparseint operator_row_offset=(couplingparams.size()-c-1)*differencecombinations.size()+1; //reversal, +1 for identity
 
-      double operatorparam=couplingparams[c].Value;
+      if (couplingparams[c].Value.imag()!=0.0){
+	std::cout << "ERROR: coupling param " <<c << " must have a real value. Imag part=" << couplingparams[c].Value.imag() <<std::endl;
+      }
+      double operatorparam=couplingparams[c].Value.real();
       if (operatorparam!=0.0){
 	for (ajaj::Sparseint col=0;col<modelvertex.Operators[c].MatrixElements.cols();++col){
 	  for (ajaj::Sparseint p=modelvertex.Operators[c].MatrixElements.get_p(col);p<modelvertex.Operators[c].MatrixElements.get_p(col+1);++p){

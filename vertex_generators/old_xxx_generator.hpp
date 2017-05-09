@@ -14,7 +14,7 @@
 //#include "../MPX.hpp"
 
 namespace oldxxx {
-  ajaj::MPO_matrix MakeHamiltonian(const ajaj::Vertex& modelvertex, const ajaj::VertexParameterArray& couplingparams){
+  ajaj::MPO_matrix MakeHamiltonian(const ajaj::Vertex& modelvertex, const ajaj::CouplingArray& couplingparams){
     //Lower triangular MPO
     // I        0  0  0  0
     // JxyS+/2  0  0  0  0
@@ -38,10 +38,16 @@ namespace oldxxx {
     //now do the non trivial parts
     double Nxxx=modelvertex.Parameters[0].Value;
     //J1=Jxy=Jz
-    double Jz=couplingparams[0].Value*Nxxx;
-    double halfJxy=couplingparams.size()>1 ? couplingparams[1].Value*0.5*Nxxx : Jz*0.5;
-    double J2z=couplingparams.size()>2 ? couplingparams[2].Value*Nxxx : 0.0;
-    double halfJ2xy=couplingparams.size()>3 ? couplingparams[3].Value*0.5*Nxxx : J2z*0.5;
+    
+    for (auto&& c : couplingparams){
+      if (c.Value.imag()!=0.0){
+	std::cout << "ERROR: coupling param " << c << " must have a real value. Imag part=" << c.Value.imag() <<std::endl;
+      }
+    }
+    double Jz=couplingparams[0].Value.real()*Nxxx;
+    double halfJxy=couplingparams.size()>1 ? couplingparams[1].Value.real()*0.5*Nxxx : Jz*0.5;
+    double J2z=couplingparams.size()>2 ? couplingparams[2].Value.real()*Nxxx : 0.0;
+    double halfJ2xy=couplingparams.size()>3 ? couplingparams[3].Value.real()*0.5*Nxxx : J2z*0.5;
     std::cout << Jz/Nxxx << " " << 2.0*halfJxy/Nxxx << " " << J2z/Nxxx << " " << 2.0*halfJ2xy/Nxxx << std::endl;
 
     //Just use S+ and its conjugate?

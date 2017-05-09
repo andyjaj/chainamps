@@ -21,7 +21,6 @@
 #include "vertex_generators/continuum_Ising_generator.hpp"
 #include "vertex_generators/continuum_ff_generator.hpp"
 #include "vertex_generators/ll_generator.hpp"
-#include "vertex_generators/spin_half_generator.hpp"
 #include "vertex_generators/old_xxx_generator.hpp"
 
 namespace ajaj{
@@ -31,7 +30,6 @@ namespace ajaj{
       cm_ff, 
       xxx,
       ll, 
-      spin_half,
       user,
       last
       };
@@ -40,18 +38,17 @@ namespace ajaj{
     BuiltinModels int_name;
     std::vector<std::string> name_variants;
     Vertex (*generator) (const VertexParameterArray&);
-    MPO_matrix (*makeH) (const Vertex&, const VertexParameterArray&);
+    MPO_matrix (*makeH) (const Vertex&, const CouplingArray&);
 
-    NameGroup(BuiltinModels i, std::vector<std::string> n, Vertex (*g) (const VertexParameterArray&),MPO_matrix (*h) (const Vertex&, const VertexParameterArray&)) : int_name(i), name_variants(n),generator(g),makeH(h) {};
+    NameGroup(BuiltinModels i, std::vector<std::string> n, Vertex (*g) (const VertexParameterArray&),MPO_matrix (*h) (const Vertex&, const CouplingArray&)) : int_name(i), name_variants(n),generator(g),makeH(h) {};
   };
 
   //recognised models, or user defined
-  static const NameGroup m_names[7] = {
+  static const NameGroup m_names[6] = {
     {BuiltinModels::cm_ising, {"continuum_Ising", "continuum_Ising", "continuum ising", "Continuum_Ising", "Continuum Ising", "CONTINUUM_ISING", "CONTINUUM ISING"},&continuumIsing::VertexGenerator,&continuumIsing::MakeHamiltonian},
     {BuiltinModels::cm_ff, {"continuum_free_fermion", "continuum free fermion", "Continuum_Free_Fermion", "Continuum Free Fermion", "CONTINUUM_FREE_FERMION","CONTINUUM FREE FERMION"},&continuumff::VertexGenerator,&continuumff::MakeHamiltonian},
     {BuiltinModels::xxx, {"OLD_XXX"},&oldxxx::VertexGenerator,&oldxxx::MakeHamiltonian},
     {BuiltinModels::ll, {"ll","LL","Luttinger_liquid","luttinger_liquid","Luttinger liquid", "luttinger liquid", "LUTTINGER_LIQUID","LUTTINGER LIQUID"},&ll::VertexGenerator,&ll::MakeHamiltonian},
-    {BuiltinModels::spin_half, {"spin half","SPIN_HALF","SPIN HALF"},&spin_half::VertexGenerator,&spin_half::MakeHamiltonian},
     {BuiltinModels::user, {"User_Defined","user_defined","User Defined","user defined","USER","user","USER_DEFINED", "USER DEFINED" },nullptr,nullptr},
     {BuiltinModels::last, {""},nullptr,nullptr}
   }; 
@@ -173,8 +170,12 @@ namespace ajaj{
 		//vp.back().print();
 	      }
 	    }
-	    //last line, containing coupling params
-	    VertexParameterArray cp;
+	    //last lines, containing coupling params
+
+	    std::vector<CouplingArray> cpas;
+	    std::vector<double> times;
+
+	    /*VertexParameterArray cp;
 	    {
 	      std::istringstream iss2(stringbuffer.at(2));
 	      std::string word;
@@ -186,24 +187,60 @@ namespace ajaj{
 		double paramvalue(stod(word));
 		cp.push_back(VertexParameter(paramname,paramvalue));
 	      }
+	    }*/
+
+	    for (auto c_idx=2;c_idx<stringbuffer.size();++c_idx){
+	      std::istringstream css(stringbuffer.at(c_idx));
+	      css >> std::ws;
+	      double temp_time;
+	      bool is_time(0);
+	      if (std::isdigit(css.peek())){
+		is_time=1;
+		css >> temp_time;
+	      }
+	      else if (stringbuffer.size()>3){ //no time dep info and yet more than 1 coupling line
+		std::cout << "ERROR: no time data, but more than one coupling defs line!" << std::endl;
+		return Model();
+	      }
+	      cpas.push_back(CouplingArray());
+	      //Coupling c;
+	      std::string word;
+	      std::complex<double> value;
+	      while (css >> word >> value){
+		cpas.back().push_back(Coupling(word,value));
+	      }
+	      if (cpas.back().size() && is_time){
+		  times.push_back(temp_time);
+	      }
 	    }
+	    //print error if no couplings, but proceed
+	    if (cpas.size()==0 || cpas[0].size()==0){
+	      std::cout << "NO INTER-VERTEX COUPLINGS DEFINED!" << std::endl;
+	      std::cout << "This is allowed, but is it what you intended?" <<std::endl;
+	    }
+	  
 	    std::cout << std::endl;
 	    std::cout << "Builtin model, coupled array of: " << the_model.name_variants.back() << " vertices" << std::endl;
 	    std::cout << "Vertex Parameters:" <<std::endl;
 	    for (auto&& p : vp){
 	      p.print();
 	    }
-	    std::cout << "Inter Vertex Coupling Parameters:" <<std::endl;
-	    for (auto&& p : cp){
-	      p.print();
+	    if (cpas.size()){
+	      std::cout << "Inter Vertex Coupling Parameters:" <<std::endl;
+	      for (auto&& c : cpas[0]){
+		std::cout << c <<std::endl;
+	      }
 	    }
-	    if (cp.size()==0){
+	    /*for (auto&& p : cp){
+	      p.print();
+	    }*/
+	    else {
 	      std::cout << "No inter vertex couplings defined! Are you sure you meant for this? Possible format error in input file.";
 	    }
 	    std::cout << std::endl;
 	    
 
-	    return Model(vp,the_model.generator,cp,the_model.makeH);
+	    return Model(vp,the_model.generator,cpas,the_model.makeH,times);
 	  }
 	}
       }
@@ -222,7 +259,7 @@ namespace ajaj{
   Model MakeUserModel(const std::string& vertex_basis_filename,const std::string& vertex_hamiltonian_filename,const std::vector<std::string>& vertex_operator_filenames,const std::vector<CouplingArray>& couplings,const std::vector<double>& times=std::vector<double>()){
     //construct model_vertex
     //read in basis file
-    ajaj::Model UserModel(couplings,times);
+    ajaj::Model UserModel(couplings,&MakeGeneralHMPO,times);
     std::ifstream basisfile;
     basisfile.open(vertex_basis_filename.c_str(),std::ios::in);
     if (basisfile.is_open()){

@@ -22,36 +22,43 @@ namespace ajaj{
   struct Coupling{
   public:
     std::string Name;
-    std::string Op1Name;
-    std::string Op2Name;
     std::complex<double> Value;
-    
+    std::string Op1Name;
+    std::string Op2Name;    
+
+    Coupling() {};
+    Coupling(const std::string& N, std::complex<double> v) : Name(N),Value(v){};
+
     bool single_vertex() const {
-      return Op2Name.empty();
+      return Op2Name.empty() && !Op1Name.empty();
     }
 
     bool two_vertex() const {
-      return !Op2Name.empty();
+      return !Op2Name.empty() && !Op1Name.empty();
     }
-
   };
 
   typedef std::vector<Coupling> CouplingArray;
 
   struct Model{
+  private:
+    std::vector<double> times_;
+    std::vector<CouplingArray> CAs_;
+    MPO_matrix (*makeH_) (const Vertex&, const CouplingArray&);
+
   public:    
     Vertex vertex;
     MPO_matrix H_MPO;
 
-    Model() {};//default, used by user defined
-    Model(const VertexParameterArray& vp, Vertex (*generator) (const VertexParameterArray&), const VertexParameterArray& cp,  MPO_matrix (*makeH) (const Vertex&, const VertexParameterArray&)) : vertex(generator(vp)),H_MPO(makeH(vertex,cp)) { //used by built in models
+    Model() : makeH_(nullptr) {};//default, used by user defined
+    Model(const VertexParameterArray& vp, Vertex (*generator) (const VertexParameterArray&), const std::vector<CouplingArray>& CAs, MPO_matrix (*makeH) (const Vertex&, const CouplingArray&), const std::vector<double>& t=std::vector<double>()) : CAs_(CAs), times_(t), makeH_(makeH), vertex(generator(vp)),H_MPO(makeH(vertex,CAs_.size() ? CAs_[0] : CouplingArray())) { //used by built in models
       std::cout << "MODEL'S LOCAL BASIS" <<std::endl;
       basis().print();
       std::cout << "MPO MATRIX INFO" <<std::endl;
       H_MPO.print_indices();
       H_MPO.print_sparse_info();
     }
-    Model(const std::vector<CouplingArray>& CAs, const std::vector<double>& t) : CAs_(CAs), times_(t){};//default, used by user defined
+    Model(const std::vector<CouplingArray>& CAs,  MPO_matrix (*makeH) (const Vertex&, const CouplingArray&), const std::vector<double>& t) : CAs_(CAs), times_(t), makeH_(makeH){};//default, used by user defined
 
     const Basis& basis() const {return vertex.basis();}
 
@@ -63,9 +70,10 @@ namespace ajaj{
     const std::vector<double>& times() const {return times_;}
     const std::vector<CouplingArray>& coupling_arrays() const {return CAs_;}
 
-  private:
-    std::vector<double> times_;
-    std::vector<CouplingArray> CAs_;
+    const MPO_matrix& change_H_MPO(const CouplingArray& ca){
+      H_MPO=makeH_(vertex,ca);
+      return H_MPO;
+    }
 
   };
 

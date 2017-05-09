@@ -37,7 +37,7 @@ namespace continuumff{
     //}
   };
 
-  ajaj::MPO_matrix MakeHamiltonian(const ajaj::Vertex& modelvertex, const ajaj::VertexParameterArray& couplingparams){
+  ajaj::MPO_matrix MakeHamiltonian(const ajaj::Vertex& modelvertex, const ajaj::CouplingArray& couplingparams){
     //Lower triangular MPO
     // I           0    0         0
     // JPsidagger  0    0         0
@@ -66,8 +66,10 @@ namespace continuumff{
     }
 
     //now the more annoying pieces
-
-    double tunnelling=couplingparams[0].Value;
+    if (couplingparams[0].Value.imag()!=0.0){
+      std::cout << "ERROR: tunnelling must have a real value. Imag part=" << couplingparams[0].Value.imag() <<std::endl;
+    }
+    double tunnelling=couplingparams[0].Value.real();
     double Delta=modelvertex.Parameters[1].Value;
 
     ajaj::Sparseint A_col_offset=1; //+1 for identity matrix in first block

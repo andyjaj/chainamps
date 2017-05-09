@@ -178,7 +178,7 @@ int main(int argc, char** argv){
 	while (current_step_size>time_step_size){current_step_size=ramp_step_size/(++num);}
 	if (num>number_of_time_steps) num=number_of_time_steps;
 
-	finrun.change_bond_operator(ajaj::MakeGeneralHMPO(myModel.vertex,myModel.coupling_arrays()[ramp_step-1]),current_step_size);
+	finrun.change_bond_operator(myModel.change_H_MPO(myModel.coupling_arrays()[ramp_step-1]),current_step_size);
 	finrun.evolve(num,measurements,CHI/*bond dimension*/,minS/*min s val*/,measurement_interval);
 	number_of_time_steps-=num;
 	++ramp_step;
@@ -186,7 +186,7 @@ int main(int argc, char** argv){
       
       if (number_of_time_steps>0 && finrun.good()){
 	std::cout <<"End of time dependent hamiltonian stage." <<std::endl;
-	finrun.change_bond_operator(ajaj::MakeGeneralHMPO(myModel.vertex,myModel.coupling_arrays()[ramp_step-1]),time_step_size);
+	finrun.change_bond_operator(myModel.change_H_MPO(myModel.coupling_arrays()[ramp_step-1]),time_step_size);
 	finrun.evolve(number_of_time_steps,measurements,CHI/*bond dimension*/,minS/*min s val*/,measurement_interval);
       }
 
