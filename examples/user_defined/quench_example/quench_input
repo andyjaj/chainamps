@@ -1,4 +1,4 @@
 USER DEFINED
-./quench_defs/vertex_basis.in ./quench_defs/vertex_hamiltonian.in ./quench_defs/vertex_operators.in
+2 ./quench_defs/vertex_hamiltonian.in ./quench_defs/vertex_operators.in
 Jx,(Sx,Sx):1.0 hx,(Sx):-0.2 hz,(Sz):1.0 
 

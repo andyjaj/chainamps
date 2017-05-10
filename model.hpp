@@ -114,7 +114,6 @@ namespace ajaj{
     //need to check if there are two names (comma separated) or one
     std::string opnames;
     if (!getline(is,opnames,')')) failure=1;
-        std::cout << failure <<std::endl;
 
     size_t comma_pos=opnames.find(",");
     if (comma_pos==std::string::npos){

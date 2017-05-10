@@ -176,18 +176,18 @@ namespace ajaj{
 	    std::vector<double> times;
 
 	    /*VertexParameterArray cp;
-	    {
+	      {
 	      std::istringstream iss2(stringbuffer.at(2));
 	      std::string word;
 	      while (iss2 >> word){
-		//use word
-		std::string paramname(word);
-		//advance
-		if (!(iss2 >> word)) break;
-		double paramvalue(stod(word));
-		cp.push_back(VertexParameter(paramname,paramvalue));
+	      //use word
+	      std::string paramname(word);
+	      //advance
+	      if (!(iss2 >> word)) break;
+	      double paramvalue(stod(word));
+	      cp.push_back(VertexParameter(paramname,paramvalue));
 	      }
-	    }*/
+	      }*/
 
 	    for (auto c_idx=2;c_idx<stringbuffer.size();++c_idx){
 	      std::istringstream css(stringbuffer.at(c_idx));
@@ -210,7 +210,7 @@ namespace ajaj{
 		cpas.back().push_back(Coupling(word,value));
 	      }
 	      if (cpas.back().size() && is_time){
-		  times.push_back(temp_time);
+		times.push_back(temp_time);
 	      }
 	    }
 	    //print error if no couplings, but proceed
@@ -233,7 +233,7 @@ namespace ajaj{
 	    }
 	    /*for (auto&& p : cp){
 	      p.print();
-	    }*/
+	      }*/
 	    else {
 	      std::cout << "No inter vertex couplings defined! Are you sure you meant for this? Possible format error in input file.";
 	    }
@@ -260,186 +260,196 @@ namespace ajaj{
     //construct model_vertex
     //read in basis file
     ajaj::Model UserModel(couplings,&MakeGeneralHMPO,times);
-    std::ifstream basisfile;
-    basisfile.open(vertex_basis_filename.c_str(),std::ios::in);
-    if (basisfile.is_open()){
-      //process first row for charge defs
-      //use getline, stringstream, stoi
-      //ajaj::Vertex UserVertex;
-      UserModel.vertex.Name=std::string("User Defined Vertex");
-      std::string basisfileline;
-      if (getline(basisfile,basisfileline)){
-	std::istringstream basis_iss(basisfileline);
-	std::string word;
-	if (basis_iss >> word) {
-	  if (word[0]=='D') { //starts with a D for definition line
+    UserModel.vertex.Name=std::string("User Defined Vertex");
+
+    uMPXInt bsize=0;
+    try { bsize=stoul(vertex_basis_filename); }
+    catch (const std::invalid_argument& ia){
+      //not a number
+    }
+    if (bsize>0){
+      UserModel.vertex.ChargeRules.push_back(static_cast<QuantumNumberInt>(0));
+      UserModel.vertex.Spectrum=ajaj::Basis(ajaj::StateArray(bsize,ajaj::State(UserModel.vertex.ChargeRules)),std::vector<double>(bsize,0.0));
+    }
+    else {
+      std::ifstream basisfile;
+      basisfile.open(vertex_basis_filename.c_str(),std::ios::in);
+      if (basisfile.is_open()){
+	//process first row for charge defs
+	//use getline, stringstream, stoi
+	//ajaj::Vertex UserVertex;
+	std::string basisfileline;
+	if (getline(basisfile,basisfileline)){
+	  std::istringstream basis_iss(basisfileline);
+	  std::string word;
+	  if (basis_iss >> word) {
+	    if (word[0]=='D') { //starts with a D for definition line
+	      int readinteger;
+	      while (basis_iss >> readinteger) {
+		UserModel.vertex.ChargeRules.push_back(static_cast<QuantumNumberInt>(readinteger));
+	      }
+	      if (UserModel.vertex.ChargeRules.size()==0){
+		std::cout <<"No charge rules, assuming no conserved Abelian charges..." <<std::endl;
+		UserModel.vertex.ChargeRules.push_back(static_cast<QuantumNumberInt>(0));
+	      }
+	    }
+	    else if (word[0]=='#') {
+	      //format is Z_n or Z
+	      while (basis_iss >> word){
+		int tempint(word.find("_")!=std::string::npos ?  stoi(word.substr(word.rfind("_")+1,word.length())) : 0);
+		if (tempint< std::numeric_limits<short int>::max() && tempint > std::numeric_limits<short int>::min()){
+		  UserModel.vertex.ChargeRules.push_back(static_cast<QuantumNumberInt>(tempint));
+		}
+		else {
+		  std::cout << "Invalid charge definition!" <<std::endl;
+		  UserModel=Model(); 
+		  return UserModel;
+		}
+	      }
+	      
+	    }
+	    else { //no definition
+	      std::cout << "No definitions of n for Z_n charges!" <<std::endl;
+	      UserModel=Model(); 
+	      return UserModel;
+	    }
+	  }
+	}
+	
+	int dummyinteger(0);
+	while (getline(basisfile,basisfileline)){
+	  std::istringstream basis_iss(basisfileline);
+	  if (basis_iss >> dummyinteger){ //first is a dummy index
+	    //read all charges
+	    ajaj::QNVector charge_values;
 	    int readinteger;
 	    while (basis_iss >> readinteger) {
-	      UserModel.vertex.ChargeRules.push_back(static_cast<QuantumNumberInt>(readinteger));
+	      charge_values.push_back(static_cast<QuantumNumberInt>(readinteger));
 	    }
-	    if (UserModel.vertex.ChargeRules.size()==0){
-	      std::cout <<"No charge rules, assuming no conserved Abelian charges..." <<std::endl;
-	      UserModel.vertex.ChargeRules.push_back(static_cast<QuantumNumberInt>(0));
-	    }
-	  }
-	  else if (word[0]=='#') {
-	    //format is Z_n or Z
-	    while (basis_iss >> word){
-	      int tempint(word.find("_")!=std::string::npos ?  stoi(word.substr(word.rfind("_")+1,word.length())) : 0);
-	      if (tempint< std::numeric_limits<short int>::max() && tempint > std::numeric_limits<short int>::min()){
-		UserModel.vertex.ChargeRules.push_back(static_cast<QuantumNumberInt>(tempint));
-	      }
-	      else {
-		std::cout << "Invalid charge definition!" <<std::endl;
-		UserModel=Model(); 
-		return UserModel;
-	      }
-	    }
-	
-	  }
-	  else { //no definition
-	    std::cout << "No definitions of n for Z_n charges!" <<std::endl;
-	    UserModel=Model(); 
-	    return UserModel;
+	    if (charge_values.size())
+	      UserModel.vertex.Spectrum.push_back(ajaj::EigenState(UserModel.vertex.ChargeRules,charge_values,0.0));
 	  }
 	}
+	basisfile.close();
       }
-
-      int dummyinteger(0);
-      while (getline(basisfile,basisfileline)){
-	std::istringstream basis_iss(basisfileline);
-	if (basis_iss >> dummyinteger){ //first is a dummy index
-	  //read all charges
-	  ajaj::QNVector charge_values;
-	  int readinteger;
-	  while (basis_iss >> readinteger) {
-	    charge_values.push_back(static_cast<QuantumNumberInt>(readinteger));
-	  }
-	  if (charge_values.size())
-	    UserModel.vertex.Spectrum.push_back(ajaj::EigenState(UserModel.vertex.ChargeRules,charge_values,0.0));
-	}
+      else {
+	std::cout << "Couldn't open basis file" << std::endl;
+	UserModel=Model(); 
+	return UserModel;
       }
-      basisfile.close();
-
-      if (!UserModel.vertex.Spectrum.size() && UserModel.vertex.ChargeRules.size() && UserModel.vertex.ChargeRules[0]==0){
-	std::cout << "No charges defined, interpreting first integer as number of states, " << dummyinteger <<std::endl;
-	UserModel.vertex.Spectrum=ajaj::Basis(ajaj::StateArray(dummyinteger,ajaj::State(UserModel.vertex.ChargeRules)),std::vector<double>(dummyinteger,0.0));
-      }
+      
       if (!UserModel.vertex.Spectrum.size()){ //still zero?
 	std::cout << "No states defined? Returning empty model." <<std::endl;
 	UserModel=Model(); 
 	return UserModel;
       }
-
-      std::cout << "MODEL'S LOCAL BASIS" <<std::endl;
-      UserModel.basis().print();
-
-      for (auto&& f : vertex_operator_filenames){
-	
-	std::cout <<"Opening operator file " << f <<std::endl;
-
-	std::ifstream operatorfile;
-	operatorfile.open(f.c_str(),std::ios::in);
-	if (operatorfile.is_open()){
-	  size_t previous_num_ops(UserModel.vertex.Operators.size());
-	  //read in operator names
-	  std::string operatorfileline;
-	  if (getline(operatorfile,operatorfileline)){
-	    std::istringstream operators_iss(operatorfileline);
-	    std::string word;
-	    while (operators_iss >> word) {
-	      UserModel.vertex.Operators.push_back(VertexOperator(word,UserModel.vertex.basis().size()));
-	    }
+    }
+  
+    std::cout << "MODEL'S LOCAL BASIS" <<std::endl;
+    UserModel.basis().print();
+    
+    for (auto&& f : vertex_operator_filenames){
+      
+      std::cout <<"Opening operator file " << f <<std::endl;
+      
+      std::ifstream operatorfile;
+      operatorfile.open(f.c_str(),std::ios::in);
+      if (operatorfile.is_open()){
+	size_t previous_num_ops(UserModel.vertex.Operators.size());
+	//read in operator names
+	std::string operatorfileline;
+	if (getline(operatorfile,operatorfileline)){
+	  std::istringstream operators_iss(operatorfileline);
+	  std::string word;
+	  while (operators_iss >> word) {
+	    UserModel.vertex.Operators.push_back(VertexOperator(word,UserModel.vertex.basis().size()));
 	  }
-	  size_t ops_in_file(UserModel.vertex.Operators.size()-previous_num_ops);
-	  //next, possible dummy line
-	  if (!std::isdigit(operatorfile.peek())){
-	    //std::vector<std::string>dummy_names;;
-	    if (getline(operatorfile,operatorfileline)){
-	      /*std::istringstream operators_iss(operatorfileline);
+	}
+	size_t ops_in_file(UserModel.vertex.Operators.size()-previous_num_ops);
+	//next, possible dummy line
+	if (!std::isdigit(operatorfile.peek())){
+	  //std::vector<std::string>dummy_names;;
+	  if (getline(operatorfile,operatorfileline)){
+	    /*std::istringstream operators_iss(operatorfileline);
 	      std::string name;
 	      while (operators_iss >> name) {
-		dummy_names.push_back(name);
-		std::cout << name << std::endl;
-		}*/
-	    }
+	      dummy_names.push_back(name);
+	      std::cout << name << std::endl;
+	      }*/
 	  }
+	}
 
-	  //now entries
-	  while (getline(operatorfile,operatorfileline)){
-	    std::istringstream operators_iss(operatorfileline);
-	    int row;
-	    int col;
-	    std::complex<double> value;
-	    if (operators_iss >> row && operators_iss >> col){
-	      size_t increment(0);
-	      while (operators_iss >> value){
-		//std::cout << value << " " ;
-		if (value!=0.0){
-		  UserModel.vertex.Operators.at(increment+previous_num_ops).MatrixElements.entry(row,col,value);
-		}
-		++increment;
+	//now entries
+	while (getline(operatorfile,operatorfileline)){
+	  std::istringstream operators_iss(operatorfileline);
+	  int row;
+	  int col;
+	  std::complex<double> value;
+	  if (operators_iss >> row && operators_iss >> col){
+	    size_t increment(0);
+	    while (operators_iss >> value){
+	      //std::cout << value << " " ;
+	      if (value!=0.0){
+		UserModel.vertex.Operators.at(increment+previous_num_ops).MatrixElements.entry(row,col,value);
 	      }
-	      if (increment!= ops_in_file){
-		std::cout << "Incorrect number of operator values specified, " << increment << " : " << UserModel.vertex.Operators.size() << std::endl; UserModel=Model(); return UserModel;
-	      }
+	      ++increment;
+	    }
+	    if (increment!= ops_in_file){
+	      std::cout << "Incorrect number of operator values specified, " << increment << " : " << UserModel.vertex.Operators.size() << std::endl; UserModel=Model(); return UserModel;
 	    }
 	  }
-	  operatorfile.close();
+	}
+	operatorfile.close();
+      }
+      else {
+	std::cout << "Couldn't open operators file" <<std::endl;
+	UserModel=Model();
+	return UserModel;
+      }
+    }
+    //finalise operators
+    for (auto&& O : UserModel.vertex.Operators){
+      O.MatrixElements.finalise();
+      //O.MatrixElements.print();
+    }
+      
+    //open vertex_hamiltonian,
+    std::ifstream hamiltonianfile;
+    hamiltonianfile.open(vertex_hamiltonian_filename.c_str(),std::ios::in);
+    if (hamiltonianfile.is_open()){
+      UserModel.vertex.Operators.push_back(VertexOperator("Vertex_Hamiltonian",UserModel.vertex.basis().size()));
+      SparseMatrix& h_array=UserModel.vertex.Operators.back().MatrixElements;
+      //ajaj::SparseMatrix h_array(UserModel.vertex.Spectrum.size(),UserModel.vertex.Spectrum.size());
+      std::string hfileline;
+      while (getline(hamiltonianfile,hfileline)){
+	std::istringstream hss(hfileline);
+	MPXInt row;
+	MPXInt col;
+	std::complex<double> value;
+	if (hss >> row && hss >> col && hss >> value){
+	  if (value!=0.0){
+	    h_array.entry(row,col,value);
+	  }
 	}
 	else {
-	  std::cout << "Couldn't open operators file" <<std::endl;
+	  std::cout << "Malformed vertex hamiltonian" << std::endl;
 	  UserModel=Model();
 	  return UserModel;
 	}
       }
-      //finalise operators
-      for (auto&& O : UserModel.vertex.Operators){
-	O.MatrixElements.finalise();
-	//O.MatrixElements.print();
-      }
-      
-      //open vertex_hamiltonian,
-      std::ifstream hamiltonianfile;
-      hamiltonianfile.open(vertex_hamiltonian_filename.c_str(),std::ios::in);
-      if (hamiltonianfile.is_open()){
-	UserModel.vertex.Operators.push_back(VertexOperator("Vertex_Hamiltonian",UserModel.vertex.basis().size()));
-	SparseMatrix& h_array=UserModel.vertex.Operators.back().MatrixElements;
-	//ajaj::SparseMatrix h_array(UserModel.vertex.Spectrum.size(),UserModel.vertex.Spectrum.size());
-	std::string hfileline;
-	while (getline(hamiltonianfile,hfileline)){
-	  std::istringstream hss(hfileline);
-	  MPXInt row;
-	  MPXInt col;
-	  std::complex<double> value;
-	  if (hss >> row && hss >> col && hss >> value){
-	    if (value!=0.0){
-	      h_array.entry(row,col,value);
-	    }
-	  }
-	  else {
-	    std::cout << "Malformed vertex hamiltonian" << std::endl;
-	    UserModel=Model();
-	    return UserModel;
-	  }
-	}
-	h_array.finalise();
-	//build MPO
-	UserModel.H_MPO=MakeGeneralHMPO(UserModel.vertex,couplings.at(0));
-	std::cout << "MPO matrix info:" <<std::endl;
-	UserModel.H_MPO.print_indices();
-	//UserModel.H_MPO.print_matrix();
-	return UserModel;
+      h_array.finalise();
+      //build MPO
+      UserModel.H_MPO=MakeGeneralHMPO(UserModel.vertex,couplings.at(0));
+      std::cout << "MPO matrix info:" <<std::endl;
+      UserModel.H_MPO.print_indices();
+      //UserModel.H_MPO.print_matrix();
+      return UserModel;
 
-      }
-      else {
-	std::cout << "Couldn't open vertex hamiltonian file" <<std::endl;
-	UserModel=Model(); 
-	return UserModel;
-      }
     }
     else {
-      std::cout << "Couldn't open basis file" << std::endl;
+      std::cout << "Couldn't open vertex hamiltonian file" <<std::endl;
+      UserModel=Model(); 
+      return UserModel;
     }
     return UserModel;
   }
