@@ -39,4 +39,12 @@ Alternatively the string `USER DEFINED` informs the driver that the vertex model
 Further example documentation, for both built in and user defined models, is included in the individual subdirectories.
 
 ## THE EXAMPLES ##
-Currently there are three user defined examples.
+Currently there are three user defined examples with documentation.
+1. `spin_half_example` demonstrates the user defined process, fDMRG and generating excited states.
+2. `quench_example` demonstrates some different user defined functionality, and using fDMRG and TEBD.
+3. `time_dep_quench` demonstrates evolution using a time dependent hamiltonian, and specifying an initial product state through c-numbers.
+The built in examples are
+1. `xxx_lattice_chains`, which uses `iDMRG_DRV.bin`, `STORE_MODEL.bin` and `UNITCELL_MEASURE.bin` to study the Heisenberg model on a cylinder.
+2. `Luttinger_liquid_chains` which demonstrates a time dependent quench for an infinite system with iTEBD, and how to perform some post-processing measurements.
+
+Please see the README.md files in the individual directories for more info on how to run the examples.
