@@ -38,5 +38,5 @@ Alternatively the string `USER DEFINED` informs the driver that the vertex model
 
 Further example documentation, for both built in and user defined models, is included in the individual subdirectories.
 
-
-
+## THE EXAMPLES ##
+Currently there are three user defined examples.
