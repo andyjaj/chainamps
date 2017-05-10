@@ -1,5 +1,5 @@
 USER DEFINED
-./vertex_basis.in ./vertex_hamiltonian.in ./Sx.in ./Sy.in ./Sz.in
+2 ./vertex_hamiltonian.in ./Sx.in ./Sy.in ./Sz.in
 0.0 hx,(Sx):10.0
-0.008 hx,(Sx):10.0 hy,(Sy):1.0
+0.015 hz,(Sz):1.0
 0.1 Jx,(Sx,Sx):10.0

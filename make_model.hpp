@@ -426,7 +426,11 @@ namespace ajaj{
 	MPXInt row;
 	MPXInt col;
 	std::complex<double> value;
-	if (hss >> row && hss >> col && hss >> value){
+	hss >> std::ws;
+	if (hss.peek()==EOF){
+	  continue;
+	}
+	else if (hss >> row && hss >> col && hss >> value){
 	  if (value!=0.0){
 	    h_array.entry(row,col,value);
 	  }

@@ -76,7 +76,8 @@ namespace ajaj {
 
     double ans=0.0;
     for (std::vector<double>::const_iterator cit=Values.begin();cit!=Values.end();++cit){
-      ans-=(*cit)*(*cit)*log((*cit)*(*cit));
+      if (*cit!=0.0)
+	ans-=(*cit)*(*cit)*log((*cit)*(*cit));
     }
     return ans;
   }

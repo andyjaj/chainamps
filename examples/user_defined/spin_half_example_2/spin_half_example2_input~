@@ -1,3 +1,0 @@
-USER DEFINED
-../examples/robert_vertex_basis.in ../examples/robert_vertex_hamiltonian.in ../examples/robert_vertex_operators.in
-Jz,(Sz1,Sz1):0.25 Jxy,(S+1,S-1):0.5 Jxy,(S-1,S+1):0.5

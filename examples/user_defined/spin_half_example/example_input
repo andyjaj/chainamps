@@ -1,3 +1,4 @@
 USER DEFINED
 ./vertex_basis.in ./vertex_hamiltonian.in ./Sx.in ./Sy.in ./Sz.in
-Jx,(Sx,Sx):0.5 Jy,(Sy,Sy):0.5 hz,(Sz):1.0
+Jx,(Sx,Sx):-1.0 Jy,(Sy,Sy):-1.0 Jz,(Sz,Sz):-1.0 hz,(Sz):0.00001
+

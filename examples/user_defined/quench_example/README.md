@@ -89,6 +89,7 @@ In your build directory, execute
 This should create a (trivial, product state) ground state for a chain of 20 sites (and open boundary conditions) with all spins aligned with the +z direction.
 Because the state is so simple it converges immediately, but one finite size sweep, -F 1, is required to create all the left canonical matrices that are fed to the TEBD routine.
 In general, for a more sophisticated initial hamiltonian one should set the number of sweeps higher and check for convergence of (at the very least) the energy.
+Also we have not set a maximum bond dimension here using -B (the default is no truncation), because we know that the state is simple.
 The contents of the file `initial_input_Energies.dat`, should convince you that the state has the correct energy:
 ~~~~
 # Index, Energy, Energy/vertices, Entropy, Truncation, Fidelity
@@ -118,7 +119,7 @@ The finite DMRG driver will produce output of the form `GroundState_X_N.TYPE` wh
 The former are the stored MPS matrices that define the state.
 The BLOCK files are intermediate storage files used by the fDRMG algorithm, and can be deleted if you wish.
 
-If we had requested excited states with `-X 2` for example, we would also have files prefixed by `ExcitedState_1` and `ExcitedState_2`, and an extra file with the excited energies (and entropy etc.) in it.
+If we had requested excited states with `-X 2` for example, we would also have files prefixed by `Excited_1` and `Excited_2`, and an extra file with the excited energies (and entropy etc.) in it.
 
 ## THE QUENCH ##
 
