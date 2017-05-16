@@ -884,31 +884,32 @@ namespace continuumIsing {
       M.entry(i+offset_to_last_block,i+offset_to_last_block,1.0);
     }
     //now the more annoying pieces
-    if (couplingparams[1].Value!=0.0){
-      //must check that use sector is turned off, or quit
-      if (modelvertex.Spectrum.getChargeRules().size()!=1){
-	std::cout << "Error: if a local longitudinal field is applied the CONSERVE_SECTOR flag must be 0!" <<std::endl;
-	exit(1);
-      }
-
-      //also put in a longitudinal field
-      if (couplingparams[1].Value.imag()!=0.0){
-	std::cout << "ERROR: applied local field must be real, imaginary part="<<couplingparams[1].Value.imag()<<std::endl;
-	exit(1);
-      }
-      const double long_field(couplingparams[1].Value.real());
-      //loop over Operators[0] and multiply by param
-      const ajaj::SparseMatrix& spin=modelvertex.Operators[0].MatrixElements;
-      for (ajaj::Sparseint col=0;col<spin.cols();++col){
-	for (ajaj::Sparseint p=spin.get_p(col);p<spin.get_p(col+1);++p){
-	  ajaj::MPXInt row=spin.get_i(p);
-	  if (modelvertex.Spectrum[row]==modelvertex.Spectrum[col]){ //check momenta are equal
-	    M.entry(row+offset_to_last_block,col,long_field*spin.get_x(p));
+    if (couplingparams.size()>1){
+      if (couplingparams[1].Value!=0.0){
+	//must check that use sector is turned off, or quit
+	if (modelvertex.Spectrum.getChargeRules().size()!=1){
+	  std::cout << "Error: if a local longitudinal field is applied the CONSERVE_SECTOR flag must be 0!" <<std::endl;
+	  exit(1);
+	}
+	
+	//also put in a longitudinal field
+	if (couplingparams[1].Value.imag()!=0.0){
+	  std::cout << "ERROR: applied local field must be real, imaginary part="<<couplingparams[1].Value.imag()<<std::endl;
+	  exit(1);
+	}
+	const double long_field(couplingparams[1].Value.real());
+	//loop over Operators[0] and multiply by param
+	const ajaj::SparseMatrix& spin=modelvertex.Operators[0].MatrixElements;
+	for (ajaj::Sparseint col=0;col<spin.cols();++col){
+	  for (ajaj::Sparseint p=spin.get_p(col);p<spin.get_p(col+1);++p){
+	    ajaj::MPXInt row=spin.get_i(p);
+	    if (modelvertex.Spectrum[row]==modelvertex.Spectrum[col]){ //check momenta are equal
+	      M.entry(row+offset_to_last_block,col,long_field*spin.get_x(p));
+	    }
 	  }
 	}
       }
     }
-
 
     //for each coupling operator
     for (size_t c=0;c<1;++c){ //assume each of the coupling params refers to an operator
