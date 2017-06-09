@@ -638,7 +638,13 @@ namespace ajaj{
 
   SparseMatrix contract_to_sparse(const MPX_matrix& A, bool conjA,const MPX_matrix& B,bool conjB, const std::vector<MPXPair>& contractidxs){
 #ifndef NDEBUG
+    std::cout << "##################" << std::endl;
     std::cout << "Contract to sparse" << std::endl;
+    std::cout << "Left info" << std::endl;
+    A.print_sparse_info();
+    std::cout << "Right info" << std::endl;
+    B.print_sparse_info();
+    std::cout << "##################" << std::endl;
 #endif
     if (A.m_SpectrumPtr!=B.m_SpectrumPtr){std::cout <<"Physical Indices don't match!" << std::endl;exit(1);}
     //next check contraction indices match sizes match!
@@ -736,7 +742,13 @@ namespace ajaj{
 
   MPX_matrix contract(const MPX_matrix& A, bool conjA,const MPX_matrix& B, bool conjB, const std::vector<MPXPair>& contractidxs){
 #ifndef NDEBUG
+    std::cout << "##################" << std::endl;
     std::cout << "Contract" << std::endl;
+    std::cout << "Left info" << std::endl;
+    A.print_sparse_info();
+    std::cout << "Right info" << std::endl;
+    B.print_sparse_info();
+    std::cout << "##################" << std::endl;
 #endif
     //figure out new indices
     std::vector<MPXIndex> Indices;
