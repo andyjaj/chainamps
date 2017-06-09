@@ -526,6 +526,9 @@ namespace ajaj {
       cs_cl_spfree(temp_array);
       m_finalised=1;
     }
+#ifndef NDEBUG
+    this->print_sparse_info();
+#endif
     return std::move(*this);
   };
 
@@ -541,6 +544,9 @@ namespace ajaj {
       cs_cl_spfree(temp_array);
       m_finalised=1;
     }
+#ifndef NDEBUG
+    this->print_sparse_info();
+#endif
     return std::move(*this);
   };
 
@@ -551,6 +557,9 @@ namespace ajaj {
       cs_cl_spfree(temp_array);
       m_finalised=1;
     }
+#ifndef NDEBUG
+    this->print_sparse_info();
+#endif
     return std::move(*this);
   }
 
@@ -570,6 +579,9 @@ namespace ajaj {
       cs_cl_spfree(temp);
       m_finalised=1;
     }
+#ifndef NDEBUG
+    this->print_sparse_info();
+#endif
     return std::move(*this);
   }
 
