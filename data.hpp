@@ -57,7 +57,8 @@ namespace ajaj {
   public:
     const std::string filename;
     std::string comment;
-    DataOutput(const std::string& f,const std::string& cs=std::string()) : Step(0), filename(f),comment(cs) {
+
+    DataOutput(const std::string& f,const std::string& cs=std::string()) : Step(0),filename(f),comment(cs) {
       outfile.open(filename.c_str(),ios::out | ios::trunc);outfile << setprecision(16);
       if (!cs.empty()){
 	outfile << "# "<< comment << std::endl;

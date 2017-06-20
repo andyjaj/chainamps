@@ -83,7 +83,7 @@ namespace ajaj{
     for (std::vector<MPO_matrix>::const_iterator cit=measuredMPOs.begin();cit!=measuredMPOs.end();++cit){
       complex_results.emplace_back(OneVertexMeasurement(*cit,ortho));
     }
-    m_results.push(Data(real_results,complex_results));
+    m_results.push(m_current_time_step,Data(real_results,complex_results));
     std::ofstream DensityFileStream_;
     DensityFileStream_.open("iTEBD_One_Vertex_Densities.dat",ios::out | ios::app);
     ortho.OutputPhysicalIndexDensities(DensityFileStream_);
@@ -433,7 +433,7 @@ namespace ajaj{
     for (auto&& m : measurements){
       complex_results.push_back(m.result());
     }
-    m_results.push(Data(real_results,complex_results));
+    m_results.push(m_current_time_step,Data(real_results,complex_results));
     //at end Vd should be trivial
 
     std::cout << "Norm at end of left canonisation: " << abs(Vd.Trace()) << std::endl; 

@@ -45,6 +45,7 @@ int main(int argc, char** argv){
 	  getline(time_file,sdump);
 	  times.push_back(time);
 	}
+	
       }
       else {
 	std::cout <<"Could not open specified time data file '" << RuntimeArgs.time_filename() << "'." <<std::endl;
@@ -143,7 +144,7 @@ int main(int argc, char** argv){
 	  m.print_sparse_info();
 	}
 	indexed_results.emplace_back(Index,ajaj::Data());
-	if (!RuntimeArgs.time_filename().empty()){
+	if (times.size()){
 	  indexed_results.back().second.Real_measurements.emplace_back(times.at(Index-1));
 	}
 	if (RuntimeArgs.calc_entanglement()){
