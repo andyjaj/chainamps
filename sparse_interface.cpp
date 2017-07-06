@@ -237,8 +237,15 @@ namespace ajaj {
       Sparseint p_s(0);
       for (Sparseint p=0;p<nz();++p){
 	double current(abs(get_x(p)));
+	
+	if (std::isnan(current) || std::isinf(current)) {
+	  std::cout << "FP error in array!" <<std::endl;
+	  this->print();
+	  exit(1);
+	}
 	if (current > largest) {largest=current; p_l=p;}
 	if (current < smallest) {smallest=current; p_s=p;}
+	
       }
       std::cout << "Largest value: " << get_x(p_l) << " Smallest value: " << get_x(p_s) << std::endl;
     }
@@ -1358,6 +1365,13 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 #endif
       double block_weight(sum_column_square_norms(*cit));
       total_weight+=block_weight;
+#ifndef DNDEBUG
+      std::cout <<"Weight is " << block_weight <<std::endl;
+      if (std::isnan(block_weight)){//if not a number, then problem!
+	std::cout << "Nan error" << std::endl;
+	this->print();
+      }
+#endif
       if (block_weight<= tolerance){
 #ifndef NDEBUG
 	std::cout << "This block is empty, skipping" << std::endl; 
@@ -1423,25 +1437,30 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     std::sort(UnsortedValues.begin(),UnsortedValues.end(),singular_value_compare);
     size_t length=(D>0 && D< UnsortedValues.size()) ? D : UnsortedValues.size();
 
+    //Now sorted, use ref to avoid confusing name
+    auto & SortedValues(UnsortedValues);
+    
     //We should also probably reject singular vals that are smaller the M_EPS times the largest singular value...
     std::vector<Sparseint> sortindices;
     sortindices.reserve(length);
-    sortindices.push_back(UnsortedValues[0].first);
+    sortindices.push_back(SortedValues[0].first);
     std::vector<double> Values;
     Values.reserve(length);
-    Values.push_back(UnsortedValues[0].second);
-    double kept_weight(UnsortedValues[0].second*UnsortedValues[0].second);
+    Values.push_back(SortedValues[0].second);
+    double kept_weight(SortedValues[0].second*SortedValues[0].second);
 
-    if (UnsortedValues[length-1].second < SPARSETOL*UnsortedValues.begin()->second){//if we are at a tiny s val, check for sligtly larger 'degenerate' singular values and remove them
-      while (length>1 && ((UnsortedValues[length-2].second-UnsortedValues[length-1].second)/UnsortedValues[length-2].second <1.0e-3)){
-	--length;
-	std::cout << "Truncating further due to very small singular values. s_val: " << UnsortedValues[length-1].second << std::endl;
+    if (SortedValues[length-1].second <= SPARSETOL*SortedValues.begin()->second && length>1){//if we are at a tiny s val, check for slightly larger 'degenerate' singular values and remove them
+      //while (length>1 && ((SortedValues[length-2].second-SortedValues[length-1].second)/SortedValues[length-2].second <1.0e-3)){
+      //first get rid of the tiny one
+      std::cout << "Truncating further due to very small singular values. s_val: " << SortedValues[--length].second << std::endl;
+      while (length>1 && ( SortedValues[length-1].second <= SPARSETOL*SortedValues.begin()->second || (1.0-1.0e-3<=SortedValues[length].second/SortedValues[length-1].second))){
+	std::cout << "Truncating further due to very small singular values. s_val: " << SortedValues[--length].second << std::endl;
       }
     }
     else { //if not tiny, then check for slightly smaller 'degenerate' s vals.
-      while (length<UnsortedValues.size() && ((UnsortedValues[length-1].second-UnsortedValues[length].second)/UnsortedValues[length-1].second <1.0e-3)){
+      while (length<SortedValues.size() && ((UnsortedValues[length-1].second-SortedValues[length].second)/SortedValues[length-1].second <1.0e-3)){
       ++length;
-      std::cout << "Increasing bond dimension, due to degeneracies. s_val: " << UnsortedValues[length-1].second << std::endl;
+      std::cout << "Increasing bond dimension, due to degeneracies. s_val: " << SortedValues[length-1].second << std::endl;
       }
     }
 
@@ -1461,19 +1480,21 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
       
     }*/
     for (size_t s=1;s<length;++s){
-      sortindices.push_back(UnsortedValues[s].first);
-      kept_weight+=UnsortedValues[s].second*UnsortedValues[s].second;
-      Values.push_back(UnsortedValues[s].second);
+      sortindices.push_back(SortedValues[s].first);
+      kept_weight+=SortedValues[s].second*SortedValues[s].second;
+      Values.push_back(SortedValues[s].second);
     }
 
     double discarded_weight(0.0);
-    for (size_t s=length;s<UnsortedValues.size();++s){
-      discarded_weight+=UnsortedValues[s].second*UnsortedValues[s].second;
+    for (size_t s=length;s<SortedValues.size();++s){
+      discarded_weight+=SortedValues[s].second*SortedValues[s].second;
     }
 
 #ifndef NDEBUG
     std::cout << "SVD()" << std::endl;
+    std::cout << "Number of singular values kept is: " << length <<std::endl;
     std::cout << "Largest s val: " << UnsortedValues[0].second << ", Smallest s val: " << UnsortedValues[length-1].second << std::endl <<std::endl;
+    for (auto s : Values) std::cout << s << std::endl;
     std::cout << "Total weight is: " << total_weight << std::endl;
     std::cout << "Kept weight is: " << kept_weight << std::endl;
     std::cout << "Discarded weight is: " << discarded_weight << std::endl <<std::endl;

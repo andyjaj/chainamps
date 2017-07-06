@@ -23,6 +23,11 @@ int main(int argc, char** argv){
   if (RuntimeArgs.is_valid()){
     ajaj::Model myModel(ajaj::MakeModelFromArgs(RuntimeArgs));
     myModel.basis().print();
+
+#ifndef DNDEBUG
+    myModel.H_MPO.print_matrix();
+#endif
+
     ajaj::uMPXInt CHI(RuntimeArgs.chi());
     double minS(1.0e-14);
     ajaj::uMPXInt number_of_time_steps(RuntimeArgs.number_of_steps());
