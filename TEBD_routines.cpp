@@ -180,7 +180,7 @@ namespace ajaj{
 #ifndef NDEBUG
     std::cout << "Calculate truncation" << std::endl;
 #endif
-    m_truncation=1.0-SquareSumRescale(m_unit.Lambdas.at(1),1.0);
+    m_truncation=decomp.Truncation;//1.0-SquareSumRescale(m_unit.Lambdas.at(1),1.0);
 #ifndef NDEBUG
     std::cout << "Swap sites" << std::endl;
 #endif

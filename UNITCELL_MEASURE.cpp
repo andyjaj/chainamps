@@ -132,6 +132,10 @@ int main(int argc, char** argv){
 	//just use order of entry
 	Index++;
       }
+
+      //are we using a time file, and does the unitcell index exceed its size?
+      if (times.size() && Index<=times.size()){
+      
       //now open unitcell file
       std::ifstream infile;
       infile.open(f.c_str(),ios::in | ios::binary);
@@ -191,6 +195,7 @@ int main(int argc, char** argv){
       else {
 	std::cout << "Couldn't open " << f << std::endl;
 	return 0;
+      }
       }
     }
     //sort
