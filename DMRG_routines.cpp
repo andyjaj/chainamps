@@ -657,6 +657,15 @@ namespace ajaj {
   MPX_matrix TwoVertexInitialWavefunction(const MPO_matrix& LeftH, const MPO_matrix& RightH, const State& TargetSector, Data& result){
     const MPX_matrix H2(TwoVertexInitialHamiltonian(LeftH,RightH));
 
+#ifndef DNDEBUG
+    if (H2.basis().size()<=5){
+      std::cout <<"*****************************" <<std::endl;
+      std::cout <<"TWO VERTEX HAMILTONIAN OUTPUT" <<std::endl;
+      std::cout <<"*****************************" <<std::endl;
+      H2.print_matrix();
+    }
+#endif
+
     /*if (!H2.isHermitian()){
       std::cout << "NOT HERMITIAN" << std::endl;
       exit(1);

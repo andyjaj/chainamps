@@ -252,7 +252,7 @@ int main(int argc, char** argv){
     }
     if (opinfo.size()) {
       std::ostringstream opss;
-      opss << "," << opinfo.front();
+      opss << opinfo.front();
       if (RuntimeArgs.two_point()){
 	opss << "(i)," << opinfo.back() << "(i+" << RuntimeArgs.separation() << ")";
       }

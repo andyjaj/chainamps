@@ -17,6 +17,13 @@ namespace ajaj{
     if (m_order==0){std::cout <<"Zeroth order requested! Assuming 1st order instead" << std::endl; m_order=1;}
     //make the Hamiltonian for a single bond
     MPX_matrix BondH(MakeBondHamiltonian(*m_H_ptr));
+
+#ifndef DNDEBUG
+    if (BondH.basis().size() <=4){
+      BondH.print_matrix();
+    }
+#endif
+
     //now make the trotter operators  
     if (m_order==1){
       BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,m_time_step_size));

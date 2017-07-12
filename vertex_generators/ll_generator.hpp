@@ -134,6 +134,11 @@ namespace ll{
 
     for (ajaj::VertexOperatorArray::iterator it=ModelVertex.Operators.begin();it!=ModelVertex.Operators.end();++it){
       it->MatrixElements.finalise();
+#ifndef DNDEBUG
+      if (ModelVertex.basis().size()<=5){
+	it->print();
+      }
+#endif
     }
 
     ModelVertex.Operators.push_back(ajaj::VertexOperator("Vertex_Hamiltonian"));
