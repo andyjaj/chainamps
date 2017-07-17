@@ -17,7 +17,7 @@
 #include "data.hpp"
 #include "command_line_input.hpp"
 #include "model.hpp"
-#include "make_model.hpp"
+#include "make_model.hpp" 
 
 int main(int argc, char** argv){
 
@@ -30,7 +30,8 @@ int main(int argc, char** argv){
     //use_filename_index(), strip and index from filename and use it to order results, default true
 
     //if we want to add time info, this is where we should do it
-    std::vector<double> times;
+    typedef std::pair<size_t,double> idx_dble;
+    std::vector<idx_dble> idx_times;
     if (!RuntimeArgs.time_filename().empty()){
       std::ifstream time_file;
       time_file.open(RuntimeArgs.time_filename().c_str(),ios::in);
@@ -43,9 +44,8 @@ int main(int argc, char** argv){
 	if (time_file.peek()=='#'){getline(time_file,sdump);}
 	while (time_file >> idx >> time){
 	  getline(time_file,sdump);
-	  times.push_back(time);
+	  idx_times.emplace_back(idx,time);
 	}
-	
       }
       else {
 	std::cout <<"Could not open specified time data file '" << RuntimeArgs.time_filename() << "'." <<std::endl;
@@ -134,7 +134,12 @@ int main(int argc, char** argv){
       }
 
       //either no times info, or if there is the unitcell index must not exceed its size
-      if (!times.size() || Index<=times.size()){
+
+      std::vector<idx_dble>::iterator time_it = std::find_if(idx_times.begin(),idx_times.end(), [Index] (const idx_dble& i_t) { return i_t.first == Index; } );
+      
+      if (!idx_times.size() || time_it!=idx_times.end()){
+
+	//if (!idx_times.size() || Index<=times.size()){
       
 	//now open unitcell file
 	std::ifstream infile;
@@ -148,8 +153,8 @@ int main(int argc, char** argv){
 	    m.print_sparse_info();
 	  }
 	  indexed_results.emplace_back(Index,ajaj::Data());
-	  if (times.size()){
-	    indexed_results.back().second.Real_measurements.emplace_back(times.at(Index-1));
+	  if (time_it!=idx_times.end()){
+	    indexed_results.back().second.Real_measurements.emplace_back(time_it->second);
 	  }
 	  if (RuntimeArgs.calc_entanglement()){
 	    indexed_results.back().second.Real_measurements.emplace_back(AA.Entropy());
