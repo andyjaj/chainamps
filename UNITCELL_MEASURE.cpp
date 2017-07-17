@@ -133,69 +133,69 @@ int main(int argc, char** argv){
 	Index++;
       }
 
-      //are we using a time file, and does the unitcell index exceed its size?
-      if (times.size() && Index<=times.size()){
+      //either no times info, or if there is the unitcell index must not exceed its size
+      if (!times.size() || Index<=times.size()){
       
-      //now open unitcell file
-      std::ifstream infile;
-      infile.open(f.c_str(),ios::in | ios::binary);
-      if (infile.is_open()){
-	std::cout << "Loading " << f << std::endl;
-	ajaj::UnitCell AA(ajaj::load_UnitCell_binary(infile,iMEAS_vertex.ChargeRules,iMEAS_vertex.Spectrum));//populates basis
-	ajaj::State TargetState(iMEAS_vertex.ChargeRules,RuntimeArgs.target());
+	//now open unitcell file
+	std::ifstream infile;
+	infile.open(f.c_str(),ios::in | ios::binary);
+	if (infile.is_open()){
+	  std::cout << "Loading " << f << std::endl;
+	  ajaj::UnitCell AA(ajaj::load_UnitCell_binary(infile,iMEAS_vertex.ChargeRules,iMEAS_vertex.Spectrum));//populates basis
+	  ajaj::State TargetState(iMEAS_vertex.ChargeRules,RuntimeArgs.target());
 
-	for (auto&& m : AA.Matrices){
-	  m.print_sparse_info();
-	}
-	indexed_results.emplace_back(Index,ajaj::Data());
-	if (times.size()){
-	  indexed_results.back().second.Real_measurements.emplace_back(times.at(Index-1));
-	}
-	if (RuntimeArgs.calc_entanglement()){
-	  indexed_results.back().second.Real_measurements.emplace_back(AA.Entropy());
-	}
-	if (RuntimeArgs.vert_entanglement()){
-	  indexed_results.back().second.Real_measurements.emplace_back(MultiVertexEntropy(AA,RuntimeArgs.vert_entanglement()));
-	}
-	if (RuntimeArgs.nev()){
-	  std::vector<std::complex<double> > Transfer_eigs(ajaj::TransferMatrixEigs(AA,RuntimeArgs.nev(),TargetState));
-	  for (auto&& eig : Transfer_eigs) {
-	    indexed_results.back().second.Real_measurements.emplace_back(abs(eig));
+	  for (auto&& m : AA.Matrices){
+	    m.print_sparse_info();
 	  }
-	}
-	if (iMEAS_vertex.Operators.size()){
-	  if (iMEAS_vertex.Spectrum.size()!=dim){
-	    std::cout << "UnitCell Basis size doesn't match operator dimensions! " << iMEAS_vertex.Spectrum.size() << " " << dim << std::endl;
-	    return 0;
+	  indexed_results.emplace_back(Index,ajaj::Data());
+	  if (times.size()){
+	    indexed_results.back().second.Real_measurements.emplace_back(times.at(Index-1));
 	  }
-	  //measure.... //how many operators, separation etc...
-	  if (!OperatorMPOs.size()){ //if haven't populated Operators yet, do it now
-	    for (auto&& shiftedop : opinfo){
-	      //make name
-	      std::ostringstream mponame;
-	      mponame << shiftedop.Name;
-	      if (shiftedop.Factor!=0.0){
-		mponame << "@" << shiftedop.WhichCharge << "@" << shiftedop.Factor;
- 	      }
-	      OperatorMPOs.emplace_back(mponame.str(),iMEAS_vertex.make_one_site_operator(shiftedop));
+	  if (RuntimeArgs.calc_entanglement()){
+	    indexed_results.back().second.Real_measurements.emplace_back(AA.Entropy());
+	  }
+	  if (RuntimeArgs.vert_entanglement()){
+	    indexed_results.back().second.Real_measurements.emplace_back(MultiVertexEntropy(AA,RuntimeArgs.vert_entanglement()));
+	  }
+	  if (RuntimeArgs.nev()){
+	    std::vector<std::complex<double> > Transfer_eigs(ajaj::TransferMatrixEigs(AA,RuntimeArgs.nev(),TargetState));
+	    for (auto&& eig : Transfer_eigs) {
+	      indexed_results.back().second.Real_measurements.emplace_back(abs(eig));
 	    }
 	  }
+	  if (iMEAS_vertex.Operators.size()){
+	    if (iMEAS_vertex.Spectrum.size()!=dim){
+	      std::cout << "UnitCell Basis size doesn't match operator dimensions! " << iMEAS_vertex.Spectrum.size() << " " << dim << std::endl;
+	      return 0;
+	    }
+	    //measure.... //how many operators, separation etc...
+	    if (!OperatorMPOs.size()){ //if haven't populated Operators yet, do it now
+	      for (auto&& shiftedop : opinfo){
+		//make name
+		std::ostringstream mponame;
+		mponame << shiftedop.Name;
+		if (shiftedop.Factor!=0.0){
+		  mponame << "@" << shiftedop.WhichCharge << "@" << shiftedop.Factor;
+		}
+		OperatorMPOs.emplace_back(mponame.str(),iMEAS_vertex.make_one_site_operator(shiftedop));
+	      }
+	    }
 
-	  if (OperatorMPOs.size()==1){
-	    if (RuntimeArgs.two_point()==0) //single site
-	      indexed_results.back().second.Complex_measurements.emplace_back(OneVertexMeasurement(OperatorMPOs[0].Matrix,AA));
-	    else //same operator, with separation
-	      indexed_results.back().second.Complex_measurements.emplace_back(TwoVertexMeasurement(OperatorMPOs[0].Matrix,OperatorMPOs[0].Matrix,AA,RuntimeArgs.separation()));
-	  }
-	  else if (OperatorMPOs.size()==2){ //two (possibly different) operators
-	    indexed_results.back().second.Complex_measurements.emplace_back(TwoVertexMeasurement(OperatorMPOs[0].Matrix,OperatorMPOs[1].Matrix,AA,RuntimeArgs.separation()));
+	    if (OperatorMPOs.size()==1){
+	      if (RuntimeArgs.two_point()==0) //single site
+		indexed_results.back().second.Complex_measurements.emplace_back(OneVertexMeasurement(OperatorMPOs[0].Matrix,AA));
+	      else //same operator, with separation
+		indexed_results.back().second.Complex_measurements.emplace_back(TwoVertexMeasurement(OperatorMPOs[0].Matrix,OperatorMPOs[0].Matrix,AA,RuntimeArgs.separation()));
+	    }
+	    else if (OperatorMPOs.size()==2){ //two (possibly different) operators
+	      indexed_results.back().second.Complex_measurements.emplace_back(TwoVertexMeasurement(OperatorMPOs[0].Matrix,OperatorMPOs[1].Matrix,AA,RuntimeArgs.separation()));
+	    }
 	  }
 	}
-      }
-      else {
-	std::cout << "Couldn't open " << f << std::endl;
-	return 0;
-      }
+	else {
+	  std::cout << "Couldn't open " << f << std::endl;
+	  return 0;
+	}
       }
     }
     //sort
