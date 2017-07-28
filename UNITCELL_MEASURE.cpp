@@ -239,6 +239,7 @@ int main(int argc, char** argv){
 	commentstream << t <<" ";
       }
       commentstream << "\n";
+      commentstream << "# ";
     }
 
     commentstream << "Index";
