@@ -12,32 +12,52 @@
 namespace ajaj{
 
   TrotterDecomposition::TrotterDecomposition(const MPO_matrix& H,double time_step_size,uMPXInt order) : m_H_ptr(&H), m_time_step_size(time_step_size), m_order(order){
+
+    double tau=m_time_step_size;
+    
 //make bond operator
-    if (m_order>2){std::cout <<"Higher than 2nd order Trotter decomposition not curtrently implemented. Aborting..." << std::endl; exit(1);}
-    if (m_order==0){std::cout <<"Zeroth order requested! Assuming 1st order instead" << std::endl; m_order=1;}
+    if (m_order>4 || m_order==0 || m_order==3){std::cout <<"Only 1st, 2nd and 4th order decompositions are supported. Aborting..." << std::endl; exit(1);}
     //make the Hamiltonian for a single bond
     MPX_matrix BondH(MakeBondHamiltonian(*m_H_ptr));
-
-#ifndef DNDEBUG
-    if (BondH.basis().size() <=4){
-      BondH.print_matrix();
-    }
-#endif
-
     //now make the trotter operators  
     if (m_order==1){
-      BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,m_time_step_size));
+      BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,tau));
       //safeish to have pointer to vector element if the vector no longer grows
       OrderedOperatorPtrs.emplace_back(&BondOperators.at(0));
     }
     if (m_order==2){ //second order is a special case with a nice simplification for timesteps where no measurement is made
-      BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,m_time_step_size/2.0));
-      BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,m_time_step_size));
+      BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,0.5*tau));
+      BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,tau));
       //safeish to have pointer to vector element if the vector no longer grows
       OrderedOperatorPtrs.emplace_back(&BondOperators.at(0));
       OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
       OrderedOperatorPtrs.emplace_back(&BondOperators.at(0));
     }
+
+    if (m_order==4){
+      double f1=0.414490771794375737142354062860761495711774604016707133323;
+      double f3=-0.657963087177502948569416251443045982847098416066828533293;
+      double f1_3=-0.24347231538312721142706218858228448713532381205012139996;
+
+      BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,0.5*tau*f1)); //odd half t1 step
+      BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,tau*f1)); //odd or even full t1 step
+      BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,0.5*tau*f1_3)); //odd t1+t3 half step
+      BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,tau*f3)); //even t3 step
+
+      //11 pieces per full step
+      OrderedOperatorPtrs.emplace_back(&BondOperators.at(0));
+      OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
+      OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
+      OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
+      OrderedOperatorPtrs.emplace_back(&BondOperators.at(2));
+      OrderedOperatorPtrs.emplace_back(&BondOperators.at(3));
+      OrderedOperatorPtrs.emplace_back(&BondOperators.at(2));
+      OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
+      OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
+      OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
+      OrderedOperatorPtrs.emplace_back(&BondOperators.at(0));
+    }  
+    
   }
 
   SeparatedTrotterDecomposition::SeparatedTrotterDecomposition(const MPO_matrix& H,double time_step_size,uMPXInt order) : H_(H),TimeStepSize_(time_step_size),Order_(order){
@@ -157,8 +177,50 @@ namespace ajaj{
        
       }
     }
+    else if (order()==4){
+      std::cout <<"4th order time step evolution" <<std::endl;
+      std::cout <<"Canonization is performed at every full time step" <<std::endl;
+      for (uMPXInt n=0;n<num_steps;++n){
+	update_time();
+	std::cout << "Time " << current_time() << std::endl;
+	for (auto& op: m_EvolutionOperators.OrderedOperatorPtrs){
+	  apply_and_decompose(*op,bond_dimension,minS);
+	}
+	/*
+	//do a half increment (and implicit swap)
+	apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
+	//do three full increments each followed by implicit swaps
+	apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS);
+	apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[2]),bond_dimension,minS);
+	apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[3]),bond_dimension,minS);
+	//do a half t1+t3 increment (and swap)
+	apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[4]),bond_dimension,minS);
+	//do the central t3 inc (and swap)
+	apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[5]),bond_dimension,minS);
+	//do a half t1+t3 increment (and swap)
+	apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[6]),bond_dimension,minS);
+	//do three full increments each followed by implicit swaps
+	apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[7]),bond_dimension,minS);
+	apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[8]),bond_dimension,minS);
+	apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[9]),bond_dimension,minS);
+	//do a half increment (and implicit swap)
+	apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[10]),bond_dimension,minS);
+	*/
+	//do we need to take a measurement?
+
+	//always orthogonalise, because we did lots of operations.
+	m_unit=OrthogonaliseInversionSymmetric(m_unit);
+
+	if (m_current_time_step % measurement_interval==0) /*make measurement*/ {
+	  if (m_unit.size()){ //only if unitcell isn't empty
+	    m_unit.store(Name_,m_current_time_step);
+	    this->do_measurements(m_unit,measuredMPOs);
+	  }
+	}
+      }
+    }
     else {
-      std::cout << "Haven't implemented higher orders yet in iTEBD::evolve()" << std::endl; exit(1);
+      std::cout << "Haven't implemented this order yet in iTEBD::evolve()" << std::endl; exit(1);
     }
     return m_unit;
   }
@@ -510,6 +572,44 @@ namespace ajaj{
 	  else {
 	    apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS);
 	    std::cout << "Left canonize" <<std::endl;
+	    left_canonise();
+	  }
+	  max_truncation_=0.0; //reset
+	}
+      }
+      else if (m_EvolutionOperators.order()==4){
+	std::cout <<"4th order time step evolution" <<std::endl;
+	for (uMPXInt n=0;n<num_steps;++n){
+	  //++m_current_time_step;
+	  update_time();
+	  std::cout << "Time " << current_time() << std::endl;
+	  //this is the first half of the time step....
+	  apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
+	  left_canonise();
+	  apply_to_even_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS);
+	  left_canonise();
+	  apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[2]),bond_dimension,minS);
+	  left_canonise();
+	  apply_to_even_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[3]),bond_dimension,minS);
+	  left_canonise();
+	  apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[4]),bond_dimension,minS);
+	  left_canonise();
+	  apply_to_even_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[5]),bond_dimension,minS);
+	  left_canonise();
+	  apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[6]),bond_dimension,minS);
+	  left_canonise();
+	  apply_to_even_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[7]),bond_dimension,minS);
+	  left_canonise();
+	  apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[8]),bond_dimension,minS);
+	  left_canonise();
+	  apply_to_even_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[9]),bond_dimension,minS);
+	  left_canonise();
+	  apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[10]),bond_dimension,minS);
+
+	  if (m_current_time_step % measurement_interval==0) /*make measurement*/ {
+	    left_canonise_measure(measurements);
+	  }
+	  else {
 	    left_canonise();
 	  }
 	  max_truncation_=0.0; //reset
