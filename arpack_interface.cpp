@@ -3,6 +3,7 @@
 #include <complex>
 #include <iostream>
 #include <algorithm>
+#include <vector>
 #include <utility>
 #if defined(USETBB)
 #include <tbb/tbb.h>
@@ -71,6 +72,7 @@ namespace arpack {
       std::cout << "Null iparam! Allocation error" << std::endl; exit(1);
     }
   }
+  
   bool cpparpack(const cs_cl* sparse,arpack_int n, arpack_int nev, std::complex<double> *Evals, std::complex<double> *Evecs, char which[3],cs_cl* initial){
     return arpack_eigs<cs_cl,cs_cl>(sparse,&sparse_matrix_vector_mult,n,initial,&cs_cl_to_dense,nev,which,Evals,Evecs).error_status();
   }

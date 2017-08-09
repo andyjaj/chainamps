@@ -73,7 +73,7 @@ namespace arpack {
     arpack_workspace(arpack_int length, arpack_int num_e_vals, char which_e_vals[3], std::complex<double>* Evals_ptr, arpack_int need_e_vectors, std::complex<double>* Evecs_ptr, std::complex<double>* resid_ptr,const double use_tolerance=-0.0);
     ~arpack_workspace();
     void init();
-    void reset();
+    void reset();    
   };
 
   /** class to find eigenvalues and maybe vectors using arpack */
@@ -102,8 +102,24 @@ namespace arpack {
     arpack_int m_cumulative_iterations;
     void (*m_MV)(const ArrayType*,std::complex<double>*,std::complex<double>*);
     void (*m_converter)(GuessType*,std::complex<double>*);
-  };
+    void sort();//always check the order...
 
+  };
+  
+  template <typename ArrayType, typename GuessType>
+  inline void arpack_eigs<ArrayType,GuessType>::arpack_eigs::sort(){
+    //first create an indexed list
+    std::vector<std::pair<arpack_int,std::complex<double> > > indexed_e_vals;
+    arpack_int count=0;
+    for (arpack_int i=0; i<m_workspace.nev; ++i){
+      indexed_e_vals.emplace_back(count,m_workspace.d[count]);
+    }
+    //next sort
+    std::sort(indexed_e_vals.begin(),indexed_e_vals.end(),
+	      [](const std::pair<arpack_int,std::complex<double> >& a, const std::pair<arpack_int,std::complex<double> >& b)
+	      {	return real(a.second) < real(b.second);});
+  }
+  
   template <typename ArrayType, typename GuessType>
   arpack_eigs<ArrayType,GuessType>::arpack_eigs(const ArrayType* array_stuff, void (*MV)(const ArrayType*,std::complex<double>*,std::complex<double>*), arpack_int length, GuessType* initial_guess, void (*converter)(GuessType*,std::complex<double>*), arpack_int num_e_vals, char which_e_vals[3], std::complex<double> *Evals, std::complex<double> *Evecs) : m_array_stuff(array_stuff), m_MV(MV), m_length(length), m_initial_guess(initial_guess),m_converter(converter),m_evals(Evals),m_evecs(Evecs),m_workspace(m_length,num_e_vals,which_e_vals,Evals,Evecs ? 1 : 0, Evecs,NULL),m_cumulative_iterations(0){
     //form resid
@@ -157,6 +173,7 @@ namespace arpack {
       do_zneupd();
       if (m_workspace.ierr!=0) {std::cout << "Arpack Error in zneupd: " << m_workspace.ierr << std::endl;}
       //check order
+
       if (m_workspace.which[0]=='S' && m_workspace.which[1]=='R'){
 	//check eval order!!!	    
 	arpack_int smallest=0;
@@ -166,18 +183,34 @@ namespace arpack {
 	  }
 	}
 	if (abs(m_workspace.d[smallest])>1.0e6){
-	  std::cout << "Very large absolute value returned from arpack for eigenvalue: " << m_workspace.d[smallest] <<", aborting..." <<std::endl; exit(1);
+	  std::cout << "Very large absolute value returned from arpack for smallest eigenvalue: " << m_workspace.d[smallest] <<", aborting..." <<std::endl; exit(1);
 	}
 	else if (smallest!=0){
-	  std::cout << "ARPACK has returned eigenvalues in the wrong order..." <<std::endl;
+	  std::cout << "ARPACK in SR mode has returned eigenvalues in the wrong order..." <<std::endl;
 	  std::cout << "Swapping the order so the eigenvalue(vector) with smallest real part is first..." <<std::endl;
+	  //create a 
+	  
 	  std::swap_ranges(m_workspace.d,m_workspace.d+1,&m_workspace.d[smallest]);
 	  std::swap_ranges(m_evecs,m_evecs+length,&(m_evecs[smallest*length]));
 	}
       }
-      for (arpack_int i=0; i<m_workspace.nev; ++i) {
-	m_evals[i] = m_workspace.d[i];
+      else if (m_workspace.which[0]=='L' && m_workspace.which[1]=='M'){
+	arpack_int largest=0;
+	for (arpack_int i=1; i<m_workspace.nev; ++i) {
+	  if (abs(m_workspace.d[i]) > abs(m_workspace.d[largest])) {
+	    largest=i;	    
+	  }
+	}
+	if (largest!=0){
+	  std::cout << "ARPACK in LM mode has returned eigenvalues in the wrong order..." <<std::endl;
+	  exit(1);
+	}
       }
+
+      std::swap_ranges(m_workspace.d,m_workspace.d+m_workspace.nev,m_evals);
+      /*for (arpack_int i=0; i<m_workspace.nev; ++i) {
+	m_evals[i] = m_workspace.d[i];
+      }*/
     }
   }
 
