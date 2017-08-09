@@ -180,43 +180,33 @@ namespace ajaj{
     else if (order()==4){
       std::cout <<"4th order time step evolution" <<std::endl;
       std::cout <<"Canonization is performed at every full time step" <<std::endl;
+      //special start
+      apply_and_decompose(*m_EvolutionOperators.OrderedOperatorPtrs[0],bond_dimension,minS);
+      //
       for (uMPXInt n=0;n<num_steps;++n){
 	update_time();
 	std::cout << "Time " << current_time() << std::endl;
-	for (auto& op: m_EvolutionOperators.OrderedOperatorPtrs){
-	  apply_and_decompose(*op,bond_dimension,minS);
+	for (auto i=1; i<10;++i){
+	  apply_and_decompose(*m_EvolutionOperators.OrderedOperatorPtrs[i],bond_dimension,minS);
+	  if (i%2) m_unit=std::move(OrthogonaliseInversionSymmetric(m_unit));
 	}
-	/*
-	//do a half increment (and implicit swap)
-	apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
-	//do three full increments each followed by implicit swaps
-	apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS);
-	apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[2]),bond_dimension,minS);
-	apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[3]),bond_dimension,minS);
-	//do a half t1+t3 increment (and swap)
-	apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[4]),bond_dimension,minS);
-	//do the central t3 inc (and swap)
-	apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[5]),bond_dimension,minS);
-	//do a half t1+t3 increment (and swap)
-	apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[6]),bond_dimension,minS);
-	//do three full increments each followed by implicit swaps
-	apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[7]),bond_dimension,minS);
-	apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[8]),bond_dimension,minS);
-	apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[9]),bond_dimension,minS);
-	//do a half increment (and implicit swap)
-	apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[10]),bond_dimension,minS);
-	*/
-	//do we need to take a measurement?
-
-	//always orthogonalise, because we did lots of operations.
-	m_unit=OrthogonaliseInversionSymmetric(m_unit);
-
 	if (m_current_time_step % measurement_interval==0) /*make measurement*/ {
+	  apply_and_decompose(*m_EvolutionOperators.OrderedOperatorPtrs[10],bond_dimension,minS);
+	  m_unit.swap(0,1);
+	  m_unit=std::move(OrthogonaliseInversionSymmetric(m_unit));
 	  if (m_unit.size()){ //only if unitcell isn't empty
 	    m_unit.store(Name_,m_current_time_step);
 	    this->do_measurements(m_unit,measuredMPOs);
 	  }
+	  else {
+	    std::cout<<"Orthogonalisation Error" <<std::endl; exit(1);
+	  }
+	  apply_and_decompose(*m_EvolutionOperators.OrderedOperatorPtrs[0],bond_dimension,minS);
 	}
+	else {
+	  apply_and_decompose(*m_EvolutionOperators.OrderedOperatorPtrs[2],bond_dimension,minS);
+	}
+	
       }
     }
     else {
