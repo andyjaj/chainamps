@@ -11,6 +11,8 @@ namespace ajaj {
 
   static const double IMAGTOL(100.0*std::numeric_limits<double>::epsilon());
 
+  static const int NUMEVALS(5);
+  
   TransferMatrixParts::TransferMatrixParts(const UnitCell& B,const UnitCell& K,const State* T) : BraCell(B),KetCell(K),TargetStatePtr(T){
     if (BraCell.size() != KetCell.size()) {
       std::cout << "Malformed unit cells" << std::endl;
@@ -55,6 +57,9 @@ namespace ajaj {
   SparseED TransferMatrixParts::LeftED(Sparseint numevals, char which[3],SparseMatrix* initial) const {    
     std::cout <<"Eigensolver for matrix of length " << this->length() << std::endl;
     std::cout <<"Using reduced subspace of length " << allowed_indices.size() <<std::endl;
+    if (numevals>1 && numevals>=allowed_indices.size()){
+      --numevals;
+    }
     if (m_length<1000){
       //use simple method
       std::cout << "Simple method" <<std::endl;
@@ -86,28 +91,42 @@ namespace ajaj {
     }
   }
 
+  
   SparseED TransferMatrixParts::RightED(Sparseint numevals, char which[3],SparseMatrix* initial) const {
     //set up workspace (Evals, Evecs) SparseHED
     //MPXInt fulldim(m_length);
-    SparseED ans(m_length,numevals);
-    std::complex<double>* Evecs = new std::complex<double>[allowed_indices.size()*numevals];
-    std::complex<double>* Evals = new std::complex<double>[numevals];
-    SparseVectorWithRestriction guess_struct(initial,&allowed_indices);
-    arpack::arpack_eigs<TransferMatrixParts,SparseVectorWithRestriction> eigensystem(this,&RightTransferMatrixMultiply,allowed_indices.size(),initial ? &guess_struct : NULL,&ConvertSparseVectorWithRestriction,numevals,which,Evals,Evecs);
-    if (eigensystem.error_status()) {std::cout << "error with tensor arpack" << std::endl;exit(1);}
-    for (size_t v=0;v<static_cast<size_t>(numevals);++v){
-      std::cout << "Eval: " << Evals[v] <<std::endl;
-      ans.Values.push_back(Evals[v]);
-     
-      for (Sparseint i=0;i<allowed_indices.size();++i){
-	ans.EigenVectors.entry(allowed_indices[i],v,Evecs[i+v*allowed_indices.size()]);
-	ans.EigenVectors.entry(allowed_indices_dagger[i],v,conj(Evecs[i+v*allowed_indices.size()]));
-      }
+
+    if (numevals>1 && numevals>=allowed_indices.size()){
+      --numevals;
     }
-    ans.EigenVectors.finalise();
-    delete[] Evecs;
-    delete[] Evals;
-    return ans;
+    if (m_length<1000){
+      //use simple method
+      std::cout << "Simple method" <<std::endl;
+      MPX_matrix TM(MakeLTransferMatrix(BraCell,KetCell));
+      ShiftLTransferMatrixToR(TM);
+      return TM.RightEigs(numevals,which,initial);
+    }
+    else {
+      SparseED ans(m_length,numevals);
+      std::complex<double>* Evecs = new std::complex<double>[allowed_indices.size()*numevals];
+      std::complex<double>* Evals = new std::complex<double>[numevals];
+      SparseVectorWithRestriction guess_struct(initial,&allowed_indices);
+      arpack::arpack_eigs<TransferMatrixParts,SparseVectorWithRestriction> eigensystem(this,&RightTransferMatrixMultiply,allowed_indices.size(),initial ? &guess_struct : NULL,&ConvertSparseVectorWithRestriction,numevals,which,Evals,Evecs);
+      if (eigensystem.error_status()) {std::cout << "error with tensor arpack" << std::endl;exit(1);}
+      for (size_t v=0;v<static_cast<size_t>(numevals);++v){
+	std::cout << "Eval: " << Evals[v] <<std::endl;
+	ans.Values.push_back(Evals[v]);
+	
+	for (Sparseint i=0;i<allowed_indices.size();++i){
+	  ans.EigenVectors.entry(allowed_indices[i],v,Evecs[i+v*allowed_indices.size()]);
+	  ans.EigenVectors.entry(allowed_indices_dagger[i],v,conj(Evecs[i+v*allowed_indices.size()]));
+	}
+      }
+      ans.EigenVectors.finalise();
+      delete[] Evecs;
+      delete[] Evals;
+      return ans;
+    }
   }
 
   void LeftTransferMatrixMultiply(const TransferMatrixParts* stuff, std::complex<double> *in, std::complex<double> *out){
@@ -156,7 +175,7 @@ namespace ajaj {
 
     State Target(MPSD.basis().getChargeRules());
 
-    SparseED LeftTdecomp(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&MPSD.LeftMatrix,&NL}}),1,Target).LeftED(1,LARGESTMAGNITUDE));
+    SparseED LeftTdecomp(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&MPSD.LeftMatrix,&NL}}),1,Target).LeftED(NUMEVALS,LARGESTMAGNITUDE));
 
     std::cout << "Leading left eigenvalue of left transfer matrix: " << LeftTdecomp.Values.at(0) << std::endl; //will need to rescale by this
     if (abs(imag(LeftTdecomp.Values.at(0)))>=IMAGTOL*abs(real(LeftTdecomp.Values.at(0)))) {
@@ -170,7 +189,7 @@ namespace ajaj {
     //MPX_matrix Q_(contract(R.ColumnMatrix,0,MPX_matrix(basis,R.ColumnMatrix.Index(1),R.Values),0,contract10));
     MPS_matrix NR(contract(PreviousLambdaInverse,0,contract(contract(R.ColumnMatrix,0,MPX_matrix(basis,R.ColumnMatrix.Index(1),R.Values),0,contract10),0,R.RowMatrix,0,contract10),0,contract10));
 
-    SparseED RightTdecomp(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&NR,&MPSD.RightMatrix}}),1,Target).RightED(1,LARGESTMAGNITUDE));
+    SparseED RightTdecomp(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&NR,&MPSD.RightMatrix}}),1,Target).RightED(NUMEVALS,LARGESTMAGNITUDE));
 
     std::cout << "Leading right eigenvalue of right transfer matrix: " << RightTdecomp.Values.at(0) << std::endl;
     if (abs(imag(RightTdecomp.Values.at(0)))>=IMAGTOL*abs(real(RightTdecomp.Values.at(0)))) {
@@ -184,7 +203,7 @@ namespace ajaj {
     VLIndices.emplace_back(0,MPSD.LeftMatrix.getInwardMatrixIndex());
     //decompose it into Xdagger X form
 
-    std::pair<std::vector<double>,MPX_matrix> VLDecomp(SqrtDR(MPX_matrix(basis,VLIndices,1,reshape(LeftTdecomp.EigenVectors/*.ExtractColumns(std::vector<MPXInt>({0}))*/,MPSD.LeftMatrix.getInwardMatrixIndex().size()))));
+    std::pair<std::vector<double>,MPX_matrix> VLDecomp(SqrtDR(MPX_matrix(basis,VLIndices,1,reshape(LeftTdecomp.EigenVectors.ExtractColumns(std::vector<MPXInt>({0})),MPSD.LeftMatrix.getInwardMatrixIndex().size()))));
     //If failure, return dummy
     if (!VLDecomp.first.size()) return UnitCell(basis);
 
@@ -195,7 +214,7 @@ namespace ajaj {
     VRIndices.emplace_back(1,MPSD.RightMatrix.getOutwardMatrixIndex());
     VRIndices.emplace_back(0,MPSD.RightMatrix.getOutwardMatrixIndex());
 
-    std::pair<std::vector<double>,MPX_matrix> VRDecomp(SqrtDR(MPX_matrix(basis,VRIndices,1,reshape(RightTdecomp.EigenVectors/*.ExtractColumns(std::vector<MPXInt>({0}))*/,MPSD.RightMatrix.getOutwardMatrixIndex().size()))));
+    std::pair<std::vector<double>,MPX_matrix> VRDecomp(SqrtDR(MPX_matrix(basis,VRIndices,1,reshape(RightTdecomp.EigenVectors.ExtractColumns(std::vector<MPXInt>({0})),MPSD.RightMatrix.getOutwardMatrixIndex().size()))));
     //If failure, return dummy
     if (!VRDecomp.first.size()) return UnitCell(basis);
 
@@ -222,7 +241,7 @@ namespace ajaj {
     const Basis& basis(C.Matrices.front().basis());
 
     //transfer matrix components with these flags enforces hermiticity of the (reshaped) left eigenvector
-    SparseED LeftTdecomp(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&C.Matrices.at(0),&C.Matrices.at(1)}}),1,State(C.basis().getChargeRules())).LeftED(1,LARGESTMAGNITUDE));
+    SparseED LeftTdecomp(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&C.Matrices.at(0),&C.Matrices.at(1)}}),1,State(C.basis().getChargeRules())).LeftED(NUMEVALS,LARGESTMAGNITUDE));
     std::cout << "Leading left eigenvalue of left transfer matrix: " << LeftTdecomp.Values.at(0) << std::endl; //will need to rescale by this
     if (abs(imag(LeftTdecomp.Values.at(0)))>=IMAGTOL*abs(real(LeftTdecomp.Values.at(0)))) {
       std::cout << "Eigenvalue has non negligible imaginary part, numerical error in transfer matrix contraction?" << std::endl;
@@ -234,7 +253,7 @@ namespace ajaj {
     VLIndices.emplace_back(1,C.Matrices.front().getInwardMatrixIndex());
     VLIndices.emplace_back(0,C.Matrices.front().getInwardMatrixIndex());
     //decompose it into Xdagger X form
-    std::pair<std::vector<double>,MPX_matrix> VLDecomp(SqrtDR(MPX_matrix(basis,VLIndices,1,reshape(LeftTdecomp.EigenVectors/*.ExtractColumns(std::vector<MPXInt>({0}))*/,C.Matrices.front().getInwardMatrixIndex().size()))));
+    std::pair<std::vector<double>,MPX_matrix> VLDecomp(SqrtDR(MPX_matrix(basis,VLIndices,1,reshape(LeftTdecomp.EigenVectors.ExtractColumns(std::vector<MPXInt>({0})),C.Matrices.front().getInwardMatrixIndex().size()))));
     //If failure, return dummy
     if (!VLDecomp.first.size()) return UnitCell(basis);
 
@@ -244,7 +263,7 @@ namespace ajaj {
     std::vector<MPXIndex> VRIndices;
     VRIndices.emplace_back(1,C.Matrices.back().getOutwardMatrixIndex());
     VRIndices.emplace_back(0,C.Matrices.back().getOutwardMatrixIndex());
-    std::pair<std::vector<double>,MPX_matrix> VRDecomp(SqrtDR(MPX_matrix(basis,VRIndices,1,reshape(LeftTdecomp.EigenVectors,C.Matrices.back().getOutwardMatrixIndex().size()))));
+    std::pair<std::vector<double>,MPX_matrix> VRDecomp(SqrtDR(MPX_matrix(basis,VRIndices,1,reshape(LeftTdecomp.EigenVectors.ExtractColumns(std::vector<MPXInt>({0})),C.Matrices.back().getOutwardMatrixIndex().size()))));
     //If failure, return dummy
     if (!VRDecomp.first.size()) return UnitCell(basis);
 
@@ -269,7 +288,7 @@ namespace ajaj {
     const EigenStateArray& spectrum(C.Matrices.at(0).GetPhysicalSpectrum());
     std::cout << "Forming left transfer matrix" << std::endl;
     MPX_matrix TransferMatrix(MakeLTransferMatrix(C,C));
-    SparseED LeftTdecomp(TransferMatrix.LeftEigs(State(spectrum[0].getChargeRules()),1,LARGESTMAGNITUDE));
+    SparseED LeftTdecomp(TransferMatrix.LeftEigs(State(spectrum[0].getChargeRules()),NUMEVALS,LARGESTMAGNITUDE));
     std::cout << "Leading left eigenvalue of left transfer matrix: " << LeftTdecomp.Values.at(0) << std::endl; //will need to rescale by this
     //make it into an MPX_matrix
     std::vector<double> scalevecX(C.Matrices.at(0).Index(1).size(),1.0/sqrt(LeftTdecomp.Values.at(0).real()));
@@ -277,19 +296,19 @@ namespace ajaj {
     VLIndices.emplace_back(1,C.Matrices.at(0).Index(1));
     VLIndices.emplace_back(0,C.Matrices.at(0).Index(1));
     //decompose it into Xdagger X form
-    std::pair<std::vector<double>,MPX_matrix> VLDecomp(SqrtDR(MPX_matrix(spectrum,VLIndices,1,reshape(LeftTdecomp.EigenVectors,C.Matrices.at(0).Index(1).size()).massage())));
+    std::pair<std::vector<double>,MPX_matrix> VLDecomp(SqrtDR(MPX_matrix(spectrum,VLIndices,1,reshape(LeftTdecomp.EigenVectors.ExtractColumns(std::vector<MPXInt>({0})),C.Matrices.at(0).Index(1).size()).massage())));
     MPX_matrix X(contract(MPX_matrix(spectrum,VLDecomp.second.Index(0),VLDecomp.first),0,VLDecomp.second,0,contract10));
     MPX_matrix Xinv(contract(reorder(VLDecomp.second,1,reorder10,1),0,MPX_matrix(spectrum,VLDecomp.second.Index(0),VLDecomp.first,1),0,contract10));
     //record scale factor for later
     //now need to make Y
     std::cout << "Forming right transfer matrix" << std::endl;
     ShiftLTransferMatrixToR(TransferMatrix); //assumes inversion symmetry!!!!!
-    SparseED RightTdecomp(TransferMatrix.RightEigs(State(spectrum[0].getChargeRules()),1,LARGESTMAGNITUDE));
+    SparseED RightTdecomp(TransferMatrix.RightEigs(State(spectrum[0].getChargeRules()),NUMEVALS,LARGESTMAGNITUDE));
     std::cout << "Leading right eigenvalue of right transfer matrix: " << RightTdecomp.Values.at(0) << std::endl; //will need to rescale by this if used
     std::vector<MPXIndex> VRIndices;
     VRIndices.emplace_back(1,C.Matrices.back().Index(2));
     VRIndices.emplace_back(0,C.Matrices.back().Index(2));
-    std::pair<std::vector<double>,MPX_matrix> VRDecomp(SqrtDR(MPX_matrix(spectrum,VRIndices,1,reshape(RightTdecomp.EigenVectors,C.Matrices.back().Index(2).size()).massage())));
+    std::pair<std::vector<double>,MPX_matrix> VRDecomp(SqrtDR(MPX_matrix(spectrum,VRIndices,1,reshape(RightTdecomp.EigenVectors.ExtractColumns(std::vector<MPXInt>({0})),C.Matrices.back().Index(2).size()).massage())));
     //to make Y we need to reorder and conjugate VRDecomp.second()
     MPX_matrix Y(contract(reorder(VRDecomp.second,1,reorder10,1),0,MPX_matrix(spectrum,VRDecomp.second.Index(0),VRDecomp.first),0,contract10));
     //need to form and svd  new lambda
