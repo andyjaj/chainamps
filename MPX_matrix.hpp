@@ -27,7 +27,7 @@ namespace ajaj{
   TranslationBlock<T> contract_conditional(const MPX_matrix& A, bool conjA,const MPX_matrix& B,bool conjB,const std::vector<MPXPair>& contractidxs,const std::pair<const std::vector<MPXInt>,const std::vector<MPXInt> >& condition);
   MPX_matrix reorder(const MPX_matrix& A, bool conjA, const std::vector<Sparseint>& newindexorder, const Sparseint numrows); //reorders indices (and reshape sparse array)
   std::pair<MPX_matrix,MPX_matrix> MakeXandXinv(const MPX_matrix& M);
-  std::pair<std::vector<double>,MPX_matrix> SqrtDR(const MPX_matrix& M);
+  std::pair<std::vector<double>,MPX_matrix> SqrtDR(const MPX_matrix& M); /**<Uses eigendecomposition, so R^dagger is inverse of R*/
   SparseMatrix reshape_to_vector(const MPX_matrix& A);
   SparseMatrix contract_to_sparse(const MPX_matrix& A, bool conjA,const MPX_matrix& B,bool conjB, const std::vector<MPXPair>& contractidxs);
   void swap(MPX_matrix& A, MPX_matrix& B);

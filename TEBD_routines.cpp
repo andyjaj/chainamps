@@ -159,15 +159,11 @@ namespace ajaj{
 	  UnitCell ortho(OrthogonaliseInversionSymmetric(m_unit));
 	  if (ortho.size()){ //if generating unitcell works, then measure and use it
 	    ortho.store(Name_,m_current_time_step);
-	    //ortho.OutputOneVertexDensityMatrix("OneVertexRho",m_current_time_step);
 	    this->do_measurements(ortho,measuredMPOs);
 	    m_unit=std::move(ortho);
 	  }
-	  //m_unit=std::move(OrthogonaliseInversionSymmetric(m_unit));
-	  //m_unit.store(Name_,m_current_time_step);
-	  m_unit.OutputOneVertexDensityMatrix("OneVertexRho",m_current_time_step);
-	  //this->do_measurements(m_unit,measuredMPOs);
 
+	  m_unit.OutputOneVertexDensityMatrix("OneVertexRho",m_current_time_step);
 	  //complete time step
 	  apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
 	}
@@ -192,7 +188,7 @@ namespace ajaj{
 	}
 	if (m_current_time_step % measurement_interval==0) /*make measurement*/ {
 	  apply_and_decompose(*m_EvolutionOperators.OrderedOperatorPtrs[10],bond_dimension,minS);
-	  m_unit.swap(0,1);
+	  m_unit.swap(0,1);//need a swap here because an odd operator follows an odd
 	  m_unit=std::move(OrthogonaliseInversionSymmetric(m_unit));
 	  if (m_unit.size()){ //only if unitcell isn't empty
 	    m_unit.store(Name_,m_current_time_step);
