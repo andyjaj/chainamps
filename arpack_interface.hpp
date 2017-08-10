@@ -110,14 +110,52 @@ namespace arpack {
   inline void arpack_eigs<ArrayType,GuessType>::arpack_eigs::sort(){
     //first create an indexed list
     std::vector<std::pair<arpack_int,std::complex<double> > > indexed_e_vals;
-    arpack_int count=0;
     for (arpack_int i=0; i<m_workspace.nev; ++i){
-      indexed_e_vals.emplace_back(count,m_workspace.d[count]);
+      indexed_e_vals.emplace_back(i,m_workspace.d[i]);
     }
-    //next sort
-    std::sort(indexed_e_vals.begin(),indexed_e_vals.end(),
-	      [](const std::pair<arpack_int,std::complex<double> >& a, const std::pair<arpack_int,std::complex<double> >& b)
-	      {	return real(a.second) < real(b.second);});
+    //next sort, needs to know if mode is SR or LM
+    if (m_workspace.which[0]=='S' && m_workspace.which[1]=='R'){
+      std::sort(indexed_e_vals.begin(),indexed_e_vals.end(),
+		[](const std::pair<arpack_int,std::complex<double> >& a, const std::pair<arpack_int,std::complex<double> >& b)
+		{ return real(a.second) < real(b.second);}
+		);
+    }
+    else if (m_workspace.which[0]=='L' && m_workspace.which[1]=='M'){
+      std::sort(indexed_e_vals.begin(),indexed_e_vals.end(),
+		[](const std::pair<arpack_int,std::complex<double> >& a, const std::pair<arpack_int,std::complex<double> >& b)
+		{ return abs(a.second) > abs(b.second);}
+		);
+    }
+
+    //now check if anything changed
+    arpack_int count=0;
+    for (auto& i : indexed_e_vals){
+      if (i.first!=count) {
+	std::cout <<"Arpack has returned eigenvalues in the wrong order!"<<std::endl;
+	for(auto& i : indexed_e_vals){
+	  std::cout << i.first <<": " << i.second <<std::endl; 
+	}
+	exit(1);
+	std::cout << "Reordering..." <<std::endl;
+	//create a buffer 
+	std::complex<double> buffer_eval;
+	std::vector<std::complex<double> > buffer_evec;
+	buffer_evec.reserve(m_workspace.ldv);
+
+	//at this point we can swap the data, and then update the indices in the list.
+	//arpack_int swap_idx=nev-1;
+	for (auto j=count+1;j<m_workspace.nev;++j){
+	  if (indexed_e_vals[j].first==count){
+	    std::swap_ranges(&m_workspace.d[i.first],&m_workspace.d[i.first]+1,&m_workspace.d[count]);
+	    std::swap_ranges(&m_evecs[i.first*m_length],&m_evecs[i.first*m_length]+m_length,&(m_evecs[count*m_length]));
+	    indexed_e_vals[j].first=i.first; //update moved idx
+	    i.first=count;//not necessary
+	    break;
+	  }
+	}
+	++count;
+      }
+    }
   }
   
   template <typename ArrayType, typename GuessType>
@@ -174,6 +212,8 @@ namespace arpack {
       if (m_workspace.ierr!=0) {std::cout << "Arpack Error in zneupd: " << m_workspace.ierr << std::endl;}
       //check order
 
+      sort();
+      /*
       if (m_workspace.which[0]=='S' && m_workspace.which[1]=='R'){
 	//check eval order!!!	    
 	arpack_int smallest=0;
@@ -187,6 +227,7 @@ namespace arpack {
 	}
 	else if (smallest!=0){
 	  std::cout << "ARPACK in SR mode has returned eigenvalues in the wrong order..." <<std::endl;
+	  exit(1);
 	  std::cout << "Swapping the order so the eigenvalue(vector) with smallest real part is first..." <<std::endl;
 	  //create a 
 	  
@@ -206,7 +247,7 @@ namespace arpack {
 	  exit(1);
 	}
       }
-
+      */
       std::swap_ranges(m_workspace.d,m_workspace.d+m_workspace.nev,m_evals);
       /*for (arpack_int i=0; i<m_workspace.nev; ++i) {
 	m_evals[i] = m_workspace.d[i];
