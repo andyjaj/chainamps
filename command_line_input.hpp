@@ -410,7 +410,7 @@ namespace ajaj {
 	  valid_=0;
 	}
 	if (options[WEIGHT_FACTOR]) {
-	  E_=1; //at least 1.
+	  E_=1; //at least 1 excited state to look for.
 	  Weight_=stod(options[WEIGHT_FACTOR].arg);
 	}
 	if (options[NUMBER_OF_EXCITED])

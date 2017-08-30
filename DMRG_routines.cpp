@@ -832,9 +832,11 @@ namespace ajaj {
     uMPXInt fulldim(this->length());
     std::cout <<"Eigensolver for matrix of length " << fulldim << std::endl;
     std::cout <<"Using reduced subspace of length " << allowed_indices.size() <<std::endl;
-    numevals=(numevals+ProjectorTensors.size() > allowed_indices.size() ? allowed_indices.size()-ProjectorTensors.size() : numevals);
+    //need to guard against numevals being 0 or larger than matrix size
+    numevals=(numevals/*+ProjectorTensors.size()*/ > allowed_indices.size() ? allowed_indices.size()/*ProjectorTensors.size()*/ : numevals);
     if (numevals==0){
-      std::cout << "All excited states in sector have been found!" <<std::endl;
+      //std::cout << "All excited states in sector have been found!" <<std::endl;
+      std::cout << "Number of requested eigenvalues=0!" <<std::endl;
       return SparseHED(fulldim,0);
     }
     SparseVectorWithRestriction guess_struct(initial,&allowed_indices);
@@ -842,12 +844,13 @@ namespace ajaj {
     //internal contractions may be large.
     //however if allowed_indices is 'small' we should use a dense method
 
-    if (allowed_indices.size()<800 /*&& !ProjectorTensors.size()*/){
+    if (allowed_indices.size()<800 && allowed_indices.size()>ProjectorTensors.size()){
       //just make the (dense) matrix and use lapack
       static std::pair<const std::vector<MPXInt>,const std::vector<MPXInt> > condition={{1,7},{2,6}};
       TranslationBlock<DenseMatrix> TB(contract_conditional<DenseMatrix>(contract(H,0,LeftBlock,0,contract13),0,contract(H,0,RightBlock,0,contract32),0,contract21,condition));
       //use lapack
-      DenseHED dense_ans(TB.Block.HED(numevals,ProjectorTensors.size()));
+      DenseHED dense_ans(TB.Block.HED(1,ProjectorTensors.size()));
+      //DenseHED dense_ans(TB.Block.HED(1,0)); //find smallest real eval
       return SparseHED(std::vector<double>(dense_ans.Values,dense_ans.Values+dense_ans.ValuesSize()),TB.TranslateRows(dense_ans.EigenVectors));
     }
     else {
