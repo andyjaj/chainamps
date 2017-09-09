@@ -112,35 +112,6 @@ namespace ajaj {
     }
   };
 
-  class TransferMatrixParts{
-  public:
-    const UnitCell& BraCell;
-    const UnitCell& KetCell;
-    const State* TargetStatePtr;
-    std::vector<MPXIndex> left_indices;
-    std::vector<MPXIndex> right_indices;
-
-    std::vector<Sparseint> allowed_indices;
-    std::vector<Sparseint> allowed_indices_dagger;
-
-    std::vector<std::array<Sparseint,2> > rows_and_cols;
-    uMPXInt vrows;
-    uMPXInt vcols;
-
-    TransferMatrixParts(const UnitCell& B,const UnitCell& K,const State* T=NULL);
-    TransferMatrixParts(const UnitCell& C,const State* T=NULL);
-    uMPXInt length() const {return m_length;}
-    SparseED LeftED(Sparseint numevals, char which[3],SparseMatrix* initial=NULL) const;
-    SparseED RightED(Sparseint numevals, char which[3],SparseMatrix* initial=NULL) const;
-
-  private:
-    uMPXInt m_length;
-    void m_init();
-  };
-
-  void LeftTransferMatrixMultiply(const TransferMatrixParts* stuff, std::complex<double> *in, std::complex<double> *out);
-  void RightTransferMatrixMultiply(const TransferMatrixParts* stuff, std::complex<double> *in, std::complex<double> *out);
-
   /** Orthogonalise a new decomposition, A L_n B inverse L_(n-1). Return a left orthogonal unit cell, and new lambda*/
   UnitCell Orthogonalise(const MPSDecomposition& MPSD,const std::vector<double>& PreviousLambda);
   UnitCell Orthogonalise(const UnitCell& C);
@@ -172,7 +143,11 @@ namespace ajaj {
   private:
     const State TargetState_;
     const uMPXInt CellSize_;
-    const bool Hermitian_answer_; //setting this true insists that the final eigenvector can be reshaped into a (obviously square) Hermitian matrix
+    const bool Hermitian_answer_; //setting this true insists that the final eigenvector can be reshaped into a (obviously square) Hermitian matrix, and assumes that dominant e val is real...
+
+    const UnitCell& KetCell_;
+    const UnitCell& BraCell_;
+
 
     std::vector<std::pair<const MPS_matrix*,const MPS_matrix*> > BraKetMatrixPtrs_;
 
@@ -189,8 +164,11 @@ namespace ajaj {
 
   public:
 
-    TransferMatrixComponents(const std::vector<const MPS_matrix*>& BraPtrs, const std::vector<const MPS_matrix*>& KetPtrs, bool HV, const State S);
-    TransferMatrixComponents(const std::vector<const MPS_matrix*>& KetPtrs, bool HV, const State S);
+    //TransferMatrixComponents(const std::vector<const MPS_matrix*>& BraPtrs, const std::vector<const MPS_matrix*>& KetPtrs, bool HV, const State S);
+    //TransferMatrixComponents(const std::vector<const MPS_matrix*>& KetPtrs, bool HV, const State S);
+
+    TransferMatrixComponents(const UnitCell& BraCell, const UnitCell& KetCell, bool HV, const State S);
+    TransferMatrixComponents(const UnitCell& KetCell, bool HV, const State S);
 
     const MPS_matrix& BraMatrix(uMPXInt i) const {return *(BraKetMatrixPtrs_.at(i).first);} //public interface
     const MPS_matrix& KetMatrix(uMPXInt i) const {return *(BraKetMatrixPtrs_.at(i).second);}
