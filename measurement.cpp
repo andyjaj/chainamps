@@ -17,9 +17,15 @@ namespace ajaj {
     std::cout << "Orthogonalising..." << std::endl;
     const Basis& basis(C.Matrices.front().basis());
 
+    SparseMatrix initialvector(C.Lambdas[0].size()*C.Lambdas[0].size(),1);
+    for (auto i=0; i<C.Lambdas[0].size();++i){
+      initialvector.entry(i+i*C.Lambdas[0].size(),1,C.Lambdas[0][i]);
+    }
+    initialvector.finalise();
+
     //transfer matrix components with these flags enforces hermiticity of the (reshaped) left eigenvector
     //SparseED LeftTdecomp(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&C.Matrices.at(0),&C.Matrices.at(1)}}),1,State(C.basis().getChargeRules())).LeftED(NUMEVALS,LARGESTMAGNITUDE));
-    SparseED LeftTdecomp(TransferMatrixComponents(C,1,State(C.basis().getChargeRules())).LeftED(NUMEVALS,LARGESTMAGNITUDE));
+    SparseED LeftTdecomp(TransferMatrixComponents(C,1,State(C.basis().getChargeRules())).LeftED(NUMEVALS,LARGESTMAGNITUDE,&initialvector));
     std::cout << "Leading left eigenvalue of left transfer matrix: " << LeftTdecomp.Values.at(0) << std::endl; //will need to rescale by this
     if (abs(imag(LeftTdecomp.Values.at(0)))>=IMAGTOL*abs(real(LeftTdecomp.Values.at(0)))) {
       std::cout << "Eigenvalue has non negligible imaginary part, numerical error in transfer matrix contraction?" << std::endl;
@@ -97,7 +103,7 @@ namespace ajaj {
 
     //Find right e vec of unitcell, this should be lambda Y Y^dagger lambda
     //SparseED RightTdecompSpecial(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&C.Matrices.at(0),&C.Matrices.at(1)}}),1,State(C.basis().getChargeRules())).RightED(NUMEVALS,LARGESTMAGNITUDE));
-    SparseED RightTdecompSpecial(TransferMatrixComponents(C,1,State(C.basis().getChargeRules())).RightED(NUMEVALS,LARGESTMAGNITUDE));
+    SparseED RightTdecompSpecial(TransferMatrixComponents(C,1,State(C.basis().getChargeRules())).RightED(NUMEVALS,LARGESTMAGNITUDE,&initialvector));
 
     std::cout << "Leading right eigenvalue of unshifted right transfer matrix: " << RightTdecompSpecial.Values.at(0) << std::endl; //will need to rescale by this
     if (abs(imag(RightTdecompSpecial.Values.at(0)))>=IMAGTOL*abs(real(RightTdecompSpecial.Values.at(0)))) {
