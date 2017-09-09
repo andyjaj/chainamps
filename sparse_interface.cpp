@@ -1554,7 +1554,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     //if we have matrices smaller than 400*400 then dense is probably fine
     //larger matrices should use a sparse method
 
-    if (B.size()<=500/*this->rows()<=400*/){ //use dense storage for block
+    if (B.size()<=SPARSE_THRESHOLD/*this->rows()<=400*/){ //use dense storage for block
       //std::cout << "Method 2 with dense storage" <<std::endl;
       TranslationBlock<DenseMatrix> TB(*this,B,B); //form block
       
@@ -1618,7 +1618,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     std::complex<double>* Evals = new std::complex<double>[numevals];
     //can we guarantee arpack won't mess the array up?
     bool arpack_error=1;
-    if (this->rows()>100){
+    if (this->rows()>SPARSE_THRESHOLD){
       arpack_error=arpack::cpparpack(this->m_array,this->rows(),numevals,Evals, Evecs, which,initial ? initial->m_array : NULL);
     }
     if (arpack_error){ 
@@ -1729,7 +1729,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     SparseED ans(this->rows(),requested_numevals);
 
     //Run arpack and check for errors
-    if(this->cols() < 500 || arpack::cpparpack(this->m_array,this->rows(),requested_numevals,Evals, Evecs, which,initial ? initial->m_array : NULL)){
+    if(this->cols() <= SPARSE_THRESHOLD || arpack::cpparpack(this->m_array,this->rows(),requested_numevals,Evals, Evecs, which,initial ? initial->m_array : NULL)){
       //std::cout << "Arpack error for array size " << this->rows() << " " << this->cols() << std::endl;
       if (this->rows()==1 && this->cols()==1){
 	Evecs[0]=1.0; Evals[0]=this->m_array->x[0];

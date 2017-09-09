@@ -400,7 +400,7 @@ namespace ajaj {
     std::cout <<"Eigensolver for matrix of length " << length() << std::endl;
     std::cout <<"Using reduced subspace of length " << allowed_indices_.size() <<std::endl;
 
-    if (length()<500){
+    if (length()<=SPARSE_THRESHOLD){
       //use simple method
       std::cout << "Simple method" <<std::endl;
       //accumulate
@@ -462,7 +462,7 @@ namespace ajaj {
     std::cout <<"Eigensolver for matrix of length " << length() << std::endl;
     std::cout <<"Using reduced subspace of length " << allowed_indices_.size() <<std::endl;
 
-    if (length()<500){
+    if (length()<SPARSE_THRESHOLD){
       //use simple method
       std::cout << "Simple method" <<std::endl;
       //accumulate

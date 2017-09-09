@@ -14,6 +14,8 @@
 
 #define FILEPREC 16 //used when outputting as text
 #define SPARSETOL std::numeric_limits<double>::epsilon()
+#define S_VAL_TOL 1.0e-9
+#define SPARSE_THRESHOLD 1000
 
 namespace ajaj { 
   typedef SuiteSparse_long Sparseint;
