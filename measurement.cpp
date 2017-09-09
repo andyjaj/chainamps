@@ -17,11 +17,11 @@ namespace ajaj {
     std::cout << "Orthogonalising..." << std::endl;
     const Basis& basis(C.Matrices.front().basis());
 
-    SparseMatrix initialvector(C.Lambdas[0].size()*C.Lambdas[0].size(),1);
+    SparseMatrix initialvector(1,C.Lambdas[0].size()*C.Lambdas[0].size());
     for (auto i=0; i<C.Lambdas[0].size();++i){
-      initialvector.entry(i+i*C.Lambdas[0].size(),1,C.Lambdas[0][i]);
+      initialvector.entry(0,i+i*C.Lambdas[0].size(),C.Lambdas[0][i]);
     }
-    initialvector.finalise();
+    initialvector.cheap_no_transpose_finalise();
 
     //transfer matrix components with these flags enforces hermiticity of the (reshaped) left eigenvector
     //SparseED LeftTdecomp(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&C.Matrices.at(0),&C.Matrices.at(1)}}),1,State(C.basis().getChargeRules())).LeftED(NUMEVALS,LARGESTMAGNITUDE));
@@ -75,11 +75,11 @@ namespace ajaj {
     //transfer matrix components with these flags enforces hermiticity of the (reshaped) left eigenvector
     //SparseED LeftTdecomp(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&C.Matrices.at(0),&C.Matrices.at(1)}}),1,State(C.basis().getChargeRules())).LeftED(NUMEVALS,LARGESTMAGNITUDE));
 
-    SparseMatrix initialvector(C.Lambdas[0].size()*C.Lambdas[0].size(),1);
+    SparseMatrix initialvector(1,C.Lambdas[0].size()*C.Lambdas[0].size());
     for (auto i=0; i<C.Lambdas[0].size();++i){
-      initialvector.entry(i+i*C.Lambdas[0].size(),1,C.Lambdas[0][i]);
+      initialvector.entry(0,i+i*C.Lambdas[0].size(),C.Lambdas[0][i]);
     }
-    initialvector.finalise();
+    initialvector.cheap_no_transpose_finalise();
 
     SparseED LeftTdecomp(TransferMatrixComponents(C,1,State(C.basis().getChargeRules())).LeftED(NUMEVALS,LARGESTMAGNITUDE,&initialvector));
     std::cout << "Leading left eigenvalue of left transfer matrix: " << LeftTdecomp.Values.at(0) << std::endl; //will need to rescale by this
