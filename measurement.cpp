@@ -17,15 +17,16 @@ namespace ajaj {
     std::cout << "Orthogonalising..." << std::endl;
     const Basis& basis(C.Matrices.front().basis());
 
-    SparseMatrix initialvector(1,C.Lambdas[0].size()*C.Lambdas[0].size());
-    for (auto i=0; i<C.Lambdas[0].size();++i){
-      initialvector.entry(0,i+i*C.Lambdas[0].size(),C.Lambdas[0][i]);
-    }
-    initialvector.cheap_no_transpose_finalise();
-
     //transfer matrix components with these flags enforces hermiticity of the (reshaped) left eigenvector
     //SparseED LeftTdecomp(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&C.Matrices.at(0),&C.Matrices.at(1)}}),1,State(C.basis().getChargeRules())).LeftED(NUMEVALS,LARGESTMAGNITUDE));
-    SparseED LeftTdecomp(TransferMatrixComponents(C,1,State(C.basis().getChargeRules())).LeftED(NUMEVALS,LARGESTMAGNITUDE,&initialvector));
+
+    SparseMatrix gM(1,C.Lambdas[0].size()*C.Lambdas[0].size(),C.Lambdas[0].size()*C.Lambdas[0].size());
+    for (auto i=0;i<C.Lambdas[0].size()*C.Lambdas[0].size();++i){
+      gM.entry(0,i,1.0);
+    }
+    gM.cheap_no_transpose_finalise();
+
+    SparseED LeftTdecomp(TransferMatrixComponents(C,1,State(C.basis().getChargeRules())).LeftED(NUMEVALS,LARGESTMAGNITUDE,&gM));
     std::cout << "Leading left eigenvalue of left transfer matrix: " << LeftTdecomp.Values.at(0) << std::endl; //will need to rescale by this
     if (abs(imag(LeftTdecomp.Values.at(0)))>=IMAGTOL*abs(real(LeftTdecomp.Values.at(0)))) {
       std::cout << "Eigenvalue has non negligible imaginary part, numerical error in transfer matrix contraction?" << std::endl;
@@ -75,13 +76,13 @@ namespace ajaj {
     //transfer matrix components with these flags enforces hermiticity of the (reshaped) left eigenvector
     //SparseED LeftTdecomp(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&C.Matrices.at(0),&C.Matrices.at(1)}}),1,State(C.basis().getChargeRules())).LeftED(NUMEVALS,LARGESTMAGNITUDE));
 
-    SparseMatrix initialvector(1,C.Lambdas[0].size()*C.Lambdas[0].size());
-    for (auto i=0; i<C.Lambdas[0].size();++i){
-      initialvector.entry(0,i+i*C.Lambdas[0].size(),C.Lambdas[0][i]);
+    SparseMatrix gM(1,C.Lambdas[0].size()*C.Lambdas[0].size(),C.Lambdas[0].size()*C.Lambdas[0].size());
+    for (auto i=0;i<C.Lambdas[0].size()*C.Lambdas[0].size();++i){
+      gM.entry(0,i,1.0);
     }
-    initialvector.cheap_no_transpose_finalise();
+    gM.cheap_no_transpose_finalise();
 
-    SparseED LeftTdecomp(TransferMatrixComponents(C,1,State(C.basis().getChargeRules())).LeftED(NUMEVALS,LARGESTMAGNITUDE,&initialvector));
+    SparseED LeftTdecomp(TransferMatrixComponents(C,1,State(C.basis().getChargeRules())).LeftED(NUMEVALS,LARGESTMAGNITUDE,&gM));
     std::cout << "Leading left eigenvalue of left transfer matrix: " << LeftTdecomp.Values.at(0) << std::endl; //will need to rescale by this
     if (abs(imag(LeftTdecomp.Values.at(0)))>=IMAGTOL*abs(real(LeftTdecomp.Values.at(0)))) {
       std::cout << "Eigenvalue has non negligible imaginary part, numerical error in transfer matrix contraction?" << std::endl;
@@ -103,7 +104,7 @@ namespace ajaj {
 
     //Find right e vec of unitcell, this should be lambda Y Y^dagger lambda
     //SparseED RightTdecompSpecial(TransferMatrixComponents(std::vector<const MPS_matrix*>({{&C.Matrices.at(0),&C.Matrices.at(1)}}),1,State(C.basis().getChargeRules())).RightED(NUMEVALS,LARGESTMAGNITUDE));
-    SparseED RightTdecompSpecial(TransferMatrixComponents(C,1,State(C.basis().getChargeRules())).RightED(NUMEVALS,LARGESTMAGNITUDE,&initialvector));
+    SparseED RightTdecompSpecial(TransferMatrixComponents(C,1,State(C.basis().getChargeRules())).RightED(NUMEVALS,LARGESTMAGNITUDE,&gM));
 
     std::cout << "Leading right eigenvalue of unshifted right transfer matrix: " << RightTdecompSpecial.Values.at(0) << std::endl; //will need to rescale by this
     if (abs(imag(RightTdecompSpecial.Values.at(0)))>=IMAGTOL*abs(real(RightTdecompSpecial.Values.at(0)))) {
@@ -410,9 +411,10 @@ namespace ajaj {
       SparseED ans(length(),numevals);
       std::complex<double>* Evecs = new std::complex<double>[allowed_indices_.size()*numevals];
       std::complex<double>* Evals = new std::complex<double>[numevals];
-      
+
       SparseVectorWithRestriction guess_struct(initial,&allowed_indices_);
-      arpack::arpack_eigs<TransferMatrixComponents,SparseVectorWithRestriction> eigensystem(this,&LeftComponentsMultiply,allowed_indices_.size(),initial ? &guess_struct : NULL,&ConvertSparseVectorWithRestriction,numevals,which,Evals,Evecs);
+      arpack::arpack_eigs<TransferMatrixComponents,SparseVectorWithRestriction> eigensystem(this,&LeftComponentsMultiply,allowed_indices_.size(),initial ? &guess_struct : nullptr, &ConvertSparseVectorWithRestriction,numevals,which,Evals,Evecs);
+
       if (eigensystem.error_status()) {std::cout << "Error with tensor arpack" << std::endl;exit(1);}
 
       if (Hermitian_answer_ && which[0]=='L' && (abs(imag(Evals[0]))>=IMAGTOL*abs(real(Evals[0])))){
