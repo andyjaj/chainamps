@@ -1449,11 +1449,11 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     Values.push_back(SortedValues[0].second);
     double kept_weight(SortedValues[0].second*SortedValues[0].second);
 
-    if (SortedValues[length-1].second <= SPARSETOL*SortedValues.begin()->second && length>1){//if we are at a tiny s val, check for slightly larger 'degenerate' singular values and remove them
+    if (SortedValues[length-1].second <= S_VAL_TOL*SortedValues.begin()->second && length>1){//if we are at a tiny s val, check for slightly larger 'degenerate' singular values and remove them
       //while (length>1 && ((SortedValues[length-2].second-SortedValues[length-1].second)/SortedValues[length-2].second <1.0e-3)){
       //first get rid of the tiny one
       std::cout << "Truncating further due to very small singular values. s_val: " << SortedValues[--length].second << std::endl;
-      while (length>1 && ( SortedValues[length-1].second <= SPARSETOL*SortedValues.begin()->second || (1.0-1.0e-3<=SortedValues[length].second/SortedValues[length-1].second))){
+      while (length>1 && ( SortedValues[length-1].second <= S_VAL_TOL*SortedValues.begin()->second || (1.0-1.0e-3<=SortedValues[length].second/SortedValues[length-1].second))){
 	std::cout << "Truncating further due to very small singular values. s_val: " << SortedValues[--length].second << std::endl;
       }
     }
