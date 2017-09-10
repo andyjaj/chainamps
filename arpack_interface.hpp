@@ -185,28 +185,28 @@ namespace arpack {
       m_workspace.info=0; //tell arpack to use random initial vector
     }
     do { //enter loop
-      if (m_workspace.info==-9){//if info is -9 then use a different random vector
-	std::cout << "Matrix vector product is zero, trying a different vector..." << std::endl;
-	m_workspace.reset();
-	m_workspace.info=0; //tell arpack to use initial guess vector
-	//m_workspace.info=0; //set to zero to cause generation of random initial vector
-	//arpack will populate resid itself if info!=1
+      if (m_workspace.info==-9){//if info is -9 on rentering loop, then use a different random vector
+	m_workspace.reset(); //restart the workspace
+	m_workspace.info=0; //tell arpack to use random initial vector
       }
 
       do_znaupd();//call arpack
 
-      if (m_workspace.info==1){//if info is 1 at this point, then we need more iterations
+      if (m_workspace.info==-9)
+	std::cout << "Matrix vector product is zero, trying a different vector..." << std::endl;
+
+      else if (m_workspace.info==1){//if info is 1 at this point, then we need more iterations
 	std::cout << iterations() << " Arnoldi iterations taken" << std::endl;
 	if (iterations()<2*m_workspace.maxiter){
 	  std::cout << "Poor convergence, trying a new starting vector..." << std::endl;
-	  m_workspace.reset();
-	  m_workspace.info=0; //set to zero to cause generation of random initial vector	
+	  m_workspace.info=-9;// convenient fudge to cause generation of random start vector without exiting loop.	
 	}
 	else {
 	  std::cout << "Too many arpack iterations, aborting..." << std::endl;
 	  exit(1);
 	}
-      }
+      } 
+
     } while (m_workspace.info==1 || m_workspace.info==-9);
 
     std::cout << "znaupd done, " << iterations() << " Arnoldi iterations taken" << std::endl;
