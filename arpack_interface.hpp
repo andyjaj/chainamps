@@ -181,10 +181,11 @@ namespace arpack {
       m_workspace.info=1; //tell arpack to use initial guess vector
     }
     else { //no initial guess? fill resid with uniform values
-      for (arpack_int i=0; i< m_length; ++i) resid[i]=1.0/sqrt(m_length);
+      if (m_length) resid[0]=1.0;
+      for (arpack_int i=1; i< m_length; ++i) resid[i]=-1.0*resid[i-1];///sqrt(m_length);
       m_workspace.info=1; //tell arpack to use initial guess vector
     }
-    do {
+    do { //enter loop
       if (m_workspace.info==-9){//if info is -9 then use a random vector
 	std::cout << "Initial guess vector is zero, trying a different vector..." << std::endl;
 	m_workspace.reset();
