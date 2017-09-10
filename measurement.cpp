@@ -11,7 +11,7 @@ namespace ajaj {
 
   static const double IMAGTOL(100.0*std::numeric_limits<double>::epsilon());
 
-  static const int NUMEVALS(5);
+  static const int NUMEVALS(3);
 
   UnitCell OrthogonaliseInversionSymmetric(const UnitCell& C){
     std::cout << "Orthogonalising..." << std::endl;
