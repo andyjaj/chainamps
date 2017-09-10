@@ -197,19 +197,15 @@ namespace arpack {
 
       if (m_workspace.info==1){//if info is 1 at this point, then we need more iterations
 	std::cout << iterations() << " Arnoldi iterations taken" << std::endl;
-	/*if (iterations()<2*m_workspace.maxiter){
-	  std::cout << "Arpack out of iterations, adding more..." << std::endl;
-	  }*/
 	if (iterations()<2*m_workspace.maxiter){
 	  std::cout << "Poor convergence, trying a new starting vector..." << std::endl;
-	  m_workspace.info=0; //set to zero to cause generation of random initial vector
-	  m_workspace.maxiter=m_length > m_workspace.maxiter ? m_length : m_workspace.maxiter;
+	  m_workspace.reset();
+	  m_workspace.info=0; //set to zero to cause generation of random initial vector	
 	}
 	else {
 	  std::cout << "Too many arpack iterations, aborting..." << std::endl;
 	  exit(1);
 	}
-	m_workspace.reset();
       }
     } while (m_workspace.info==1 || m_workspace.info==-9);
 
