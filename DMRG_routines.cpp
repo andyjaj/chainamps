@@ -270,7 +270,7 @@ namespace ajaj {
     double S_E(entropy(CentralDecomposition.Values));
     energy.Real_measurements.push_back(S_E);
     energy.Real_measurements.push_back(CentralDecomposition.Truncation);
-    energy.Real_measurements.push_back(1.0);//overlap not calculated at moment
+    energy.Real_measurements.push_back(CheckConvergence(pred_,CentralDecomposition));//overlap not calculated at moment
     std::cout <<"Current Bond Dimension: " << CentralDecomposition.Values.size() << ", Entropy: " << S_E << std::endl;
     return energy;
   }
@@ -303,7 +303,7 @@ namespace ajaj {
     double S_E(entropy(CentralDecomposition.Values));
     energy.Real_measurements.push_back(S_E);
     energy.Real_measurements.push_back(CentralDecomposition.Truncation);
-    energy.Real_measurements.push_back(1.0);//overlap not calculated at moment
+    energy.Real_measurements.push_back(CheckConvergence(pred_,CentralDecomposition));//overlap not calculated at moment
     std::cout <<"Current Bond Dimension: " << CentralDecomposition.Values.size() << ", Entropy: " << S_E << std::endl;
     return energy;
   }
@@ -512,7 +512,7 @@ namespace ajaj {
     double S_E(entropy(CentralDecomposition.Values));
     results.Real_measurements.push_back(S_E);
     results.Real_measurements.push_back(CentralDecomposition.Truncation);
-    results.Real_measurements.push_back(1.0);//overlap not calculated at moment
+    results.Real_measurements.push_back(CheckConvergence(pred_,CentralDecomposition));//overlap not calculated at moment
     std::cout <<"Current Bond Dimension: " << CentralDecomposition.Values.size() << ", Entropy: " << S_E << std::endl;
     return results;
   }
@@ -564,7 +564,7 @@ namespace ajaj {
     double S_E(entropy(CentralDecomposition.Values));
     results.Real_measurements.push_back(S_E);
     results.Real_measurements.push_back(CentralDecomposition.Truncation);
-    results.Real_measurements.push_back(1.0);//overlap not calculated at moment
+    results.Real_measurements.push_back(CheckConvergence(pred_,CentralDecomposition));//overlap not calculated at moment
     std::cout <<"Current Bond Dimension: " << CentralDecomposition.Values.size() << ", Entropy: " << S_E << std::endl;
     return results;
   }
@@ -810,6 +810,12 @@ namespace ajaj {
   double CheckConvergence(const Prediction& guess,const std::vector<double>& PreviousLambda){
     return 1.0-Sum((guess.Auxiliary*SparseMatrix(PreviousLambda)).SVD());
   }
+
+  double CheckConvergence(const Prediction& g,const MPSDecomposition& D){
+    //g.Guess is just a sparse matrix at this point...
+    return 1.0-abs((reshape(g.Guess,D.basis().size()*D.LeftMatrix.Index(1).size()).dagger()*contract_to_sparse(contract(D.LeftMatrix,0,MPX_matrix(D.basis(),D.RightMatrix.Index(0),D.Values),0,contract20),0,D.RightMatrix,0,contract20)).trace());
+  }
+
 
   TwoVertexComponents::TwoVertexComponents(const MPX_matrix& L, const MPO_matrix& HMPO, const MPX_matrix& R, const std::vector<ProjectorBlocks>* P, const State* StatePtr) : LeftBlock(L),H(HMPO),RightBlock(R),ProjectorsPtr(P),TargetStatePtr(StatePtr),m_length(L.Index(5).size()*H.Index(2).size()*R.Index(4).size()*H.Index(2).size()),LeftPart(reorder(contract(H,0,LeftBlock,0,contract13).RemoveDummyIndices(std::vector<MPXInt>({{3,5,6}})),0,reorder03214,3)),RightPart(reorder(contract(H,0,RightBlock,0,contract32).RemoveDummyIndices(std::vector<MPXInt>({{4,5,7}})),0,reorder12403,3)) {
     

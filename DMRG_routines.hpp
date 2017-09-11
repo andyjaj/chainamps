@@ -234,6 +234,8 @@ namespace ajaj {
   MPX_matrix TwoVertexWavefunction(const MPX_matrix& LeftBlock, const MPO_matrix& H, const MPX_matrix& RightBlock, const std::vector<ProjectorBlocks>* ProjectorBlocksPtr, MPXInt NumVertices, Data& result, SparseMatrix* guessptr=nullptr);
   /** checks overlap between prediction vector and new wavefunction */
   double CheckConvergence(const Prediction& guess,const std::vector<double>& Lambda);
+  double CheckConvergence(const Prediction& guess,const MPSDecomposition& Decomp);
+
 
   class TwoVertexComponents{
   public:
