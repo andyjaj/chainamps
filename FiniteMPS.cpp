@@ -151,6 +151,7 @@ namespace ajaj{
       if (lambdafile.is_open()){
 	LAMBDA=1;
 	MP=L;
+	break; //only find one
       }
     }
 

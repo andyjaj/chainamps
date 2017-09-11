@@ -142,11 +142,13 @@ namespace ajaj{
       std::ofstream RightOutfile;
       RightOutfile.open(RightName.c_str(),ios::out | ios::trunc | ios::binary);
       if (RightMatrix.fprint_binary(RightOutfile)) return 1;
-      else return 0;
+      else {
+	return 0;
+      }
     }
   }
 
-  bool MPSDecomposition::store(const std::string& Name, uMPXInt nl,uMPXInt nr) const {
+  bool MPSDecomposition::store(const std::string& Name, uMPXInt nl,uMPXInt nr, bool StoreLambda) const {
     std::ofstream LeftOutfile;
     LeftOutfile.open(LeftName(Name,nl).c_str(),ios::out | ios::trunc | ios::binary);    
     if (LeftMatrix.fprint_binary(LeftOutfile)) return 1;
@@ -155,23 +157,26 @@ namespace ajaj{
       RightOutfile.open(RightName(Name,nr).c_str(),ios::out | ios::trunc | ios::binary);
       if (RightMatrix.fprint_binary(RightOutfile)) return 1;
       else {
-	std::stringstream LambdaName;
-	LambdaName << Name.c_str() << "_Lambda_" << nl << "_" << nr << ".MPX_matrix";
-	std::ofstream LambdaOutfile;
-	LambdaOutfile.open(LambdaName.str().c_str(),ios::out | ios::trunc | ios::binary);
-	if (MPX_matrix(LeftMatrix.GetPhysicalSpectrum(),LeftMatrix.Index(2),Values).fprint_binary(LambdaOutfile)){return 1;}
-	else {
-	  //now do one vertex density matrix
-	  std::ofstream rhofile;
-	  std::stringstream rhoName;
-	  rhoName << "fDMRGRho_"<<nl <<".dat";
-	  rhofile.open(rhoName.str().c_str(),ios::out | ios::trunc);
-	  if (rhofile.is_open()){
-	    OutputOneVertexDensityMatrix(rhofile);
-	    return 0;
+	if (StoreLambda){
+	  std::stringstream LambdaName;
+	  LambdaName << Name.c_str() << "_Lambda_" << nl << "_" << nr << ".MPX_matrix";
+	  std::ofstream LambdaOutfile;
+	  LambdaOutfile.open(LambdaName.str().c_str(),ios::out | ios::trunc | ios::binary);
+	  if (MPX_matrix(LeftMatrix.GetPhysicalSpectrum(),LeftMatrix.Index(2),Values).fprint_binary(LambdaOutfile)){return 1;}
+	  else {
+	    //now do one vertex density matrix
+	    std::ofstream rhofile;
+	    std::stringstream rhoName;
+	    rhoName << "fDMRGRho_"<<nl <<".dat";
+	    rhofile.open(rhoName.str().c_str(),ios::out | ios::trunc);
+	    if (rhofile.is_open()){
+	      OutputOneVertexDensityMatrix(rhofile);
+	      return 0;
+	    }
+	    else return 1;
 	  }
-	  else return 1;
 	}
+	return 0;
       }
     }
   }

@@ -192,6 +192,8 @@ namespace ajaj {
     //solve
     CentralDecomposition=TwoVertexSVD(TwoVertexInitialWavefunction(LeftH,RightH,TargetState_,two_vertex_energy),bonddim,smin);
     CentralDecomposition.SquareRescale(1.0);
+    CentralDecomposition.store(getName(),left_size()+1,right_size()+1,0);
+
     //CentralDecomposition.OutputPhysicalIndexDensities(DensityFileStream_);
     //at this stage we can use the generated left and right Hamiltonians to save the left and right blocks
     //update superblock values
@@ -228,6 +230,7 @@ namespace ajaj {
     Data energy;
     CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),nullptr,size(),energy,&(pred_.Guess)),chi,smin);
     CentralDecomposition.SquareRescale(1.0);
+    CentralDecomposition.store(getName(),left_size()+1,right_size()+1,0);
     //CentralDecomposition.OutputPhysicalIndexDensities(DensityFileStream_);
     pred_=MakePrediction(CentralDecomposition,previous_lambda_);
     fidelity_=CheckConvergence(pred_,previous_lambda_);
@@ -254,12 +257,16 @@ namespace ajaj {
     }
     Data energy;
     std::cout << "Position: " << left_size() << " " << right_size() << std::endl;
+
     previous_lambda_=CentralDecomposition.Values;
-    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),nullptr,size(),energy),chi,smin);
+    std::stringstream namestream;
+    namestream << getName() << "_Right_" << right_size()+1 << ".MPS_matrix";
+    pred_=MakeRFinitePrediction(CentralDecomposition,load_MPS_matrix(namestream.str(),basis()));
+
+    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),nullptr,size(),energy,&(pred_.Guess)),chi,smin);
     CentralDecomposition.SquareRescale(1.0);
+    CentralDecomposition.store(getName(),left_size()+1,right_size()+1,left_size()==right_size());
     //CentralDecomposition.OutputPhysicalIndexDensities(DensityFileStream_);
-    //pred_=MakePrediction(CentralDecomposition,previous_lambda_);
-    //fidelity_=CheckConvergence(pred_,previous_lambda_);
     double S_E(entropy(CentralDecomposition.Values));
     energy.Real_measurements.push_back(S_E);
     energy.Real_measurements.push_back(CentralDecomposition.Truncation);
@@ -270,6 +277,7 @@ namespace ajaj {
 
   Data SuperBlock::move_left_two_vertex(uMPXInt chi, double smin){
     const EigenStateArray& spectrum=getH().GetPhysicalSpectrum();
+
     std::cout << "Move left" << std::endl;
     //check we can move left
     if (left_size()<1){std::cout << "At left end of superblock already..." << std::endl; exit(1);};
@@ -282,12 +290,16 @@ namespace ajaj {
     }
     Data energy;
     std::cout << "Position: " << left_size() << " " << right_size() << std::endl;
+
     previous_lambda_=CentralDecomposition.Values;
-    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),nullptr,size(),energy),chi,smin);
+    std::stringstream namestream;
+    namestream << getName() << "_Left_" << left_size()+1 << ".MPS_matrix";
+    pred_=MakeLFinitePrediction(CentralDecomposition,load_MPS_matrix(namestream.str(),basis()));
+
+    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),nullptr,size(),energy,&(pred_.Guess)),chi,smin);
     CentralDecomposition.SquareRescale(1.0);
+    CentralDecomposition.store(getName(),left_size()+1,right_size()+1,left_size()==right_size());
     //CentralDecomposition.OutputPhysicalIndexDensities(DensityFileStream_);
-    //pred_=MakePrediction(CentralDecomposition,previous_lambda_);
-    //fidelity_=CheckConvergence(pred_,previous_lambda_);
     double S_E(entropy(CentralDecomposition.Values));
     energy.Real_measurements.push_back(S_E);
     energy.Real_measurements.push_back(CentralDecomposition.Truncation);
@@ -377,6 +389,7 @@ namespace ajaj {
     uMPXInt step_number=0;
     while (step_number<number_of_steps || (convergence>convergence_criterion && convergence_criterion>0.0)){
       Data this_step(grow_two_vertex(chi,smin));
+      //CentralDecomposition.store(getName(),left_size()+1,right_size()+1);//store left and right
       convergence=this_step.Real_measurements[2];
       ++step_number;
       output_ref_.push(this_step);
@@ -391,7 +404,7 @@ namespace ajaj {
     //we start at the middle of the system
     //in case we need excited states later, we store MPS matrices as well as the L and R blocks.
     if (size()==2) {
-      CentralDecomposition.store(getName(),left_size()+1,right_size()+1);//store left and right
+      //CentralDecomposition.store(getName(),left_size()+1,right_size()+1);//store left and right
       std::cout << "Skipping finite sweeps, only two vertices..." << std::endl;
     }
     else {
@@ -400,24 +413,33 @@ namespace ajaj {
 	std::cout << left_size() << " " << middle_size() << " " << right_size() << std::endl;
 	for (uMPXInt r=right_size();r>0;--r){
 	  move_right_two_vertex(chi_,smin_);
+	  //CentralDecomposition.store_left(getName(),left_size()+1);
+	  //CentralDecomposition.store_right(getName(),right_size()+1);
 	}
-	CentralDecomposition.store_right(getName(),right_size()+1);
+	//CentralDecomposition.store_right(getName(),right_size()+1);
+
 	for (uMPXInt l=left_size();l>0;--l){
 	  Data this_step(move_left_two_vertex(chi_,smin_));
 	  if (left_size()==right_size()) {
 	    output_ref_.push(this_step);//at midpoint, push output
-	    CentralDecomposition.store(getName(),left_size()+1,right_size()+1);//store left and right
+	    //CentralDecomposition.store(getName(),left_size()+1,right_size()+1);//store left and right
 	  }
-	  else if (left_size()>right_size()) {CentralDecomposition.store_right(getName(),right_size()+1);} //just store right
+	  else if (left_size()>right_size()) {
+	    //CentralDecomposition.store_right(getName(),right_size()+1);
+	    //CentralDecomposition.store_left(getName(),left_size()+1);
+	  } //don't store lambda
 	}
 	CentralDecomposition.store_left(getName(),left_size()+1);
 	for (uMPXInt r=right_size();r>left_size();--r){
 	  Data this_step(move_right_two_vertex(chi_,smin_));
 	  if (left_size()==right_size()) {
 	    output_ref_.push(this_step);
-	    CentralDecomposition.store(getName(),left_size()+1,right_size()+1);//store left and right
+	    //CentralDecomposition.store(getName(),left_size()+1,right_size()+1);//store left and right
 	  }
-	  else if (left_size()<right_size()) {CentralDecomposition.store_left(getName(),left_size()+1);} //just store left
+	  else if (left_size()<right_size()) {
+	    //CentralDecomposition.store_left(getName(),left_size()+1);
+	    //CentralDecomposition.store_right(getName(),right_size()+1);
+	  } //just store left
 	}
       }
     }
@@ -429,11 +451,13 @@ namespace ajaj {
     const EigenStateArray& spectrum=getH().GetPhysicalSpectrum();
     Data results;
     results.Real_measurements.push_back(double(PBlocks_.size()));
-    std::cout << "Calculating Excited State" << std::endl;
+    std::cout << "Calculating Excited State " << PBlocks_.size() << std::endl;
 
     std::cout << "Position: " << left_size() << " " << right_size() << std::endl;
 
-    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),&PBlocks_,size(),results),chi,smin);
+    SparseMatrix Guess(reshape_to_vector(contract(CentralDecomposition.LeftMatrix,0,contract(MPX_matrix(CentralDecomposition.basis(),CentralDecomposition.RightMatrix.Index(0),CentralDecomposition.Values),0,CentralDecomposition.RightMatrix,0,contract10),0,contract20)));
+
+    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),&PBlocks_,size(),results,&Guess),chi,smin);
     CentralDecomposition.SquareRescale(1.0);
     CentralDecomposition.store(getName(),left_size()+1,right_size()+1);
 
@@ -471,18 +495,20 @@ namespace ajaj {
     //shift projectors
     for (auto&& pb : PBlocks_){
       pb.move_right_two_vertex(CentralDecomposition.LeftMatrix);
-      /*std::cout << "Shifting" <<std::endl;
-      std::cout << pb.getName() <<std::endl;
-      pb.getLeftBlock().print_indices();
-      pb.getRightBlock().print_indices();*/
     }
 
     Data results;
     results.Real_measurements.push_back(double(PBlocks_.size()));
     std::cout << "Position: " << left_size() << " " << right_size() << std::endl;
     previous_lambda_=CentralDecomposition.Values;
-    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),&PBlocks_,size(),results),chi,smin);
+    std::stringstream namestream;
+    namestream << StorageName << "_Right_" << right_size()+1 << ".MPS_matrix";
+    pred_=MakeRFinitePrediction(CentralDecomposition,load_MPS_matrix(namestream.str(),basis()));
+
+    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),&PBlocks_,size(),results,&(pred_.Guess)),chi,smin);
     CentralDecomposition.SquareRescale(1.0);
+    CentralDecomposition.store(getName(),left_size()+1,right_size()+1,left_size()==right_size());
+
     double S_E(entropy(CentralDecomposition.Values));
     results.Real_measurements.push_back(S_E);
     results.Real_measurements.push_back(CentralDecomposition.Truncation);
@@ -504,7 +530,7 @@ namespace ajaj {
     else {
       StorageName=getName();
     }
-    //std::string StorageName = (((left_size()<=right_size()+middle_size()) && init_flag_) || left_size()==1) ? HBlocksName_ : getName();
+
     const EigenStateArray& spectrum=getH().GetPhysicalSpectrum();
     //check we can move left
     if (left_size()<1){std::cout << "At left end of superblock already..." << std::endl; exit(1);};
@@ -518,17 +544,23 @@ namespace ajaj {
 
     for (auto&& pb : PBlocks_){
       pb.move_left_two_vertex(CentralDecomposition.RightMatrix);
-      //std::cout << "Shifting" <<std::endl;
-      //pb.getLeftBlock().print_indices();
-      //pb.getRightBlock().print_indices();
     }
 
     Data results;
     results.Real_measurements.push_back(double(PBlocks_.size()));
     std::cout << "Position: " << left_size() << " " << right_size() << std::endl;
     previous_lambda_=CentralDecomposition.Values;
-    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),&PBlocks_,size(),results),chi,smin);
+    //mismatch between storage and prediction names at midpoint, while in init phase,
+    //reaching the mid point from the right requires block with HBlocksName, but we have an MPS_matrix with the new name that we must use!
+    std::stringstream namestream;
+    std::string PredictionName = ((left_size()==right_size()) && init_flag_) ? getName() : StorageName;
+    namestream << PredictionName << "_Left_" << left_size()+1 << ".MPS_matrix";
+    pred_=MakeLFinitePrediction(CentralDecomposition,load_MPS_matrix(namestream.str(),basis()));
+
+    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),&PBlocks_,size(),results,&(pred_.Guess)),chi,smin);
     CentralDecomposition.SquareRescale(1.0);
+    CentralDecomposition.store(getName(),left_size()+1,right_size()+1,left_size()==right_size());
+
     double S_E(entropy(CentralDecomposition.Values));
     results.Real_measurements.push_back(S_E);
     results.Real_measurements.push_back(CentralDecomposition.Truncation);
@@ -552,16 +584,19 @@ namespace ajaj {
 	for (uMPXInt r=right_size();r>0;--r){
 	  move_right_two_vertex(chi,smin);
 	}
-	CentralDecomposition.store_right(getName(),right_size()+1);
+	//CentralDecomposition.store_right(getName(),right_size()+1);
 	for (uMPXInt l=left_size();l>0;--l){
 	  Data this_step(move_left_two_vertex(chi,smin));
 	  if (left_size()==right_size()) {
 	    output_ref_.push(this_step);//at midpoint, push output
-	    CentralDecomposition.store(getName(),left_size()+1,right_size()+1);//store left and right
+	    //CentralDecomposition.store(getName(),left_size()+1,right_size()+1);//store left and right
 	  }
-	  else if (left_size()>right_size()) {CentralDecomposition.store_right(getName(),right_size()+1);} //just store right
+	  else if (left_size()>right_size()) {
+	    //CentralDecomposition.store_right(getName(),right_size()+1);
+	    //CentralDecomposition.store_left(getName(),left_size()+1);
+	  } 
 	}
-	CentralDecomposition.store_left(getName(),left_size()+1);
+	//CentralDecomposition.store_left(getName(),left_size()+1);
 	
 	if (n==num_sweeps) init_flag_=0; //first time through, turn off init here as we have formed all blocks once...
 	
@@ -569,9 +604,12 @@ namespace ajaj {
 	  Data this_step(move_right_two_vertex(chi,smin));
 	  if (left_size()==right_size()) {
 	    output_ref_.push(this_step);
-	    CentralDecomposition.store(getName(),left_size()+1,right_size()+1);//store left and right
+	    // CentralDecomposition.store(getName(),left_size()+1,right_size()+1);//store left and right
 	  }
-	  else if (left_size()<right_size()) {CentralDecomposition.store_left(getName(),left_size()+1);} //just store left
+	  else if (left_size()<right_size()) {
+	    //CentralDecomposition.store_left(getName(),left_size()+1);
+	    //CentralDecomposition.store_right(getName(),right_size()+1);
+	  } //don't store lambda
 	}
       }
     }
@@ -666,17 +704,11 @@ namespace ajaj {
     }
 #endif
 
-    /*if (!H2.isHermitian()){
-      std::cout << "NOT HERMITIAN" << std::endl;
-      exit(1);
-    }*/
-    //H2.print_matrix();
-
     static char SMALLESTREAL[]={'S','R','\n'}; //lowest real part for energies
 
     std::cout << "Eigensolver starting for two vertex wavefunction..." << std::endl;    
 
-    SparseHED decomp(H2.Eigs(TargetSector,6,SMALLESTREAL));
+    SparseHED decomp(H2.Eigs(TargetSector,1,SMALLESTREAL));
     std::cout << "Lowest energy/Number of Vertices: " << decomp.Values[0]/2.0 <<std::endl;
 
     std::cout << "Raw eigenvalues" <<std::endl;
@@ -701,20 +733,28 @@ namespace ajaj {
   }
 
   Prediction MakePrediction(const MPSDecomposition& Decomp, const std::vector<double>& PreviousLambda){
+    std::cout <<"Making prediction vector" <<std::endl;
     const EigenStateArray& spectrum(Decomp.LeftMatrix.GetPhysicalSpectrum());
     Prediction ans;
-    std::cout << "Forming State Prediction Vector" << std::endl;
     MPX_matrix svals(spectrum,Decomp.LeftMatrix.Index(2),Decomp.Values);
     MPX_matrix LambdaLB(reorder(contract(Decomp.LeftMatrix,0,svals,0,contract20),0,reorder102,1));
     MPXDecomposition RotDecomp(LambdaLB.SVD());
-    ans.LambdaL=contract_to_sparse(RotDecomp.ColumnMatrix,0,MPX_matrix(spectrum,RotDecomp.ColumnMatrix.Index(1),RotDecomp.Values),0,contract10);
+    //ans.LambdaL=contract_to_sparse(RotDecomp.ColumnMatrix,0,MPX_matrix(spectrum,RotDecomp.ColumnMatrix.Index(1),RotDecomp.Values),0,contract10);
     MPX_matrix ALambdaR(reorder(contract(svals,0,Decomp.RightMatrix,0,contract10),0,reorder102,2));
     RotDecomp=ALambdaR.SVD();
-    ans.LambdaR=contract_to_sparse(MPX_matrix(spectrum,RotDecomp.RowMatrix.Index(0),RotDecomp.Values),0,RotDecomp.RowMatrix,0,contract10);
+    ans.Auxiliary=contract_to_sparse(MPX_matrix(spectrum,RotDecomp.RowMatrix.Index(0),RotDecomp.Values),0,RotDecomp.RowMatrix,0,contract10);
     MPX_matrix InversePreviousLambda(spectrum,Decomp.RightMatrix.Index(2),Decomp.LeftMatrix.Index(1),PreviousLambda,1); //1 means take inverse values    
     ans.Guess=reshape_to_vector(contract(contract(ALambdaR,0,InversePreviousLambda,0,contract20),0,LambdaLB,0,contract20));
-    //ans.Guess.rescale(sqrt(1.0/ans.Guess.square_norm()));
     return ans;
+  }
+
+  Prediction MakeLFinitePrediction(const MPSDecomposition& Decomp, const MPS_matrix& A){
+    std::cout <<"Making prediction vector" <<std::endl;
+    return Prediction(reshape_to_vector(contract(A,0,contract(Decomp.LeftMatrix,0,MPX_matrix(Decomp.LeftMatrix.basis(),Decomp.LeftMatrix.Index(2),Decomp.Values),0,contract20),0,contract21)));
+  }
+  Prediction MakeRFinitePrediction(const MPSDecomposition& Decomp, const MPS_matrix& B){
+    std::cout <<"Making prediction vector" <<std::endl;
+    return Prediction(reshape_to_vector(contract(MPS_matrix(contract(MPX_matrix(Decomp.RightMatrix.basis(),Decomp.RightMatrix.Index(0),Decomp.Values),0,Decomp.RightMatrix,0,contract10)).left_shape(),0,B,0,contract20)));
   }
 
   MPX_matrix TwoVertexWavefunction(const MPX_matrix& LB, const MPO_matrix& H, const MPX_matrix& RB, const std::vector<ProjectorBlocks>* ProjectorBlocksPtr, MPXInt NumVertices, Data& result, SparseMatrix* guessptr){
@@ -733,7 +773,7 @@ namespace ajaj {
     formations++;
 #endif
 
-    MPXInt num_to_find = stuff.length() >= 5 ? 4 : 1; //guard partially against ARPACK doing silly things
+    MPXInt num_to_find = stuff.length() > 5 ? 2 : 1; //guard partially against ARPACK doing silly things
 #ifdef TIMING
     auto tD1 = std::chrono::high_resolution_clock::now();
 #endif
@@ -768,7 +808,7 @@ namespace ajaj {
   }
 
   double CheckConvergence(const Prediction& guess,const std::vector<double>& PreviousLambda){
-    return 1.0-Sum((guess.LambdaR*SparseMatrix(PreviousLambda)).SVD());
+    return 1.0-Sum((guess.Auxiliary*SparseMatrix(PreviousLambda)).SVD());
   }
 
   TwoVertexComponents::TwoVertexComponents(const MPX_matrix& L, const MPO_matrix& HMPO, const MPX_matrix& R, const std::vector<ProjectorBlocks>* P, const State* StatePtr) : LeftBlock(L),H(HMPO),RightBlock(R),ProjectorsPtr(P),TargetStatePtr(StatePtr),m_length(L.Index(5).size()*H.Index(2).size()*R.Index(4).size()*H.Index(2).size()),LeftPart(reorder(contract(H,0,LeftBlock,0,contract13).RemoveDummyIndices(std::vector<MPXInt>({{3,5,6}})),0,reorder03214,3)),RightPart(reorder(contract(H,0,RightBlock,0,contract32).RemoveDummyIndices(std::vector<MPXInt>({{4,5,7}})),0,reorder12403,3)) {
@@ -844,7 +884,7 @@ namespace ajaj {
     //internal contractions may be large.
     //however if allowed_indices is 'small' we should use a dense method
 
-    if (allowed_indices.size()<800 && allowed_indices.size()>ProjectorTensors.size()){
+    if (allowed_indices.size()<=SPARSE_THRESHOLD && allowed_indices.size()>ProjectorTensors.size()){
       //just make the (dense) matrix and use lapack
       static std::pair<const std::vector<MPXInt>,const std::vector<MPXInt> > condition={{1,7},{2,6}};
       TranslationBlock<DenseMatrix> TB(contract_conditional<DenseMatrix>(contract(H,0,LeftBlock,0,contract13),0,contract(H,0,RightBlock,0,contract32),0,contract21,condition));

@@ -40,8 +40,11 @@ namespace ajaj {
   struct Prediction {
   public:
     SparseMatrix Guess; /**< The actual prediction vector */
-    SparseMatrix LambdaL;
-    SparseMatrix LambdaR; /**< Used when checking the overlap of the prediction vector (fidelity) with a calculated wavefunction.*/
+    //SparseMatrix LambdaL;
+    SparseMatrix Auxiliary; /**< e.g. LambdaR, used when checking the overlap of the prediction vector (fidelity) with a calculated wavefunction.*/
+    Prediction(){}
+    Prediction(SparseMatrix&& G) : Guess(std::move(G)) {} //no aux
+
   };
 
   /** A container of sorts, that stores blocks and provides interface to retrieve them.*/
@@ -94,6 +97,7 @@ namespace ajaj {
     const MPX_matrix& getRightBlock() const {return RightBlock;}
     const std::string& getName() const {return Name_;}
     const EigenStateArray& getSpectrum() const {return *SpectrumPtr_;}
+    const Basis& basis() const {return *SpectrumPtr_;}
   };
 
   /** Holds a superblock and can grow it or sweep it using DMRG methods. */
@@ -115,9 +119,6 @@ namespace ajaj {
       std::stringstream dnamestream;
       dnamestream << getName();// << "_Density_Matrix.dat";
       DensityFileName_=dnamestream.str();
-      //std::ofstream DensityFileStream_;
-      //DensityFileStream_.open(DensityFileName_.c_str(),ios::out | ios::trunc);
-      //DensityFileStream_.close();
     }
     const MPO_matrix& getH() const {return *H_ptr_;}
     const MPSDecomposition& getCentralDecomposition() const {return CentralDecomposition;}
@@ -222,6 +223,8 @@ namespace ajaj {
   MPX_matrix TwoVertexInitialWavefunction(const MPO_matrix& LeftH, const MPO_matrix& RightH, const State& TargetSector, Data& result);
   /** Makes a prediction vector for the eigensolver*/
   Prediction MakePrediction(const MPSDecomposition& Decomp, const std::vector<double>& PreviousLambda);
+  Prediction MakeLFinitePrediction(const MPSDecomposition& Decomp, const MPS_matrix& A);
+  Prediction MakeRFinitePrediction(const MPSDecomposition& Decomp, const MPS_matrix& B);
   /** Updates the left block*/
   MPX_matrix MakeLeftBlock(const MPX_matrix& LB, const MPX_matrix& H, const MPS_matrix& A);
   MPX_matrix MakeRightBlock(const MPX_matrix& RB, const MPX_matrix& H, const MPS_matrix& B);

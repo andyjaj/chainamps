@@ -72,7 +72,7 @@ namespace ajaj{
     }
 
     bool store(const std::string& LeftName, const std::string& RightName) const;
-    bool store(const std::string& Name, uMPXInt nl,uMPXInt nr) const;
+    bool store(const std::string& Name, uMPXInt nl,uMPXInt nr,bool StoreLambda=1) const;
     bool store_left(const std::string& Name, uMPXInt nl) const;
     bool store_right(const std::string& Name,uMPXInt nr) const;
 

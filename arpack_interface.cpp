@@ -26,7 +26,7 @@ namespace arpack {
       if (ncv>n) ncv = n;
       ldv = n;
       lworkl = 3*ncv*ncv + 6*ncv;
-      maxiter= 300;
+      maxiter= n;
       ido = 0;
       v = new std::complex<double>[ldv*ncv];
       iparam = new arpack_int[11];

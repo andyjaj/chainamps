@@ -162,10 +162,10 @@ namespace arpack {
       ++count;
     }
 
-    std::cout <<"Ordered eigenvalues from ARPACK"<<std::endl;
+    /*std::cout <<"Ordered eigenvalues from ARPACK"<<std::endl;
     for (auto i=0;i<m_workspace.nev;++i){
       std::cout << m_workspace.d[i] <<std::endl;
-    }
+      }*/
     
   }
   
@@ -197,7 +197,7 @@ namespace arpack {
 
       else if (m_workspace.info==1){//if info is 1 at this point, then we need more iterations
 	std::cout << iterations() << " Arnoldi iterations taken" << std::endl;
-	if (iterations()<5*m_workspace.maxiter){
+	if (iterations()<2*m_workspace.maxiter){
 	  std::cout << "Poor convergence, trying a new starting vector..." << std::endl;
 	  m_workspace.info=-9;// convenient fudge to cause generation of random start vector without exiting loop.	
 	}
