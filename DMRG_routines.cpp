@@ -409,10 +409,12 @@ namespace ajaj {
     }
     else {
       for (uMPXInt n=num_sweeps;n>0;--n){
+	double cumulative_truncation=0.0;
 	std::cout << std::endl << "Starting sweep: " << num_sweeps-n+1<< std::endl;
 	std::cout << left_size() << " " << middle_size() << " " << right_size() << std::endl;
 	for (uMPXInt r=right_size();r>0;--r){
 	  Data this_step(move_right_two_vertex(chi_,smin_));
+	  cumulative_truncation+=CentralDecomposition.Truncation;
 	}
 
 	for (uMPXInt l=left_size();l>0;--l){
@@ -420,6 +422,7 @@ namespace ajaj {
 	  if (left_size()==right_size()) {
 	    output_ref_.push(this_step);//at midpoint, push output
 	  }
+	  cumulative_truncation+=CentralDecomposition.Truncation;
 	}
 	CentralDecomposition.store_left(getName(),left_size()+1);
 	for (uMPXInt r=right_size();r>left_size();--r){
@@ -427,7 +430,10 @@ namespace ajaj {
 	  if (left_size()==right_size()) {
 	    output_ref_.push(this_step);
 	  }
+	  cumulative_truncation+=CentralDecomposition.Truncation;
 	}
+	cumulative_truncation=cumulative_truncation/(2.0*size());
+	std::cout << "Average (per vertex) truncation for sweep = " << cumulative_truncation <<std::endl;
       }
     }
   }
@@ -567,15 +573,18 @@ namespace ajaj {
     }
     else {
       for (uMPXInt n=num_sweeps;n>0;--n){//sweep towards right
+	double cumulative_truncation=0.0;
 	std::cout << std::endl << "Starting sweep: " << num_sweeps-n+1<< std::endl;
 	for (uMPXInt r=right_size();r>0;--r){
 	  Data this_step(move_right_two_vertex(chi,smin));
+	  cumulative_truncation+=CentralDecomposition.Truncation;
 	}
 	for (uMPXInt l=left_size();l>0;--l){
 	  Data this_step(move_left_two_vertex(chi,smin));	    
 	  if (left_size()==right_size()) {
 	    output_ref_.push(this_step);//at midpoint, push output
 	  }
+	  cumulative_truncation+=CentralDecomposition.Truncation;
 	}
 	
 	if (n==num_sweeps) init_flag_=0; //first time through, turn off init here as we have formed all blocks once...
@@ -585,7 +594,10 @@ namespace ajaj {
 	  if (left_size()==right_size()) {
 	    output_ref_.push(this_step);
 	  }
+	  cumulative_truncation+=CentralDecomposition.Truncation;
 	}
+	cumulative_truncation=cumulative_truncation/(2.0*size());
+	std::cout << "Average (per vertex) truncation for sweep = " << cumulative_truncation <<std::endl;
       }
     }
   }

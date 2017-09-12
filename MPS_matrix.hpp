@@ -61,7 +61,7 @@ namespace ajaj{
     MPSDecomposition(MPXDecomposition&& X) noexcept : Truncation(X.Truncation), Values(std::move(X.Values)), LeftMatrix(std::move(X.ColumnMatrix)), RightMatrix(std::move(X.RowMatrix)){};
     MPSDecomposition(const Basis& basis) : Truncation(0.0), Values(), LeftMatrix(basis), RightMatrix(basis){};
     const std::vector<double>& SquareRescale(double sqsum) {
-      Truncation/=sqsum;
+      Truncation=Truncation/sqsum;
       SquareSumRescale(Values,sqsum);
       return Values;
     }

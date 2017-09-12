@@ -22,23 +22,26 @@ namespace arpack {
   const char* arpack_workspace::bmat="I";
 
   void arpack_workspace::init(){
-      ncv = 10*nev;
-      if (ncv>n) ncv = n;
+      
       ldv = n;
-      lworkl = 3*ncv*ncv + 5*ncv; //5
-      maxiter= n;
+      maxiter= 50;
       ido = 0;
-      v = new std::complex<double>[ldv*ncv];
       iparam = new arpack_int[11];
       iparam[0] = 1;
       iparam[2] = maxiter;
       iparam[6] = 1;
       ipntr = new arpack_int[14];
       workd = new std::complex<double>[3*n];
+      d = new std::complex<double>[nev+1];
+
+      ncv = 20*nev;
+      if (ncv>n) ncv = n;
+      v = new std::complex<double>[ldv*ncv];
+
+      lworkl = 3*ncv*ncv + 5*ncv;
       workl = new std::complex<double>[lworkl];
       rwork = new double[ncv];
       select = new arpack_int[ncv];
-      d = new std::complex<double>[nev+1];
       workev = new std::complex<double>[2*ncv];
       //
       std::cout << "Arpack workspace set, using at least " << double(sizeof(std::complex<double>)*(3*n+lworkl+nev+1+2*ncv+ldv*ncv+nev*n))/(1024.0*1024.0) << " megabytes (including solution space size)" << std::endl; 
@@ -61,13 +64,33 @@ namespace arpack {
       delete[] workev;
   }
 
-  void arpack_workspace::reset(){
+  void arpack_workspace::reset(arpack_int ncv_delta){
     ido=0;
     if (iparam){//iparam not null
       iparam[0] = 1;
       iparam[2] = maxiter;
       iparam[6] = 1;
     }
+
+    if (ncv_delta!=0){
+      ncv = ncv+ncv_delta*nev;
+      if (ncv>n) ncv = n;
+      else if (ncv<2*nev) ncv=2*nev;
+
+      lworkl = 3*ncv*ncv + 5*ncv;
+
+      delete[] v;
+      v = new std::complex<double>[ldv*ncv];
+      delete[] workl;
+      workl = new std::complex<double>[lworkl];
+      delete[] rwork;
+      rwork = new double[ncv];
+      delete[] select;
+      select = new arpack_int[ncv];
+      delete[] workev;
+      workev = new std::complex<double>[2*ncv];
+    }
+
     else {
       std::cout << "Null iparam! Allocation error" << std::endl; exit(1);
     }

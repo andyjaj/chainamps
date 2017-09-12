@@ -12,7 +12,7 @@
 
 #if defined(USETBB)
 #include <tbb/tbb.h>
-#define TBBNZ 10000 //used as part of the threading cutoff
+#define TBBNZ 1000 //used as part of the threading cutoff
 #endif
 
 #include "sparse_interface.hpp"

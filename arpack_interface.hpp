@@ -73,7 +73,7 @@ namespace arpack {
     arpack_workspace(arpack_int length, arpack_int num_e_vals, char which_e_vals[3], std::complex<double>* Evals_ptr, arpack_int need_e_vectors, std::complex<double>* Evecs_ptr, std::complex<double>* resid_ptr,const double use_tolerance=-0.0);
     ~arpack_workspace();
     void init();
-    void reset();    
+    void reset(arpack_int ncv_delta=0);    
   };
 
   /** class to find eigenvalues and maybe vectors using arpack */
@@ -184,22 +184,28 @@ namespace arpack {
       std::cout << "No guess, trying a random starting vector..." << std::endl;
       m_workspace.info=0; //tell arpack to use random initial vector
     }
+
+    arpack_int ncv_diff=0;
+
     do { //enter loop
-      if (m_workspace.info==-9){//if info is -9 on rentering loop, then use a different random vector
+      if (m_workspace.info==-9){//if info is -9 on rentering loop then alter things
 	m_workspace.reset(); //restart the workspace
 	m_workspace.info=0; //tell arpack to use random initial vector
+      }
+      else if (ncv_diff && m_workspace.info==1){
+	m_workspace.reset(ncv_diff); //restart the workspace, changing ncv
       }
 
       do_znaupd();//call arpack
 
       if (m_workspace.info==-9)
-	std::cout << "Matrix vector product is zero, trying a different vector..." << std::endl;
+	std::cout << "Matrix vector product is zero, trying a different starting vector..." << std::endl;
 
       else if (m_workspace.info==1){//if info is 1 at this point, then we need more iterations
 	std::cout << iterations() << " Arnoldi iterations taken" << std::endl;
-	if (iterations()<2*m_workspace.maxiter){
-	  std::cout << "Poor convergence, trying a new starting vector..." << std::endl;
-	  m_workspace.info=-9;// convenient fudge to cause generation of random start vector without exiting loop.	
+	if (iterations()<m_length/*5*m_workspace.maxiter*/){
+	  std::cout << "Poor convergence, altering ncv..." << std::endl;
+	  ncv_diff+=1;
 	}
 	else {
 	  std::cout << "Too many arpack iterations, aborting..." << std::endl;
