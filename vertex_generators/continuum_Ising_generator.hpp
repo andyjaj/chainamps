@@ -904,7 +904,7 @@ namespace continuumIsing {
 	  for (ajaj::Sparseint p=spin.get_p(col);p<spin.get_p(col+1);++p){
 	    ajaj::MPXInt row=spin.get_i(p);
 	    if (modelvertex.Spectrum[row]==modelvertex.Spectrum[col]){ //check momenta are equal
-	      M.entry(row+offset_to_last_block,col,long_field*spin.get_x(p));
+	      M.entry(row+offset_to_last_block,col,modelvertex.Parameters[0].Value*long_field*spin.get_x(p));
 	    }
 	  }
 	}

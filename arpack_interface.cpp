@@ -22,10 +22,10 @@ namespace arpack {
   const char* arpack_workspace::bmat="I";
 
   void arpack_workspace::init(){
-      ncv = 4*nev;
+      ncv = 10*nev;
       if (ncv>n) ncv = n;
       ldv = n;
-      lworkl = 3*ncv*ncv + 6*ncv;
+      lworkl = 3*ncv*ncv + 5*ncv; //5
       maxiter= n;
       ido = 0;
       v = new std::complex<double>[ldv*ncv];

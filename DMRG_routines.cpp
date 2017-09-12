@@ -412,34 +412,21 @@ namespace ajaj {
 	std::cout << std::endl << "Starting sweep: " << num_sweeps-n+1<< std::endl;
 	std::cout << left_size() << " " << middle_size() << " " << right_size() << std::endl;
 	for (uMPXInt r=right_size();r>0;--r){
-	  move_right_two_vertex(chi_,smin_);
-	  //CentralDecomposition.store_left(getName(),left_size()+1);
-	  //CentralDecomposition.store_right(getName(),right_size()+1);
+	  Data this_step(move_right_two_vertex(chi_,smin_));
 	}
-	//CentralDecomposition.store_right(getName(),right_size()+1);
 
 	for (uMPXInt l=left_size();l>0;--l){
 	  Data this_step(move_left_two_vertex(chi_,smin_));
 	  if (left_size()==right_size()) {
 	    output_ref_.push(this_step);//at midpoint, push output
-	    //CentralDecomposition.store(getName(),left_size()+1,right_size()+1);//store left and right
 	  }
-	  else if (left_size()>right_size()) {
-	    //CentralDecomposition.store_right(getName(),right_size()+1);
-	    //CentralDecomposition.store_left(getName(),left_size()+1);
-	  } //don't store lambda
 	}
 	CentralDecomposition.store_left(getName(),left_size()+1);
 	for (uMPXInt r=right_size();r>left_size();--r){
-	  Data this_step(move_right_two_vertex(chi_,smin_));
+	  Data this_step(move_right_two_vertex(chi_,smin_));	  
 	  if (left_size()==right_size()) {
 	    output_ref_.push(this_step);
-	    //CentralDecomposition.store(getName(),left_size()+1,right_size()+1);//store left and right
 	  }
-	  else if (left_size()<right_size()) {
-	    //CentralDecomposition.store_left(getName(),left_size()+1);
-	    //CentralDecomposition.store_right(getName(),right_size()+1);
-	  } //just store left
 	}
       }
     }
@@ -582,21 +569,14 @@ namespace ajaj {
       for (uMPXInt n=num_sweeps;n>0;--n){//sweep towards right
 	std::cout << std::endl << "Starting sweep: " << num_sweeps-n+1<< std::endl;
 	for (uMPXInt r=right_size();r>0;--r){
-	  move_right_two_vertex(chi,smin);
+	  Data this_step(move_right_two_vertex(chi,smin));
 	}
-	//CentralDecomposition.store_right(getName(),right_size()+1);
 	for (uMPXInt l=left_size();l>0;--l){
-	  Data this_step(move_left_two_vertex(chi,smin));
+	  Data this_step(move_left_two_vertex(chi,smin));	    
 	  if (left_size()==right_size()) {
 	    output_ref_.push(this_step);//at midpoint, push output
-	    //CentralDecomposition.store(getName(),left_size()+1,right_size()+1);//store left and right
 	  }
-	  else if (left_size()>right_size()) {
-	    //CentralDecomposition.store_right(getName(),right_size()+1);
-	    //CentralDecomposition.store_left(getName(),left_size()+1);
-	  } 
 	}
-	//CentralDecomposition.store_left(getName(),left_size()+1);
 	
 	if (n==num_sweeps) init_flag_=0; //first time through, turn off init here as we have formed all blocks once...
 	
@@ -604,12 +584,7 @@ namespace ajaj {
 	  Data this_step(move_right_two_vertex(chi,smin));
 	  if (left_size()==right_size()) {
 	    output_ref_.push(this_step);
-	    // CentralDecomposition.store(getName(),left_size()+1,right_size()+1);//store left and right
 	  }
-	  else if (left_size()<right_size()) {
-	    //CentralDecomposition.store_left(getName(),left_size()+1);
-	    //CentralDecomposition.store_right(getName(),right_size()+1);
-	  } //don't store lambda
 	}
       }
     }
@@ -773,7 +748,8 @@ namespace ajaj {
     formations++;
 #endif
 
-    MPXInt num_to_find = stuff.length() > 5 ? 2 : 1; //guard partially against ARPACK doing silly things
+    MPXInt num_to_find = 1;//stuff.length() > 5 ? 3 : 1; //guard partially against ARPACK doing silly things
+    //especially if there are degeneracies, it can be helpful to let arpack find slightly more eigenvalues
 #ifdef TIMING
     auto tD1 = std::chrono::high_resolution_clock::now();
 #endif

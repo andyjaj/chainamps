@@ -26,7 +26,7 @@ int main(int argc, char** argv){
     myModel.basis().print();
 
     ajaj::uMPXInt CHI(RuntimeArgs.chi());
-    double minS(1.0e-14);
+    double minS(SPARSETOL);
     ajaj::uMPXInt number_of_vertices(RuntimeArgs.num_vertices());
     ajaj::uMPXInt number_of_excited_states(RuntimeArgs.num_excited());
     ajaj::uMPXInt number_of_finite_vol_sweeps(RuntimeArgs.num_sweeps());
