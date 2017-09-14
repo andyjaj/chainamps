@@ -14,7 +14,7 @@
 
 #define FILEPREC 16 //used when outputting as text
 #define SPARSETOL std::numeric_limits<double>::epsilon()
-#define SPARSE_THRESHOLD 1000
+#define SPARSE_THRESHOLD 1200
 
 namespace ajaj { 
   typedef SuiteSparse_long Sparseint;
@@ -425,7 +425,7 @@ namespace ajaj {
     return SparseMatrix(std::move(Input.copy_transpose().ExtractColumns(RowLookups).transpose()));
   }
 
-  std::pair<SparseMatrix,SparseMatrix> SparseHermitianDecomposition(DenseHED decomp);
+  //std::pair<SparseMatrix,SparseMatrix> SparseHermitianDecomposition(DenseHED decomp);
 
   SparseMatrix Exponentiate(const SparseHED& decomp, std::complex<double> factor);
 

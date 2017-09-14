@@ -112,6 +112,7 @@ namespace ajaj {
     std::vector<double> previous_lambda_;
     double fidelity_;
     Prediction pred_;
+    
   public:
     MPSDecomposition CentralDecomposition;
 

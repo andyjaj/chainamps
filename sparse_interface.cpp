@@ -10,14 +10,14 @@
 #include <cassert>
 #include <cs.h>
 
-#if defined(USETBB)
-#include <tbb/tbb.h>
-#define TBBNZ 1000 //used as part of the threading cutoff
-#endif
-
 #include "sparse_interface.hpp"
 #include "dense_interface.hpp"
 #include "arpack_interface.hpp"
+
+#if defined(USETBB)
+#include <tbb/tbb.h>
+#define TBBNZ 2000  //used as part of the threading cutoff
+#endif
 
 namespace ajaj {
 
@@ -495,9 +495,7 @@ namespace ajaj {
   }
 
   void SparseMatrix::entry(Sparseint i, Sparseint j, std::complex<double> value){
-    //if (abs(value) > SPARSETOL){
-      cs_cl_entry(m_array,j,i,value); //we work with the transpose until finalised!!!!
-      //}
+    cs_cl_entry(m_array,j,i,value); //we work with the transpose until finalised!!!!
   };
 
   void SparseMatrix::zero_entry(Sparseint i, Sparseint j){
@@ -511,13 +509,11 @@ namespace ajaj {
   //cheap entry assumes we have preallocated correctly and have the correct dimensions!!!!
   void SparseMatrix::cheap_entry(Sparseint i, Sparseint j, std::complex<double> value){
     //col, because we entr things as transpose 
-    //if (abs(value) > SPARSETOL){
       m_array->i[m_array->nz]=j;
       //row
       m_array->p[m_array->nz]=i;
       //val
       m_array->x[m_array->nz++]=value;
-      //}
   };
 
   SparseMatrix&& SparseMatrix::finalise(){
@@ -526,7 +522,6 @@ namespace ajaj {
       m_array=cs_cl_compress(temp_array); //we work with the transpose until finalised!!!!
       cs_cl_spfree(temp_array);
       cs_cl_dupl(m_array);
-      //cs_cl_droptol(m_array,SPARSETOL);
       //cs_cl_dropzeros(m_array);
       temp_array=m_array;
       m_array=cs_cl_transpose(temp_array,-1);
@@ -543,7 +538,6 @@ namespace ajaj {
       cs_cl_spfree(temp_array);
       temp_array=m_array;
       m_array=0;
-      //cs_cl_droptol(temp_array,SPARSETOL);
       m_array=cs_cl_transpose(temp_array,-1);
       cs_cl_spfree(temp_array);
       m_finalised=1;
@@ -1174,14 +1168,11 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 	      else {x1x2[old.m_array->i[p]][1]+=old_row_idxs[l]*multipliers[old2new[l]];}
 	    }
 	  }
-	  //check the value is not effectively zero
-	  //if (abs(old.m_array->x[p])>SPARSETOL*largest){
-	    Sparseint entry;   
-	    entry=new_matrix.m_array->nz++;
-	    new_matrix.m_array->i[entry]=x1x2[old.m_array->i[p]][1]+y2;
-	    new_matrix.m_array->p[entry]=x1x2[old.m_array->i[p]][0]+y1;
-	    new_matrix.m_array->x[entry]=conjugate ? conj(old.m_array->x[p]) : old.m_array->x[p];
-	    //}
+	  Sparseint entry;   
+	  entry=new_matrix.m_array->nz++;
+	  new_matrix.m_array->i[entry]=x1x2[old.m_array->i[p]][1]+y2;
+	  new_matrix.m_array->p[entry]=x1x2[old.m_array->i[p]][0]+y1;
+	  new_matrix.m_array->x[entry]=conjugate ? conj(old.m_array->x[p]) : old.m_array->x[p];
 	}
       }
     }
@@ -1399,17 +1390,20 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 #ifndef NDEBUG
       std::cout << "Reading back into Sparse" << std::endl;
 #endif
+      double U_threshold=SPARSETOL/double(Blockans.U.rows());
+      double Vd_threshold=SPARSETOL/double(Blockans.Vdagger.cols());
+
       for (Sparseint v=0;v<Blockans.ValuesSize();++v){
 	//read column of U into sparse
 	for (Sparseint i=0;i<Blockans.U.rows();++i){
 	  //because cols of U are normalised vectors, and these vectors are not absurdly long, we drop the smallest values.
-	  if (abs(Blockans.U.Value(i,v))>SPARSETOL){
+	  if (abs(Blockans.U.Value(i,v))>U_threshold){
 	    UnsortedU.entry(TB.RowLookups[i],UnsortedValues.size(),Blockans.U.Value(i,v));
 	  }
 	}
 	//read row of Vdagger into sparse 
 	for (Sparseint j=0;j<Blockans.Vdagger.cols();++j){
-	  if (abs(Blockans.Vdagger.Value(v,j))>SPARSETOL){
+	  if (abs(Blockans.Vdagger.Value(v,j))>Vd_threshold){
 	    UnsortedVstar.entry(TB.ColLookups[j],UnsortedValues.size(),Blockans.Vdagger.Value(v,j));
 	  }
 	}
@@ -1512,11 +1506,11 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
       // now read through block answer and feed back into sparse
       //copy across eigenvalues
       //copy in eigenvectors
+      double tol=SPARSETOL/double(Blockans.EigenVectors.rows());
       for (Sparseint v=0;v<Blockans.ValuesSize();++v){
 	//read column of EigenVectors into sparse
 	for (Sparseint i=0;i<Blockans.EigenVectors.rows();++i){
-	  if (abs(Blockans.EigenVectors.Value(i,v))>SPARSETOL){
-	    //ans.EigenVectors.entry(TB.ColLookups[i],ans.ValuesSize(),Blockans.EigenVectors.Value(i,v));
+	  if (abs(Blockans.EigenVectors.Value(i,v))>tol){
 	    ans.EigenVectors.entry(TB.ColLookups[i],ans.ValuesSize(),Blockans.EigenVectors.Value(i,v));
 	  }
 	}
@@ -1550,11 +1544,11 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
       // now read through block answer and feed back into sparse
       //copy across eigenvalues
       //copy in eigenvectors
+      double tol=SPARSETOL/double(Blockans.EigenVectors.rows());
       for (Sparseint v=0;v<Blockans.ValuesSize();++v){
 	//read column of EigenVectors into sparse
 	for (Sparseint i=0;i<Blockans.EigenVectors.rows();++i){
-	  if (abs(Blockans.EigenVectors.Value(i,v))>SPARSETOL){
-	      //ans.EigenVectors.entry(TB.ColLookups[i],ans.ValuesSize(),Blockans.EigenVectors.Value(i,v));
+	  if (abs(Blockans.EigenVectors.Value(i,v))>tol){
 	    ans.EigenVectors.entry(TB.ColLookups[i],ans.ValuesSize(),Blockans.EigenVectors.Value(i,v));
 	  }
 	}
@@ -1578,10 +1572,13 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
       //if translation block is smaller than 100 x 100, it will end up using a dense method.
       SparseHED SpBlockans(SpTB.Block.HED(numevals,which,Guessptr));
       ans.Values=SpBlockans.Values; //copy eigenvalues over
+      double tol=SPARSETOL/double(SpBlockans.EigenVectors.rows());
       for (Sparseint c=0;c<numevals;++c){
 	//ans.Values.push_back(SpBlockans.Values.at(c));
 	for (Sparseint p=SpBlockans.EigenVectors.get_p(c);p<SpBlockans.EigenVectors.get_p(c+1);++p){
-	  ans.EigenVectors.entry(SpTB.ColLookups[SpBlockans.EigenVectors.get_i(p)],c,SpBlockans.EigenVectors.get_x(p));
+	  if (abs(SpBlockans.EigenVectors.get_x(p))>tol){
+	    ans.EigenVectors.entry(SpTB.ColLookups[SpBlockans.EigenVectors.get_i(p)],c,SpBlockans.EigenVectors.get_x(p));
+	  }
 	}
       }
       
@@ -1656,10 +1653,12 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     else {Guessptr=NULL;}
     SparseED SpBlockans(SpTB.Block.ED(numevals,which,Guessptr));
     ans.Values=SpBlockans.Values; //copy eigenvalues over
+    double tol=SPARSETOL/double(SpBlockans.EigenVectors.rows());
     for (Sparseint c=0;c<numevals;++c){
       //ans.Values.push_back(SpBlockans.Values.at(c));
       for (Sparseint p=SpBlockans.EigenVectors.get_p(c);p<SpBlockans.EigenVectors.get_p(c+1);++p){
-	ans.EigenVectors.entry(SpTB.ColLookups[SpBlockans.EigenVectors.get_i(p)],c,SpBlockans.EigenVectors.get_x(p));
+	if (abs(SpBlockans.EigenVectors.get_x(p))>tol)
+	  ans.EigenVectors.entry(SpTB.ColLookups[SpBlockans.EigenVectors.get_i(p)],c,SpBlockans.EigenVectors.get_x(p));
       }
     }
     ans.EigenVectors.finalise();
@@ -1691,9 +1690,11 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     //below does a transpose, messing up the translation block's sparsematrix
     SparseED SpBlockans(SpTB.Block.transpose().ED(numevals,which,Guessptr));
     ans.Values=SpBlockans.Values; //copy eigenvalues over
+    double tol=SPARSETOL/double(SpBlockans.EigenVectors.rows());
     for (Sparseint c=0;c<numevals;++c){
       for (Sparseint p=SpBlockans.EigenVectors.get_p(c);p<SpBlockans.EigenVectors.get_p(c+1);++p){
-	ans.EigenVectors.entry(SpTB.RowLookups[SpBlockans.EigenVectors.get_i(p)],c,SpBlockans.EigenVectors.get_x(p));
+	if (abs(SpBlockans.EigenVectors.get_x(p))>tol)
+	  ans.EigenVectors.entry(SpTB.RowLookups[SpBlockans.EigenVectors.get_i(p)],c,SpBlockans.EigenVectors.get_x(p));
       }
     }
     ans.EigenVectors.finalise();
@@ -1774,7 +1775,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     return ans;
   }
 
-  std::pair<SparseMatrix,SparseMatrix> SparseHermitianDecomposition(DenseHED decomp){
+  /*std::pair<SparseMatrix,SparseMatrix> SparseHermitianDecomposition(DenseHED decomp){
     std::pair<SparseMatrix,SparseMatrix> ans(SparseMatrix(decomp.EigenVectors.cols(),decomp.EigenVectors.rows()),SparseMatrix(decomp.EigenVectors.rows(),decomp.EigenVectors.cols()));
       //SparseMatrix ans(decomp.EigenVectors.cols(),decomp.EigenVectors.rows());
       //SparseMatrix ansinv(decomp.EigenVectors.rows(),decomp.EigenVectors.cols());
@@ -1793,7 +1794,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     ans.first.finalise();
     ans.second.finalise();
     return ans;
-  }
+    }*/
 
   SparseMatrix Exponentiate(const SparseHED& decomp,std::complex<double> factor){
     std::vector<std::complex<double> > diagpart;
@@ -2072,7 +2073,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 	    }
 	  }
 	}
-	ans_col_ptrs_[col+1]=nz_in_this_col;//thread safe because every col writes to a different memory location
+	ans_col_ptrs_[col+1]=nz_in_this_col;//thread safe for TBB because every col writes to a different memory location
 	//only reset the values we need to
 	for (auto element : non_zero_rows){
 	  Flag[element]=0;

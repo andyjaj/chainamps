@@ -33,7 +33,7 @@ int main(int argc, char** argv){
     double weight_factor(RuntimeArgs.weight_factor());
 
     ajaj::State TargetState(myModel.make_target(RuntimeArgs.target()));
-    ajaj::DataOutput results(ajaj::OutputName(RuntimeArgs.filename(),"Energies.dat"),"Index, Energy, Energy/vertices, Entropy, Truncation, Fidelity"); //open file for output
+    ajaj::DataOutput results(ajaj::OutputName(RuntimeArgs.filename(),"Energies.dat"),"Index, Energy, Energy/vertices, Entropy, Truncation, 1-Fidelity"); //open file for output
     ajaj::iDMRG infvol(std::string("GroundState"),myModel.H_MPO,TargetState,results); //create an infinite sweep simulation object
     auto t1 = std::chrono::high_resolution_clock::now();
     infvol.run(number_of_vertices/2,-1.0,CHI,minS); //convergence criterion: not used if negative, number of vertices used instead
@@ -44,7 +44,7 @@ int main(int argc, char** argv){
     fvol.run(number_of_finite_vol_sweeps,CHI,minS); //run for a set number of sweeps
     auto t4 = std::chrono::high_resolution_clock::now();
     if (number_of_excited_states>0){
-      ajaj::DataOutput ex_results(ajaj::OutputName(RuntimeArgs.filename(),"Excited_Energies.dat"),"Sweep Index, State Index, Energy, Entropy, Truncation, 1"); //open file for output
+      ajaj::DataOutput ex_results(ajaj::OutputName(RuntimeArgs.filename(),"Excited_Energies.dat"),"Sweep Index, State Index, Energy, Entropy, Truncation, 1-abs(guess overlap)"); //open file for output
       
       if (number_of_finite_vol_sweeps==0){
 	fvol.run(1,CHI,minS); //do a finite vol sweep to finish off.
