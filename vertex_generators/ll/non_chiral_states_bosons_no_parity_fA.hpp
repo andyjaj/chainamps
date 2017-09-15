@@ -7,7 +7,6 @@ int non_chir_bosons(double tpi_R, double Beta, double en_cutoff)
 
   /*delineate states of full bosons up to a given energy*/
 
-  //nmax = (int)(sqrt(en_cutoff)/Beta) + 1; 
   nmax = (int) (sqrt((en_cutoff+1.0/12.0)/tpi_R)/Beta)+1;
   nmin = -nmax+1;
   //nmax = 1; nmin = 0;

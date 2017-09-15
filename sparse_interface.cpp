@@ -1356,7 +1356,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 #endif
       double block_weight(sum_column_square_norms(*cit));
       total_weight+=block_weight;
-#ifndef DNDEBUG
+#ifndef NDEBUG
       std::cout <<"Weight is " << block_weight <<std::endl;
       if (std::isnan(block_weight)){//if not a number, then problem!
 	std::cout << "Nan error" << std::endl;
