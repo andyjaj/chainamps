@@ -409,7 +409,8 @@ namespace ajaj {
     //we start at the middle of the system
     //in case we need excited states later, we store MPS matrices as well as the L and R blocks.
     if (size()==2) {
-      //CentralDecomposition.store(getName(),left_size()+1,right_size()+1);//store left and right
+      //necessary to leave a well formed state to hand to excited states or TEBD
+      CentralDecomposition.store(getName(),left_size()+1,right_size()+1,1);//store left and right
       std::cout << "Skipping finite sweeps, only two vertices..." << std::endl;
     }
     else {

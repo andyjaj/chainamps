@@ -16,7 +16,7 @@
 
 #if defined(USETBB)
 #include <tbb/tbb.h>
-#define TBBNZ 2000  //used as part of the threading cutoff
+#define TBBNZ 1000  //used as part of the threading cutoff
 #endif
 
 namespace ajaj {
@@ -1968,17 +1968,18 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
       int* Flag = new int[lhs_->m];
       std::fill(Flag,Flag+lhs_->m,0);
       std::vector<SuiteSparse_long> non_zero_rows;
+      non_zero_rows.reserve(lhs_->m/10);
       for (SuiteSparse_long col=r.begin(); col<r.end(); ++col){ // iterates over a subrange
 	SuiteSparse_long nz_in_this_col=0;
 	for (SuiteSparse_long rp=rhs_->p[col];rp<rhs_->p[col+1];++rp){
-	  SuiteSparse_long j=rhs_->i[rp];
-	  for (SuiteSparse_long lp=lhs_->p[j];lp<lhs_->p[j+1];++lp){
-	    SuiteSparse_long i=lhs_->i[lp];
-	    if (!Flag[i]){
-	      Flag[i]=1;
-	      ++nz_;
+	  //SuiteSparse_long j=rhs_->i[rp];
+	  for (SuiteSparse_long lp=lhs_->p[rhs_->i[rp]];lp<lhs_->p[rhs_->i[rp]+1];++lp){
+	    //SuiteSparse_long i=lhs_->i[lp];
+	    if (!Flag[lhs_->i[lp]]){
+	      Flag[lhs_->i[lp]]=1;
+	      //++nz_;
 	      ++nz_in_this_col;
-	      non_zero_rows.push_back(i); //record these to reset at end of cycle
+	      non_zero_rows.push_back(lhs_->i[lp]); //record these to reset at end of cycle
 	    }
 	  }
 	}
@@ -1987,9 +1988,10 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 	for (auto element : non_zero_rows){
 	  Flag[element]=0;
 	}
-	non_zero_rows.clear(); //faster push back next time through, because less allocations needs to occur.
+	non_zero_rows.clear(); //faster push back next time through, because less allocations need to occur.
       }
       delete[] Flag;
+      nz_=ans_col_ptrs_[r.end()]-ans_col_ptrs_[r.begin()];
     }
     // the method to reduce computations accumulated in two bodies,
     // unnecessary really, but provides a check.
@@ -2018,7 +2020,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     void operator()(const tbb::blocked_range<SuiteSparse_long>& r) { 
       SuiteSparse_long start_col=r.begin();
       SuiteSparse_long end_col;
-      for (SuiteSparse_long q=r.begin();q!=r.end();++q) end_col=q+1; //just in case r.end() doesn't have epxected behaviour
+      for (SuiteSparse_long q=r.begin();q!=r.end();++q) end_col=q+1; //just in case r.end() doesn't have expected behaviour
 
       cs_cl* local_answer(multiply_by_blocked_cols(lhs_,rhs_,start_col,end_col,ans_->p));//steals ans_->p to make new answer
       //feed_to_answer(local_answer,ans_,start_col);//moves to full answer and destroys local answer

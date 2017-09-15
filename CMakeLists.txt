@@ -10,7 +10,7 @@ endif(TIMING)
 
 #Requires c++11 compile flag
 set(CMAKE_CXX_FLAGS "-std=c++11")
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -fno-inline-functions -fno-inline-functions-called-once -fno-optimize-sibling-calls")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -DDNDEBUG -fno-inline-functions -fno-inline-functions-called-once -fno-optimize-sibling-calls")
 add_compile_options(-Wno-return-type-c-linkage -m64 -march=native -mtune=native)
 
 #Required dependencies are BLAS/LAPACK, cxsparse and ARPACK. All should be compiled to use 64 bit integers!

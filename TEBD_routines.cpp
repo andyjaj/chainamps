@@ -19,6 +19,7 @@ namespace ajaj{
     if (m_order>4 || m_order==0 || m_order==3){std::cout <<"Only 1st, 2nd and 4th order decompositions are supported. Aborting..." << std::endl; exit(1);}
     //make the Hamiltonian for a single bond
     MPX_matrix BondH(MakeBondHamiltonian(*m_H_ptr));
+    
     //now make the trotter operators  
     if (m_order==1){
       BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,tau));
