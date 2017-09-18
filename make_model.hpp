@@ -21,6 +21,7 @@
 #include "vertex_generators/continuum_Ising_generator.hpp"
 #include "vertex_generators/continuum_ff_generator.hpp"
 #include "vertex_generators/ll_generator.hpp"
+#include "vertex_generators/llsc_generator.hpp"
 #include "vertex_generators/old_xxx_generator.hpp"
 
 namespace ajaj{
@@ -29,7 +30,8 @@ namespace ajaj{
     cm_ising,
       cm_ff, 
       xxx,
-      ll, 
+      ll,
+      llsemi, 
       user,
       last
       };
@@ -44,11 +46,12 @@ namespace ajaj{
   };
 
   //recognised models, or user defined
-  static const NameGroup m_names[6] = {
+  static const NameGroup m_names[7] = {
     {BuiltinModels::cm_ising, {"continuum_Ising", "continuum_Ising", "continuum ising", "Continuum_Ising", "Continuum Ising", "CONTINUUM_ISING", "CONTINUUM ISING"},&continuumIsing::VertexGenerator,&continuumIsing::MakeHamiltonian},
     {BuiltinModels::cm_ff, {"continuum_free_fermion", "continuum free fermion", "Continuum_Free_Fermion", "Continuum Free Fermion", "CONTINUUM_FREE_FERMION","CONTINUUM FREE FERMION"},&continuumff::VertexGenerator,&continuumff::MakeHamiltonian},
     {BuiltinModels::xxx, {"OLD_XXX"},&oldxxx::VertexGenerator,&oldxxx::MakeHamiltonian},
     {BuiltinModels::ll, {"ll","LL","Luttinger_liquid","luttinger_liquid","Luttinger liquid", "luttinger liquid", "LUTTINGER_LIQUID","LUTTINGER LIQUID"},&ll::VertexGenerator,&ll::MakeHamiltonian},
+    {BuiltinModels::llsemi, {"llsc","LLSC","Luttinger_liquid_semiclassical", "LUTTINGER_LIQUID_SEMICLASSICAL","LUTTINGER LIQUID SEMICLASSICAL"},&llsemi::VertexGenerator,&llsemi::MakeHamiltonian},
     {BuiltinModels::user, {"User_Defined","user_defined","User Defined","user defined","USER","user","USER_DEFINED", "USER DEFINED" },nullptr,nullptr},
     {BuiltinModels::last, {""},nullptr,nullptr}
   }; 

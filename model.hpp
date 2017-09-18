@@ -57,6 +57,7 @@ namespace ajaj{
       std::cout << "MPO MATRIX INFO" <<std::endl;
       H_MPO.print_indices();
       H_MPO.print_sparse_info();
+
     }
     Model(const std::vector<CouplingArray>& CAs,  MPO_matrix (*makeH) (const Vertex&, const CouplingArray&), const std::vector<double>& t) : CAs_(CAs), times_(t), makeH_(makeH){};//default, used by user defined
 

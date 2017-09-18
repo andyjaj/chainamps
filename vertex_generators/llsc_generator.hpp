@@ -1,5 +1,5 @@
-#ifndef THEORY_LL_H
-#define THEORY_LL_H
+#ifndef THEORY_LLSC_H
+#define THEORY_LLSC_H
 
 #include <cmath>
 #include <cstdlib>
@@ -12,6 +12,8 @@
 //#include "../MPX.hpp"
 
 ////////////////////////
+#ifndef RMK
+#define RMK
 namespace rmk { //namespace for Robert's ancilliary arrays and definitions
   /*definitions for construction of full states*/
   static const ajaj::uMPXInt MaxStates=2000; /*maximum number of states allowed in the Hilbert space of a single boson*/
@@ -44,8 +46,9 @@ namespace rmk { //namespace for Robert's ancilliary arrays and definitions
 #include "./ll/non_chiral_states_bosons_no_parity_fA.hpp"
 #include "./ll/non_chir_me_no_parity.hpp"
 }
+#endif
 
-namespace ll{
+namespace llsemi{
   ajaj::Vertex VertexGenerator(const ajaj::VertexParameterArray& inputs)
   {
     //initialise vertex object
@@ -134,25 +137,26 @@ namespace ll{
 
     for (ajaj::VertexOperatorArray::iterator it=ModelVertex.Operators.begin();it!=ModelVertex.Operators.end();++it){
       it->MatrixElements.finalise();
-#ifndef DNDEBUG
-      if (ModelVertex.basis().size()<=5){
-	it->print();
-      }
-#endif
     }
 
     ModelVertex.Operators.push_back(ajaj::VertexOperator("Vertex_Hamiltonian"));
     ModelVertex.Operators.back().MatrixElements=ajaj::SparseMatrix(ModelVertex.basis().Energies());
+
+#ifndef DNDEBUG
+    if (ModelVertex.basis().size()<=5){
+      for (auto&& M : ModelVertex.Operators)
+	M.print();
+    }
+#endif
 
     return ModelVertex;
   }
 
   ajaj::MPO_matrix MakeHamiltonian(const ajaj::Vertex& modelvertex, const ajaj::CouplingArray& couplingparams){
     //Lower triangular MPO
-    // I           0    0         0
-    // JPsidagger  0    0         0
-    // JPsi
-    // HV          Psi' Psidagger I        //note the charges Q, are such that Q[Psidagger[i]]+Q[Psi'[i]]=0
+    // I         0     0
+    // t phase   0     0
+    // HV        phase I        //note the charges Q, are such that Q[Psidagger[i]]+Q[Psi'[i]]=0
 
     double R(modelvertex.Parameters[0].Value);
     ajaj::QNCombinations differencecombinations(modelvertex.Spectrum,1); //1 means use difference
@@ -172,16 +176,12 @@ namespace ll{
     }
     double tunnelling=couplingparams[0].Value.real();
 
-    //quickest to use psi and its Hermitian conjugate
-    /*ajaj::Sparseint psi_col_offset=1; //+1 for identity matrix in first block
-    ajaj::Sparseint psi_row_offset=differencecombinations.size()+1; //reversed order
-    ajaj::Sparseint psidagger_col_offset=differencecombinations.size()+1; //+1 for identity matrix in first block
-    ajaj::Sparseint psidagger_row_offset=1; //reversed order*/
-
     ajaj::Sparseint operator_col_offset=1; //+1 for identity matrix in first block
     ajaj::Sparseint operator_row_offset=1; //reversal, +1 for identity
 
     ajaj::SparseMatrix ThetaSq(modelvertex.Operators[4].MatrixElements*modelvertex.Operators[4].MatrixElements);
+
+    //Theta has an implicit imaginary i int its def, so ThetaSq has an implicit -1.
 
     for (ajaj::Sparseint col=0;col<ThetaSq.cols();++col){
       for (ajaj::Sparseint p=ThetaSq.get_p(col);p<ThetaSq.get_p(col+1);++p){

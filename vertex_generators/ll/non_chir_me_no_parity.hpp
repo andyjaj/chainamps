@@ -42,7 +42,7 @@ double non_chir_psi(int k,int l)
 }
 
 
-//k is out state, l in state, i.e. <k|I*\phi(x=0)|l>
+//k is out state, l in state, i.e. <k|I*beta*\phi(x=0)|l>
 double phase_me(double Beta, int k, int l)
 {
 
@@ -64,9 +64,9 @@ double phase_me(double Beta, int k, int l)
   /*contribution of oscillator modes of phase - only is non-zero if states have identical N,M quantum numbers but different sets of oscillator modes*/
   else if ((state_Z[0][k]==state_Z[0][l]) && (state_Z[1][k]==state_Z[1][l]) && ((kl!=ll) || (kr!=lr))) {
     if (kl==ll) /*chiral parts of states are the same*/
-      return(Beta*(-1.0*me_phase_creation[kr][lr]+me_phase_destruction[kr][lr]));
+      return(Beta*(1.0*me_phase_creation[kr][lr]-me_phase_destruction[kr][lr]));
     else if (kr==lr) /*anti-chiral parts of states are the same*/
-      return(Beta*(-1.0*me_phase_creation[kl][ll]+me_phase_destruction[kl][ll]));
+      return(Beta*(1.0*me_phase_creation[kl][ll]-me_phase_destruction[kl][ll]));
     else
       return(0.0);
   }

@@ -735,13 +735,6 @@ namespace ajaj {
     wfindices.push_back(MPXIndex(0,StateArray(1,TargetSector))); //outgoing
 
     return MPX_matrix(H2.GetPhysicalSpectrum(),wfindices,2,reshape(decomp.EigenVectors.ExtractColumns(std::vector<MPXInt>(1,0)),H2.GetPhysicalSpectrum().size()));
-
-    /*SparseMatrix comb(decomp.EigenVectors.ExtractColumns(std::vector<MPXInt>(1,0)));
-    comb+=decomp.EigenVectors.ExtractColumns(std::vector<MPXInt>(1,1));
-    comb+=decomp.EigenVectors.ExtractColumns(std::vector<MPXInt>(1,2));
-
-    comb.rescale(sqrt(1.0/3.0));
-    return MPX_matrix(H2.GetPhysicalSpectrum(),wfindices,2,reshape(comb,H2.GetPhysicalSpectrum().size()));*/
   }
 
   Prediction MakePrediction(const MPSDecomposition& Decomp, const std::vector<double>& PreviousLambda){

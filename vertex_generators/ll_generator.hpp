@@ -12,6 +12,8 @@
 //#include "../MPX.hpp"
 
 ////////////////////////
+#ifndef RMK
+#define RMK
 namespace rmk { //namespace for Robert's ancilliary arrays and definitions
   /*definitions for construction of full states*/
   static const ajaj::uMPXInt MaxStates=2000; /*maximum number of states allowed in the Hilbert space of a single boson*/
@@ -44,6 +46,7 @@ namespace rmk { //namespace for Robert's ancilliary arrays and definitions
 #include "./ll/non_chiral_states_bosons_no_parity_fA.hpp"
 #include "./ll/non_chir_me_no_parity.hpp"
 }
+#endif
 
 namespace ll{
   ajaj::Vertex VertexGenerator(const ajaj::VertexParameterArray& inputs)
