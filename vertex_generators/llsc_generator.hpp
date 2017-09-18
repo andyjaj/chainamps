@@ -159,6 +159,7 @@ namespace llsemi{
     // HV        phase I        //note the charges Q, are such that Q[Psidagger[i]]+Q[Psi'[i]]=0
 
     double R(modelvertex.Parameters[0].Value);
+    double tpi_R=2.0*M_PI/R;
     ajaj::QNCombinations differencecombinations(modelvertex.Spectrum,1); //1 means use difference
 
     ajaj::MPXInt lineardim(modelvertex.Spectrum.size()*(2+differencecombinations.size()));
@@ -179,15 +180,15 @@ namespace llsemi{
     ajaj::Sparseint operator_col_offset=1; //+1 for identity matrix in first block
     ajaj::Sparseint operator_row_offset=1; //reversal, +1 for identity
 
-    ajaj::SparseMatrix ThetaSq(modelvertex.Operators[4].MatrixElements*modelvertex.Operators[4].MatrixElements);
+    ajaj::SparseMatrix PhaseSq(modelvertex.Operators[4].MatrixElements*modelvertex.Operators[4].MatrixElements);
 
-    //Theta has an implicit imaginary i int its def, so ThetaSq has an implicit -1.
+    //Theta has an implicit imaginary i int its def, so PhaseSq has an implicit -1.
 
-    for (ajaj::Sparseint col=0;col<ThetaSq.cols();++col){
-      for (ajaj::Sparseint p=ThetaSq.get_p(col);p<ThetaSq.get_p(col+1);++p){
-	ajaj::MPXInt row=ThetaSq.get_i(p);
+    for (ajaj::Sparseint col=0;col<PhaseSq.cols();++col){
+      for (ajaj::Sparseint p=PhaseSq.get_p(col);p<PhaseSq.get_p(col+1);++p){
+	ajaj::MPXInt row=PhaseSq.get_i(p);
 	if (modelvertex.Spectrum[row]==modelvertex.Spectrum[col]){ //check momenta are equal
-	  M.entry(row+offset_to_last_block,col,-1.0*R*tunnelling*ThetaSq.get_x(p));
+	  M.entry(row+offset_to_last_block,col,(-1.0/tpi_R)*tunnelling*PhaseSq.get_x(p));
 	}
       }
     }
@@ -221,7 +222,7 @@ namespace llsemi{
 	//lowest block row
 	M.entry(offset_to_last_block+i,modelvertex.Spectrum.size()*(operator_col_offset+MPO_subcol)+col,x);
 	//first block col
-	M.entry(modelvertex.Spectrum.size()*(operator_row_offset+MPO_subrow)+i,col,R*2.0*x*tunnelling);
+	M.entry(modelvertex.Spectrum.size()*(operator_row_offset+MPO_subrow)+i,col,(2.0/tpi_R)*x*tunnelling);
       }
     }
 
