@@ -582,7 +582,8 @@ namespace ajaj {
   }
 
   void ExcitedStateFiniteDMRG::run(uMPXInt num_sweeps, uMPXInt chi, double smin){
-    if (init_flag_) init(chi,smin);
+    
+    if (init_flag_) init(chi,(num_sweeps>1 && size()!=2) ? 0.0 : smin);
     std::cout << "Performing finite sweeps" << std::endl;
     //we start at the middle of the system
     //in case we need excited states later, we store MPS matrices as well as the L and R blocks.
@@ -591,17 +592,23 @@ namespace ajaj {
       std::cout << "Skipping finite sweeps, only two vertices..." << std::endl;
     }
     else {
+
+      
       for (uMPXInt n=num_sweeps;n>0;--n){//sweep towards right
+      //if we request multiple sweeps, use first sweep as a quick warmup, with small bond dimension!
+	uMPXInt smin_local=(num_sweeps>1 && n==num_sweeps) ? 0.0 : smin;
+	
+	
 	double cumulative_truncation=0.0;
 	std::cout << std::endl << "Starting sweep: " << num_sweeps-n+1<< std::endl;
 	for (uMPXInt r=right_size();r>0;--r){
-	  Data this_step(move_right_two_vertex(chi,smin));
+	  Data this_step(move_right_two_vertex(chi,smin_local));
 	  //output_ref_.push(this_step);//at midpoint, push output
 
 	  cumulative_truncation+=CentralDecomposition.Truncation;
 	}
 	for (uMPXInt l=left_size();l>0;--l){
-	  Data this_step(move_left_two_vertex(chi,smin));
+	  Data this_step(move_left_two_vertex(chi,smin_local));
 	  //output_ref_.push(this_step);//at midpoint, push output
 	    
 	  if (left_size()==right_size()) {
@@ -613,7 +620,7 @@ namespace ajaj {
 	if (n==num_sweeps) init_flag_=0; //first time through, turn off init here as we have formed all blocks once...
 	
 	for (uMPXInt r=right_size();r>left_size();--r){
-	  Data this_step(move_right_two_vertex(chi,smin));
+	  Data this_step(move_right_two_vertex(chi,smin_local));
 	  //output_ref_.push(this_step);//at midpoint, push output
 
 	  if (left_size()==right_size()) {

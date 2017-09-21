@@ -40,9 +40,8 @@ int main(int argc, char** argv){
     auto t2 = std::chrono::high_resolution_clock::now();
 
     ajaj::FiniteDMRG fvol(infvol,results); //create a finite sweep object from the output of infinite volume algorithm
-    auto t3 = std::chrono::high_resolution_clock::now();
     fvol.run(number_of_finite_vol_sweeps,CHI,minS); //run for a set number of sweeps
-    auto t4 = std::chrono::high_resolution_clock::now();
+    auto t3 = std::chrono::high_resolution_clock::now();
     if (number_of_excited_states>0){
       ajaj::DataOutput ex_results(ajaj::OutputName(RuntimeArgs.filename(),"Excited_Energies.dat"),"Sweep Index, State Index, Energy, Entropy, Truncation, 1-abs(guess overlap)"); //open file for output
       
@@ -56,11 +55,14 @@ int main(int argc, char** argv){
 	Exfvol.run(number_of_finite_vol_sweeps,CHI,minS);
       }
     }
-    
+    auto t4 = std::chrono::high_resolution_clock::now();
+
 
     std::cout << "Infinite Volume part took "<< std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count()<< " milliseconds" << std::endl;
-    std::cout << "Finite Volume part took "<< std::chrono::duration_cast<std::chrono::milliseconds>(t4-t3).count()<< " milliseconds" << std::endl;
-
+    std::cout << "Finite Volume part took "<< std::chrono::duration_cast<std::chrono::milliseconds>(t3-t2).count()<< " milliseconds" << std::endl;
+    if (number_of_excited_states>0)
+      std::cout << "Excited States part took "<< std::chrono::duration_cast<std::chrono::milliseconds>(t4-t3).count()<< " milliseconds" << std::endl;
+    
     return 0;
   }
   else {

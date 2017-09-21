@@ -1,7 +1,7 @@
 /*definitions for construction of chiral portions of states*/
 const int MaxPart=300; /*maximum number of partitions allowed at a given level; used in denumerating number of chiral states*/
 const int MaxChiralStates=600; /*largest allowed number of chiral states*/
-const int UL=6;  /*the level up to (but not including) which we keep chiral states*/
+const int UL=10;  /*the level up to (but not including) which we keep chiral states*/
 const int LL=0;
 
 const int MaxNum_a=20; /*the maximum number of chiral a's that we allow in constructing a state, i.e.  

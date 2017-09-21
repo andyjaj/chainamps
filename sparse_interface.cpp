@@ -1968,7 +1968,12 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
       int* Flag = new int[lhs_->m];
       std::fill(Flag,Flag+lhs_->m,0);
       std::vector<SuiteSparse_long> non_zero_rows;
-      non_zero_rows.reserve(lhs_->m/10);
+      for (auto i=0; i<=lhs_->n;++i){
+	if (lhs_->p[i]>0){
+	  non_zero_rows.reserve(lhs_->p[i]); //crude guess but useful to reduce memory reallocs
+	  break;
+	}
+      }
       for (SuiteSparse_long col=r.begin(); col<r.end(); ++col){ // iterates over a subrange
 	SuiteSparse_long nz_in_this_col=0;
 	for (SuiteSparse_long rp=rhs_->p[col];rp<rhs_->p[col+1];++rp){
