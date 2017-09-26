@@ -1922,12 +1922,17 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     Sparseint nz=0;
     Sparseint m = A->m;
     //Sparseint anz = A->p [A->n];
-    //Sparseint n = B->n; 
+    //Sparseint n = B->n;
+    Sparseint* Ap = A->p;
+    Sparseint* Ai = A->i ;
+    std::complex<double>* Ax = A->x;
     Sparseint* Bp = B->p;
     Sparseint* Bi = B->i ;
     std::complex<double>* Bx = B->x;
     //Sparseint bnz = Bp [B->n];
-    Sparseint* w = (Sparseint*)cs_calloc (m, sizeof (Sparseint));
+    Sparseint* w= new Sparseint[m];
+    std::fill(w,w+m,-1);
+    //Sparseint* w = (Sparseint*)cs_calloc (m, sizeof (Sparseint));
     std::complex<double>* x = (std::complex<double>*)cs_malloc (m, sizeof (std::complex<double>));
     C = cs_cl_spalloc (m, end-start, nzmax, 1, 0); //we have already figured out the number of nonzeros, so can do the correct allocation now       
     Sparseint* Cp = C->p;
@@ -1935,14 +1940,40 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
       Sparseint* Ci = C->i; 
       std::complex<double>* Cx = C->x;
       Cp[j-start] = nz;                  /* column j of C starts here */
-      for (Sparseint p = Bp[j]; p < Bp[j+1]; p++){
-	nz = cs_cl_scatter (A, Bi[p], Bx[p], w, x, j+1, C, nz);
+
+      if (Bp[j]!=Bp[j+1]){ //not an empty col
+	for (Sparseint lp=Ap[Bi[Bp[j]]];lp<Ap[Bi[Bp[j]]+1];++lp){
+	  Sparseint i=Ai[lp];
+	  w[i]=j;
+	  Ci[nz++]=i;
+	  //ans.put_i(ans_nz++)=i;
+	  x[i]=Ax[lp]*Bx[Bp[j]];
+	}
+      }
+
+      for (Sparseint rp = Bp[j]+1; rp < Bp[j+1]; rp++){
+
+	//	nz = cs_cl_scatter (A, Bi[p], Bx[p], w, x, j+1, C, nz);
+	for (Sparseint lp=Ap[Bi[rp]];lp<Ap[Bi[rp]+1];++lp){
+	  Sparseint i=Ai[lp];
+	  if (w[i]!=j){//don't have it yet...
+	    w[i]=j;
+	    Ci[nz++]=i;
+	    //ans.put_i(ans_nz++)=i;
+	    x[i]=Ax[lp]*Bx[rp];
+	  }
+	  else {
+	    x[i]+=Ax[lp]*Bx[rp];//scatter
+	  }
+	}
+
       }
       for (Sparseint p = Cp[j-start]; p < nz; p++) Cx[p] = x [Ci[p]];
     }
     Cp [end-start] = nz ;                       /* finalize the last column of C */
     assert(nz==nzmax);
-    cs_free(w);
+    //cs_free(w);
+    delete[] w;
     cs_free(x);
     return C;    
   }
