@@ -1848,21 +1848,21 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     if (U->nz!=-1){std::cout << "Error" <<std::endl; exit(1);}
     if (U->m!=1){
     //record original col counts
-    SuiteSparse_long* Cp = U->p;
-    SuiteSparse_long* Ci = U->i;
+    Sparseint* Cp = U->p;
+    Sparseint* Ci = U->i;
     std::complex<double>* Cx = U->x ;
     cs_cl* A=cs_cl_transpose(U,-1);
     //order by double transpose, without recounting rows
-    SuiteSparse_long m = A->m; 
-    SuiteSparse_long n = A->n; 
-    SuiteSparse_long* Ap = A->p;
-    SuiteSparse_long* Ai = A->i; 
+    Sparseint m = A->m; 
+    Sparseint n = A->n; 
+    Sparseint* Ap = A->p;
+    Sparseint* Ai = A->i; 
     std::complex<double>* Ax = A->x;
-    SuiteSparse_long* w=(SuiteSparse_long*)cs_malloc(m,sizeof(SuiteSparse_long));
+    Sparseint* w=(Sparseint*)cs_malloc(m,sizeof(Sparseint));
     std::copy(Cp,Cp+m,w);//need a copy in w
-    for (SuiteSparse_long j = 0; j < n; j++){
-      for (SuiteSparse_long p = Ap[j]; p < Ap[j+1]; p++){
-	SuiteSparse_long q;
+    for (Sparseint j = 0; j < n; j++){
+      for (Sparseint p = Ap[j]; p < Ap[j+1]; p++){
+	Sparseint q;
 	Ci[q = w [Ai[p]]++] = j; /* place ATranspose(i,j) as entry A(j,i) */
 	Cx[q] = Ax[p];
       }
@@ -1873,29 +1873,29 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     //return A;
   }
 
-  void order_rows_and_feed_to_answer(cs_cl* U, cs_cl* P,const SuiteSparse_long Pcol){//destroys unsorted U as it goes along, Pcol is the insertion column
+  void order_rows_and_feed_to_answer(cs_cl* U, cs_cl* P,const Sparseint Pcol){//destroys unsorted U as it goes along, Pcol is the insertion column
     //record original col counts
     cs_cl* UTranspose=cs_cl_transpose(U,-1); //orders, but gives us the transpose
     //order by double transpose, without recounting rows
-    SuiteSparse_long m = UTranspose->m; 
-    SuiteSparse_long n = UTranspose->n; 
-    SuiteSparse_long* UTp = UTranspose->p;
-    SuiteSparse_long* UTi = UTranspose->i; 
+    Sparseint m = UTranspose->m; 
+    Sparseint n = UTranspose->n; 
+    Sparseint* UTp = UTranspose->p;
+    Sparseint* UTi = UTranspose->i; 
     std::complex<double>* UTx = UTranspose->x;
     //P already allocated..., need to start at last nonzero of P and update
-    SuiteSparse_long* Pi = P->i;
+    Sparseint* Pi = P->i;
     std::complex<double>* Px = P->x;
     //to be thread safe must use a separate counter for nonzeros of P!!!!
     cs_free(U->i);  U->i=nullptr;
     cs_free(U->x);  U->x=nullptr;
-    SuiteSparse_long* w = U->p;  U->p=nullptr;
+    Sparseint* w = U->p;  U->p=nullptr;
     U->nzmax=0;
     cs_cl_spfree(U); //have hung on to U->p.
     //P->p should have been set already
-    SuiteSparse_long offset=P->p[Pcol];
-    for (SuiteSparse_long j = 0; j < n; j++){
-      for (SuiteSparse_long p = UTp[j]; p < UTp[j+1]; p++){
-	SuiteSparse_long q= offset+w[UTi[p]]++;
+    Sparseint offset=P->p[Pcol];
+    for (Sparseint j = 0; j < n; j++){
+      for (Sparseint p = UTp[j]; p < UTp[j+1]; p++){
+	Sparseint q= offset+w[UTi[p]]++;
 	//P->p already exists, so doesn't need copying in
 	//P->p[Pcol] should give the correct starting position
 	Pi[q] = j; //use the offset from P
@@ -1907,38 +1907,38 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     cs_cl_spfree(UTranspose);
   }
 
-  void feed_to_answer(cs_cl* U, cs_cl* P,const SuiteSparse_long Pcol){//destroys unsorted U as it goes along, Pcol is the insertion column
-    SuiteSparse_long Unz=U->p[U->n];
+  void feed_to_answer(cs_cl* U, cs_cl* P,const Sparseint Pcol){//destroys unsorted U as it goes along, Pcol is the insertion column
+    Sparseint Unz=U->p[U->n];
     std::copy(U->i,U->i+Unz,P->i+P->p[Pcol]);
     std::copy(U->x,U->x+Unz,P->x+P->p[Pcol]);
     cs_cl_spfree(U);
   }
 
-  cs_cl* multiply_by_blocked_cols(const cs_cl* A, const cs_cl*B, SuiteSparse_long start, SuiteSparse_long end, const SuiteSparse_long* ans_col_ptrs){
+  cs_cl* multiply_by_blocked_cols(const cs_cl* A, const cs_cl*B, Sparseint start, Sparseint end, const Sparseint* ans_col_ptrs){
     cs_cl *C=nullptr;
     if (!CS_CSC (A) || !CS_CSC (B)) return (NULL);      /* check inputs */
     if (A->n != B->m) return (NULL);
-    SuiteSparse_long nzmax=ans_col_ptrs[end]-ans_col_ptrs[start];
-    SuiteSparse_long nz=0;
-    SuiteSparse_long m = A->m;
-    //SuiteSparse_long anz = A->p [A->n];
-    //SuiteSparse_long n = B->n; 
-    SuiteSparse_long* Bp = B->p;
-    SuiteSparse_long* Bi = B->i ;
+    Sparseint nzmax=ans_col_ptrs[end]-ans_col_ptrs[start];
+    Sparseint nz=0;
+    Sparseint m = A->m;
+    //Sparseint anz = A->p [A->n];
+    //Sparseint n = B->n; 
+    Sparseint* Bp = B->p;
+    Sparseint* Bi = B->i ;
     std::complex<double>* Bx = B->x;
-    //SuiteSparse_long bnz = Bp [B->n];
-    SuiteSparse_long* w = (SuiteSparse_long*)cs_calloc (m, sizeof (SuiteSparse_long));
+    //Sparseint bnz = Bp [B->n];
+    Sparseint* w = (Sparseint*)cs_calloc (m, sizeof (Sparseint));
     std::complex<double>* x = (std::complex<double>*)cs_malloc (m, sizeof (std::complex<double>));
     C = cs_cl_spalloc (m, end-start, nzmax, 1, 0); //we have already figured out the number of nonzeros, so can do the correct allocation now       
-    SuiteSparse_long* Cp = C->p;
-    for (SuiteSparse_long j = start; j < end; j++){
-      SuiteSparse_long* Ci = C->i; 
+    Sparseint* Cp = C->p;
+    for (Sparseint j = start; j < end; j++){
+      Sparseint* Ci = C->i; 
       std::complex<double>* Cx = C->x;
       Cp[j-start] = nz;                  /* column j of C starts here */
-      for (SuiteSparse_long p = Bp[j]; p < Bp[j+1]; p++){
+      for (Sparseint p = Bp[j]; p < Bp[j+1]; p++){
 	nz = cs_cl_scatter (A, Bi[p], Bx[p], w, x, j+1, C, nz);
       }
-      for (SuiteSparse_long p = Cp[j-start]; p < nz; p++) Cx[p] = x [Ci[p]];
+      for (Sparseint p = Cp[j-start]; p < nz; p++) Cx[p] = x [Ci[p]];
     }
     Cp [end-start] = nz ;                       /* finalize the last column of C */
     assert(nz==nzmax);
@@ -1949,13 +1949,13 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 
 #if defined(USETBB)
   struct reduce_nz {
-    SuiteSparse_long nz_; // accumulating integer
+    Sparseint nz_; // accumulating integer
     const cs_cl* lhs_;
     const cs_cl* rhs_;
-    SuiteSparse_long* ans_col_ptrs_;
+    Sparseint* ans_col_ptrs_;
     reduce_nz(const cs_cl* lhs,const cs_cl* rhs)  : lhs_(lhs),rhs_(rhs),ans_col_ptrs_(nullptr) {
       nz_=0; //init
-      ans_col_ptrs_=(SuiteSparse_long*) cs_malloc(rhs_->n+1,sizeof(SuiteSparse_long)); 
+      ans_col_ptrs_=(Sparseint*) cs_malloc(rhs_->n+1,sizeof(Sparseint)); 
       ans_col_ptrs_[0]=0;
     }
     // splitting constructor required by TBB
@@ -1963,37 +1963,32 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
       nz_=0;
     }
     // the main computation method
-    void operator()(const tbb::blocked_range<SuiteSparse_long>& r) { 
+    void operator()(const tbb::blocked_range<Sparseint>& r) { 
       // closely resembles the original serial loop
-      int* Flag = new int[lhs_->m];
-      std::fill(Flag,Flag+lhs_->m,0);
-      std::vector<SuiteSparse_long> non_zero_rows;
-      for (auto i=0; i<=lhs_->n;++i){
-	if (lhs_->p[i]>0){
-	  non_zero_rows.reserve(lhs_->p[i]); //crude guess but useful to reduce memory reallocs
-	  break;
+
+      Sparseint* Flag = new Sparseint[lhs_->m];
+      std::fill(Flag,Flag+lhs_->m,-1);
+      
+      for (Sparseint col=r.begin(); col<r.end(); ++col){ // iterates over a subrange
+	Sparseint nz_in_this_col=0;
+
+	if (rhs_->p[col]!=rhs_->p[col+1]){//if col is not empty...
+	  for (Sparseint lp=lhs_->p[rhs_->i[rhs_->p[col]]];lp<lhs_->p[rhs_->i[rhs_->p[col]]+1];++lp){
+	    Flag[lhs_->i[lp]]=col;
+	    ++nz_in_this_col; 
+	  }
 	}
-      }
-      for (SuiteSparse_long col=r.begin(); col<r.end(); ++col){ // iterates over a subrange
-	SuiteSparse_long nz_in_this_col=0;
-	for (SuiteSparse_long rp=rhs_->p[col];rp<rhs_->p[col+1];++rp){
-	  //SuiteSparse_long j=rhs_->i[rp];
-	  for (SuiteSparse_long lp=lhs_->p[rhs_->i[rp]];lp<lhs_->p[rhs_->i[rp]+1];++lp){
-	    //SuiteSparse_long i=lhs_->i[lp];
-	    if (!Flag[lhs_->i[lp]]){
-	      Flag[lhs_->i[lp]]=1;
+	for (Sparseint rp=rhs_->p[col]+1;rp<rhs_->p[col+1];++rp){
+	  for (Sparseint lp=lhs_->p[rhs_->i[rp]];lp<lhs_->p[rhs_->i[rp]+1];++lp){
+	    //Sparseint i=lhs_->i[lp];
+	    if (Flag[lhs_->i[lp]]!=col){
+	      Flag[lhs_->i[lp]]=col;
 	      //++nz_;
 	      ++nz_in_this_col;
-	      non_zero_rows.push_back(lhs_->i[lp]); //record these to reset at end of cycle
 	    }
 	  }
 	}
 	ans_col_ptrs_[col+1]=nz_in_this_col;//thread safe because every col writes to a different memory location
-	//only reset the values we need to
-	for (auto element : non_zero_rows){
-	  Flag[element]=0;
-	}
-	non_zero_rows.clear(); //faster push back next time through, because less allocations need to occur.
       }
       delete[] Flag;
       nz_=ans_col_ptrs_[r.end()]-ans_col_ptrs_[r.begin()];
@@ -2010,22 +2005,22 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     const cs_cl* rhs_;
     bool NoSort_;
     cs_cl* ans_;
-    reduce_sparse(const cs_cl* lhs,const cs_cl* rhs,SuiteSparse_long* ans_col_ptrs,bool NoSort)  : lhs_(lhs),rhs_(rhs),NoSort_(NoSort),ans_(nullptr){
+    reduce_sparse(const cs_cl* lhs,const cs_cl* rhs,Sparseint* ans_col_ptrs,bool NoSort)  : lhs_(lhs),rhs_(rhs),NoSort_(NoSort),ans_(nullptr){
       ans_ = (cs_cl*)cs_cl_calloc(1, sizeof (cs_cl)); 
       ans_->m = lhs_->m;                             
       ans_->n = rhs_->n;
       ans_->nzmax = ans_col_ptrs[rhs_->n];
       ans_->nz = -1;            
       ans_->p = ans_col_ptrs;
-      ans_->i = (SuiteSparse_long*)cs_malloc (ans_->nzmax, sizeof (SuiteSparse_long));
+      ans_->i = (Sparseint*)cs_malloc (ans_->nzmax, sizeof (Sparseint));
       ans_->x = (std::complex<double>*)cs_malloc (ans_->nzmax, sizeof (std::complex<double>));
     }
     reduce_sparse(reduce_sparse& rb, tbb::split) : lhs_(rb.lhs_), rhs_(rb.rhs_),NoSort_(rb.NoSort_),ans_(rb.ans_){
     }
-    void operator()(const tbb::blocked_range<SuiteSparse_long>& r) { 
-      SuiteSparse_long start_col=r.begin();
-      SuiteSparse_long end_col;
-      for (SuiteSparse_long q=r.begin();q!=r.end();++q) end_col=q+1; //just in case r.end() doesn't have expected behaviour
+    void operator()(const tbb::blocked_range<Sparseint>& r) { 
+      Sparseint start_col=r.begin();
+      Sparseint end_col;
+      for (Sparseint q=r.begin();q!=r.end();++q) end_col=q+1; //just in case r.end() doesn't have expected behaviour
 
       cs_cl* local_answer(multiply_by_blocked_cols(lhs_,rhs_,start_col,end_col,ans_->p));//steals ans_->p to make new answer
       //feed_to_answer(local_answer,ans_,start_col);//moves to full answer and destroys local answer
@@ -2043,7 +2038,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 
   Sparseint* allocate_nonzero_totals(const cs_cl* A, const cs_cl* B){
     if (B->p[B->n]==0 || A->p[A->n]==0){ //epmty array!!
-      SuiteSparse_long* ans_col_ptrs_=(SuiteSparse_long*) cs_malloc(B->n+1,sizeof(SuiteSparse_long)); 
+      Sparseint* ans_col_ptrs_=(Sparseint*) cs_malloc(B->n+1,sizeof(Sparseint)); 
       std::fill(ans_col_ptrs_,ans_col_ptrs_+B->n+1,0.0);
       return ans_col_ptrs_;
     }
@@ -2053,7 +2048,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
       if (guess_chunksize<B->n){
 	//std::cout << "THREADED" <<std::endl;
 	reduce_nz nz_body(A,B);
-	tbb::parallel_reduce(tbb::blocked_range<SuiteSparse_long>(0,B->n), nz_body);
+	tbb::parallel_reduce(tbb::blocked_range<Sparseint>(0,B->n), nz_body);
 	//std::cout << 10000*B->n/(B->p[B->n]) << std::endl;
 	for (Sparseint c=1;c<=B->n;++c){//cumulative sum
 	  nz_body.ans_col_ptrs_[c]+=nz_body.ans_col_ptrs_[c-1];
@@ -2062,30 +2057,34 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
       }
 #endif
       //std::cout << "NOT THREADED" <<std::endl;
-      SuiteSparse_long* ans_col_ptrs_=(SuiteSparse_long*) cs_malloc(B->n+1,sizeof(SuiteSparse_long)); 
+      Sparseint* ans_col_ptrs_=(Sparseint*) cs_malloc(B->n+1,sizeof(Sparseint)); 
       ans_col_ptrs_[0]=0;
-      int* Flag = new int[A->m];
-      std::fill(Flag,Flag+A->m,0);
-      std::vector<SuiteSparse_long> non_zero_rows;
-      for (SuiteSparse_long col=0; col<B->n; ++col){ // iterates over a subrange
-	SuiteSparse_long nz_in_this_col=0;
-	for (SuiteSparse_long rp=B->p[col];rp<B->p[col+1];++rp){
-	  SuiteSparse_long j=B->i[rp];
-	  for (SuiteSparse_long lp=A->p[j];lp<A->p[j+1];++lp){
-	    SuiteSparse_long i=A->i[lp];
-	    if (!Flag[i]){
-	      Flag[i]=1;
+      Sparseint* Flag = new Sparseint[A->m];
+      std::fill(Flag,Flag+A->m,-1);
+      //std::vector<Sparseint> non_zero_rows;
+      for (Sparseint col=0; col<B->n; ++col){ // iterates over a subrange
+	Sparseint nz_in_this_col=0;
+
+	if (B->p[col]!=B->p[col+1]){
+	  Sparseint j=B->i[B->p[col]];
+	  for (Sparseint lp=A->p[j];lp<A->p[j+1];++lp){
+	    Sparseint i=A->i[lp];
+	    Flag[i]=col;
+	    ++nz_in_this_col;
+	  }
+	}
+
+	for (Sparseint rp=B->p[col]+1;rp<B->p[col+1];++rp){
+	  Sparseint j=B->i[rp];
+	  for (Sparseint lp=A->p[j];lp<A->p[j+1];++lp){
+	    Sparseint i=A->i[lp];
+	    if (Flag[i]!=col){
+	      Flag[i]=col;
 	      ++nz_in_this_col;
-	      non_zero_rows.push_back(i);
 	    }
 	  }
 	}
 	ans_col_ptrs_[col+1]=nz_in_this_col;//thread safe for TBB because every col writes to a different memory location
-	//only reset the values we need to
-	for (auto element : non_zero_rows){
-	  Flag[element]=0;
-	}
-	non_zero_rows.clear(); //faster push back next time through, because less allocations needs to occur.
       }
       delete[] Flag;
       for (Sparseint c=1;c<=B->n;++c){//cumulative sum
@@ -2130,12 +2129,12 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 	  SparseMatrix rhsTrans(rhs.copy_transpose()); //temp transpose
 	  col_ptrs=allocate_nonzero_totals(rhsTrans.m_array,lhsTrans.m_array);
 	  reduce_sparse body(rhsTrans.m_array,lhsTrans.m_array,col_ptrs,1); //don't sort rows
-	  tbb::parallel_reduce(tbb::blocked_range<SuiteSparse_long>(0,lhsTrans.m_array->n),body);
+	  tbb::parallel_reduce(tbb::blocked_range<Sparseint>(0,lhsTrans.m_array->n),body);
 	  return std::move(SparseMatrix(body.ans_,1).transpose()); //return the transpose
 	}
 	else {
 	  reduce_sparse body(lhs.m_array,rhs.m_array,col_ptrs,NoSort);
-	  tbb::parallel_reduce(tbb::blocked_range<SuiteSparse_long>(0,rhs.m_array->n),body);
+	  tbb::parallel_reduce(tbb::blocked_range<Sparseint>(0,rhs.m_array->n),body);
 	  return SparseMatrix(body.ans_,1);
 	}
       }
@@ -2149,8 +2148,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 
 	bool swap_and_transpose=NoSort ? 0 : (lhs.nz()+rhs.nz()<ans_nz);
 	Sparseint fdim= swap_and_transpose ? rhs.cols() : lhs.rows();
-	bool* Flag=new bool[fdim];
-	std::fill(Flag, Flag+fdim, 0);
+	
 	const SparseMatrix* Aptr=nullptr;
 	const SparseMatrix* Bptr=nullptr;
 	SparseMatrix* temp1=nullptr;
@@ -2170,16 +2168,28 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 	}
 	SparseMatrix ans(Aptr->rows(),Bptr->cols(),ans_nz,1);
 	ans_nz=0;
-	std::fill(Flag, Flag+Aptr->rows(), 0);
+	Sparseint* Flag=new Sparseint[fdim];
+	std::fill(Flag, Flag+Aptr->rows(),-1);
 	for (Sparseint k=0;k<Bptr->cols();++k){
 	  ans.put_p(k)=ans_nz;
-	  for (Sparseint rp=Bptr->get_p(k);rp<Bptr->get_p(k+1);++rp){
+	  
+	  //pull out first use of scatter for this col, as condition is automatically true.
+	  if (Bptr->get_p(k)!=Bptr->get_p(k+1)){
+	    for (Sparseint lp=Aptr->get_p(Bptr->get_i(Bptr->get_p(k)));lp<Aptr->get_p(Bptr->get_i(Bptr->get_p(k))+1);++lp){
+	      Sparseint i=Aptr->get_i(lp);
+	      Flag[i]=k;
+	      ans.put_i(ans_nz++)=i;
+	      W[i]=Aptr->get_x(lp)*Bptr->get_x(Bptr->get_p(k));
+	    }
+	  }
+
+	  for (Sparseint rp=(Bptr->get_p(k))+1;rp<Bptr->get_p(k+1);++rp){
 	    Sparseint j=Bptr->get_i(rp);
 	    std::complex<double> Bx=Bptr->get_x(rp);
 	    for (Sparseint lp=Aptr->get_p(j);lp<Aptr->get_p(j+1);++lp){
 	      Sparseint i=Aptr->get_i(lp);
-	      if (!Flag[i]){//don't have it yet...
-		Flag[i]=1;
+	      if (Flag[i]!=k){//don't have it yet...
+		Flag[i]=k;
 		ans.put_i(ans_nz++)=i;
 		W[i]=Aptr->get_x(lp)*Bx;
 	      }
@@ -2188,10 +2198,11 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 	      }
 	    }
 	  }
+
 	  for (Sparseint cp = ans.get_p(k) ; cp < ans_nz ; cp++){//gather
 	    Sparseint i = ans.get_i(cp) ;
 	    ans.put_x(cp) = W[i] ;
-	    Flag[i]=0;
+	    //Flag[i]=0;
 	  }
 	}
 	ans.put_p(Bptr->cols())=ans_nz;
