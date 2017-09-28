@@ -1443,6 +1443,19 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     Values.push_back(SortedValues[0].second);
     double kept_weight(SortedValues[0].second*SortedValues[0].second);
 
+    double max_trunc_error=1.0e-12;
+    double trunc_error=0.0;
+
+    size_t trunc_length=SortedValues.size();
+    
+    while (trunc_error < max_trunc_error && trunc_length>0){
+      trunc_error+=SortedValues[trunc_length-1].second*SortedValues[trunc_length-1].second;
+      --trunc_length;
+    }
+    ++trunc_length; //need trunc_error<max_trunc_error
+    if (trunc_length < length) length=trunc_length;
+    
+    
     if (SortedValues[length-1].second <= min_s_val*SortedValues.begin()->second && length>1){//if we are at a tiny s val, check for slightly larger 'degenerate' singular values and remove them
       //while (length>1 && ((SortedValues[length-2].second-SortedValues[length-1].second)/SortedValues[length-2].second <1.0e-3)){
       //first get rid of the tiny one
