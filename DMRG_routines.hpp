@@ -195,10 +195,10 @@ namespace ajaj {
   public:
     //steal resources from finite dmrg object if possible
     ExcitedStateFiniteDMRG(const std::string& Name, FiniteDMRG& FD, double Weight, DataOutput& resultsref) : SuperBlock(std::move(FD)),output_ref_(resultsref),BaseName_(Name),GSName_(ResetName(BaseName_,1)),HBlocksName_(GSName_),init_flag_(1),PBlocks_(1,ProjectorBlocks(HBlocksName_,getSpectrum(),size(),left_size(),middle_size(),Weight)) {}
-    void init(double chi, double smin);
+    void init(double chi, double smin, bool converge=1);
     void run(uMPXInt number_of_sweeps, uMPXInt chi, double smin);
-    Data move_right_two_vertex(uMPXInt chi=0, double smin=0.0);
-    Data move_left_two_vertex(uMPXInt chi=0, double smin=0.0);
+    Data move_right_two_vertex(uMPXInt chi=0, double smin=0.0, bool converge=1);
+    Data move_left_two_vertex(uMPXInt chi=0, double smin=0.0, bool converge=1);
 
     void next_state(double Weight){
       //push_back projectorblocks       //update name
@@ -232,7 +232,7 @@ namespace ajaj {
   MPX_matrix MakeDummyLeftBlock(const MPO_matrix& H, const State& TargetState);
   MPX_matrix MakeDummyRightBlock(const MPO_matrix& H, const State& TargetState);
   /** Solves the superblock Hamiltonian eigen problem, output requires SVD. */
-  MPX_matrix TwoVertexWavefunction(const MPX_matrix& LeftBlock, const MPO_matrix& H, const MPX_matrix& RightBlock, const std::vector<ProjectorBlocks>* ProjectorBlocksPtr, MPXInt NumVertices, Data& result, SparseMatrix* guessptr=nullptr);
+  MPX_matrix TwoVertexWavefunction(const MPX_matrix& LeftBlock, const MPO_matrix& H, const MPX_matrix& RightBlock, const std::vector<ProjectorBlocks>* ProjectorBlocksPtr, MPXInt NumVertices, Data& result, SparseMatrix* guessptr=nullptr, bool converge=1);
   /** checks overlap between prediction vector and new wavefunction */
   double CheckConvergence(const Prediction& guess,const std::vector<double>& Lambda);
   double CheckConvergence(const Prediction& guess,const MPSDecomposition& Decomp);
@@ -260,7 +260,7 @@ namespace ajaj {
     //TwoVertexComponents(const MPX_matrix& L, const MPO_matrix& HMPO, const MPX_matrix& R, const State* StatePtr) : TwoVertexComponents(L,HMPO,R,nullptr,StatePtr) {}
 
 
-    SparseHED HED(MPXInt numevals, char which[3],const SparseMatrix* initial=NULL) const;
+    SparseHED HED(MPXInt numevals, char which[3],const SparseMatrix* initial=nullptr, bool converge=1) const;
     MPXInt length()const {return m_length;}
   private:
     uMPXInt m_length;

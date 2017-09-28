@@ -451,7 +451,7 @@ namespace ajaj {
     }
   }
 
-  void ExcitedStateFiniteDMRG::init(double chi, double smin){
+  void ExcitedStateFiniteDMRG::init(double chi, double smin, bool converge){
     //first step
     //LeftBlock and RightBlock are correct? but we need to solve centre and store.
     const EigenStateArray& spectrum=getH().GetPhysicalSpectrum();
@@ -464,7 +464,7 @@ namespace ajaj {
     //not the best guess, as we want something orthogonal to this...
     SparseMatrix Guess(reshape_to_vector(contract(CentralDecomposition.LeftMatrix,0,contract(MPX_matrix(CentralDecomposition.basis(),CentralDecomposition.RightMatrix.Index(0),CentralDecomposition.Values),0,CentralDecomposition.RightMatrix,0,contract10),0,contract20)));
 
-    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),&PBlocks_,size(),results,&Guess),chi,smin);
+    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),&PBlocks_,size(),results,&Guess,converge),chi,smin);
     CentralDecomposition.SquareRescale(1.0);
     CentralDecomposition.store(getName(),left_size()+1,right_size()+1);
 
@@ -476,7 +476,7 @@ namespace ajaj {
     output_ref_.push(results);
   }
 
-  Data ExcitedStateFiniteDMRG::move_right_two_vertex(uMPXInt chi, double smin){
+  Data ExcitedStateFiniteDMRG::move_right_two_vertex(uMPXInt chi, double smin, bool converge){
     //if this is the initial run through, or we need a dummy block only, we get Hamiltonian blocks from GS storage
     std::string StorageName;
     if (right_size()==1){//just need a dummy block
@@ -508,11 +508,12 @@ namespace ajaj {
     results.Real_measurements.push_back(double(PBlocks_.size()));
     std::cout << "Position: " << left_size() << " " << right_size() << std::endl;
     previous_lambda_=CentralDecomposition.Values;
+    
     std::stringstream namestream;
     namestream << StorageName << "_Right_" << right_size()+1 << ".MPS_matrix";
     pred_=MakeRFinitePrediction(CentralDecomposition,load_MPS_matrix(namestream.str(),basis()));
 
-    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),&PBlocks_,size(),results,&(pred_.Guess)),chi,right_size()<=1 ? -0.0 : smin);
+    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),&PBlocks_,size(),results,&(pred_.Guess),converge),chi,right_size()<=1 ? -0.0 : smin);
     CentralDecomposition.SquareRescale(1.0);
     CentralDecomposition.store(getName(),left_size()+1,right_size()+1,left_size()==right_size());
 
@@ -527,7 +528,7 @@ namespace ajaj {
     return results;
   }
 
-  Data ExcitedStateFiniteDMRG::move_left_two_vertex(uMPXInt chi, double smin){
+  Data ExcitedStateFiniteDMRG::move_left_two_vertex(uMPXInt chi, double smin, bool converge){
     //if this is the initial run through, or we need a dummy block only, we get blocks from GS storage
     //first pass to left, we will have the left blocks for the right hand side only
     std::string StorageName;
@@ -567,7 +568,7 @@ namespace ajaj {
     namestream << PredictionName << "_Left_" << left_size()+1 << ".MPS_matrix";
     pred_=MakeLFinitePrediction(CentralDecomposition,load_MPS_matrix(namestream.str(),basis()));
 
-    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),&PBlocks_,size(),results,&(pred_.Guess)),chi,left_size()<=1 ? -0.0 : smin);
+    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),&PBlocks_,size(),results,&(pred_.Guess),converge),chi,left_size()<=1 ? -0.0 : smin);
     CentralDecomposition.SquareRescale(1.0);
     CentralDecomposition.store(getName(),left_size()+1,right_size()+1,left_size()==right_size());
 
@@ -583,7 +584,9 @@ namespace ajaj {
 
   void ExcitedStateFiniteDMRG::run(uMPXInt num_sweeps, uMPXInt chi, double smin){
     
-    if (init_flag_) init(chi,(num_sweeps>1 && size()!=2) ? 0.0 : smin);
+    if (init_flag_) init(chi,smin, 1/* (num_sweeps>1 && size()!=2) ? 0 : 1*/);
+
+    //    if (init_flag_) init(chi,(num_sweeps>1 && size()!=2) ? 0.0 : smin, (num_sweeps>1 && size()!=2) ? 0 : 1);
     std::cout << "Performing finite sweeps" << std::endl;
     //we start at the middle of the system
     //in case we need excited states later, we store MPS matrices as well as the L and R blocks.
@@ -592,23 +595,21 @@ namespace ajaj {
       std::cout << "Skipping finite sweeps, only two vertices..." << std::endl;
     }
     else {
-
-      
       for (uMPXInt n=num_sweeps;n>0;--n){//sweep towards right
       //if we request multiple sweeps, use first sweep as a quick warmup, with small bond dimension!
-	uMPXInt smin_local=(num_sweeps>1 && n==num_sweeps) ? 0.0 : smin;
-	
+	double smin_local=smin;//(num_sweeps>1 && n==num_sweeps) ? 0.0 : smin;
+	bool converge= 1;//(num_sweeps>1 && n==num_sweeps) ? 0 : 1; //if we have more than one sweep, run the first sweep with minimal convergence
 	
 	double cumulative_truncation=0.0;
 	std::cout << std::endl << "Starting sweep: " << num_sweeps-n+1<< std::endl;
 	for (uMPXInt r=right_size();r>0;--r){
-	  Data this_step(move_right_two_vertex(chi,smin_local));
+	  Data this_step(move_right_two_vertex(chi,smin_local,converge));
 	  //output_ref_.push(this_step);//at midpoint, push output
 
 	  cumulative_truncation+=CentralDecomposition.Truncation;
 	}
 	for (uMPXInt l=left_size();l>0;--l){
-	  Data this_step(move_left_two_vertex(chi,smin_local));
+	  Data this_step(move_left_two_vertex(chi,smin_local,converge));
 	  //output_ref_.push(this_step);//at midpoint, push output
 	    
 	  if (left_size()==right_size()) {
@@ -620,7 +621,7 @@ namespace ajaj {
 	if (n==num_sweeps) init_flag_=0; //first time through, turn off init here as we have formed all blocks once...
 	
 	for (uMPXInt r=right_size();r>left_size();--r){
-	  Data this_step(move_right_two_vertex(chi,smin_local));
+	  Data this_step(move_right_two_vertex(chi,smin));
 	  //output_ref_.push(this_step);//at midpoint, push output
 
 	  if (left_size()==right_size()) {
@@ -769,7 +770,7 @@ namespace ajaj {
     return Prediction(reshape_to_vector(contract(reorder(contract(MPX_matrix(Decomp.RightMatrix.basis(),Decomp.LeftMatrix.Index(2),Decomp.Values),0,Decomp.RightMatrix,0,contract10),0,reorder102,2),0,B,0,contract20)));
   }
 
-  MPX_matrix TwoVertexWavefunction(const MPX_matrix& LB, const MPO_matrix& H, const MPX_matrix& RB, const std::vector<ProjectorBlocks>* ProjectorBlocksPtr, MPXInt NumVertices, Data& result, SparseMatrix* guessptr){
+  MPX_matrix TwoVertexWavefunction(const MPX_matrix& LB, const MPO_matrix& H, const MPX_matrix& RB, const std::vector<ProjectorBlocks>* ProjectorBlocksPtr, MPXInt NumVertices, Data& result, SparseMatrix* guessptr, bool converge){
     //Need to figure out 'length' then choose strategy appropriately.
     //form LeftPart, RightPart
 #ifdef TIMING
@@ -791,7 +792,7 @@ namespace ajaj {
     auto tD1 = std::chrono::high_resolution_clock::now();
 #endif
 
-    SparseHED decomp(stuff.HED(num_to_find,SMALLESTREAL,guessptr));
+    SparseHED decomp(stuff.HED(num_to_find,SMALLESTREAL,guessptr,converge));
 #ifdef TIMING
     auto tD2 = std::chrono::high_resolution_clock::now();
     decomp_time_millisecs+=std::chrono::duration_cast<std::chrono::milliseconds>(tD2-tD1).count();
@@ -886,7 +887,7 @@ namespace ajaj {
     }
   };
 
-  SparseHED TwoVertexComponents::HED(MPXInt numevals, char which[3],const SparseMatrix* initial) const {
+  SparseHED TwoVertexComponents::HED(MPXInt numevals, char which[3],const SparseMatrix* initial,bool converge) const {
     //set up workspace (Evals, Evecs) SparseHED
     uMPXInt fulldim(this->length());
     std::cout <<"Eigensolver for matrix of length " << fulldim << std::endl;
@@ -918,7 +919,7 @@ namespace ajaj {
       std::complex<double>* Evals = new std::complex<double>[numevals];
       SparseHED ans(fulldim,numevals);
       std::cout <<"Calling arpack_eigs()..." << std::endl;
-      arpack::arpack_eigs<TwoVertexComponents,SparseVectorWithRestriction> eigensystem(this,&TwoVertexMPOMPSMultiply,allowed_indices.size(),initial ? &guess_struct : NULL,&ConvertSparseVectorWithRestriction,numevals,which,Evals,Evecs);
+      arpack::arpack_eigs<TwoVertexComponents,SparseVectorWithRestriction> eigensystem(this,&TwoVertexMPOMPSMultiply,allowed_indices.size(),initial ? &guess_struct : NULL,&ConvertSparseVectorWithRestriction,numevals,which,Evals,Evecs,converge ? -0.0 : 1.0e-8);
       if (eigensystem.error_status()) {std::cout << "Error with tensor arpack" << std::endl;exit(1);}
 
       for (size_t v=0;v<static_cast<size_t>(numevals);++v){

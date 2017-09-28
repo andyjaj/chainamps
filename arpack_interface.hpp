@@ -88,7 +88,7 @@ namespace arpack {
     arpack_workspace m_workspace; //workspace storage objects and params
 
     //need to set up workspace and get pointers to array (or components to make array) and ptrs to output containers
-    arpack_eigs(const ArrayType* array_stuff, void (*MV)(const ArrayType*,std::complex<double>*,std::complex<double>*), arpack_int length, GuessType* initial_guess, void (*converter)(GuessType*,std::complex<double>*), arpack_int num_e_vals, char which_e_vals[3], std::complex<double> *Evals, std::complex<double> *Evecs=NULL);
+    arpack_eigs(const ArrayType* array_stuff, void (*MV)(const ArrayType*,std::complex<double>*,std::complex<double>*), arpack_int length, GuessType* initial_guess, void (*converter)(GuessType*,std::complex<double>*), arpack_int num_e_vals, char which_e_vals[3], std::complex<double> *Evals, std::complex<double> *Evecs=nullptr, double tol=-0.0);
     ~arpack_eigs(){ delete[] resid; }
 
     void do_znaupd();
@@ -170,7 +170,7 @@ namespace arpack {
   }
   
   template <typename ArrayType, typename GuessType>
-  arpack_eigs<ArrayType,GuessType>::arpack_eigs(const ArrayType* array_stuff, void (*MV)(const ArrayType*,std::complex<double>*,std::complex<double>*), arpack_int length, GuessType* initial_guess, void (*converter)(GuessType*,std::complex<double>*), arpack_int num_e_vals, char which_e_vals[3], std::complex<double> *Evals, std::complex<double> *Evecs) : m_array_stuff(array_stuff), m_MV(MV), m_length(length), m_initial_guess(initial_guess),m_converter(converter),m_evals(Evals),m_evecs(Evecs),m_workspace(m_length,num_e_vals,which_e_vals,Evals,Evecs ? 1 : 0, Evecs,NULL),m_cumulative_iterations(0){
+  arpack_eigs<ArrayType,GuessType>::arpack_eigs(const ArrayType* array_stuff, void (*MV)(const ArrayType*,std::complex<double>*,std::complex<double>*), arpack_int length, GuessType* initial_guess, void (*converter)(GuessType*,std::complex<double>*), arpack_int num_e_vals, char which_e_vals[3], std::complex<double> *Evals, std::complex<double> *Evecs, double tol) : m_array_stuff(array_stuff), m_MV(MV), m_length(length), m_initial_guess(initial_guess),m_converter(converter),m_evals(Evals),m_evecs(Evecs),m_workspace(m_length,num_e_vals,which_e_vals,Evals,Evecs ? 1 : 0, Evecs,nullptr,tol), m_cumulative_iterations(0){
     //form resid
     resid = new std::complex<double>[m_length];
     m_workspace.resid=resid;
@@ -205,7 +205,7 @@ namespace arpack {
 	std::cout << iterations() << " Arnoldi iterations taken" << std::endl;
 	if (iterations()<m_length/*5*m_workspace.maxiter*/){
 	  std::cout << "Poor convergence, altering ncv..." << std::endl;
-	  ncv_diff+=1;
+	  ncv_diff+=3;
 	}
 	else {
 	  std::cout << "Too many arpack iterations, aborting..." << std::endl;

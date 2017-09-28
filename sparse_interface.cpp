@@ -1933,7 +1933,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     Sparseint* w= new Sparseint[m];
     std::fill(w,w+m,-1);
     //Sparseint* w = (Sparseint*)cs_calloc (m, sizeof (Sparseint));
-    std::complex<double>* x = (std::complex<double>*)cs_malloc (m, sizeof (std::complex<double>));
+    std::complex<double>* x = new std::complex<double>[m];// (std::complex<double>*)cs_malloc (m, sizeof (std::complex<double>));
     C = cs_cl_spalloc (m, end-start, nzmax, 1, 0); //we have already figured out the number of nonzeros, so can do the correct allocation now       
     Sparseint* Cp = C->p;
     for (Sparseint j = start; j < end; j++){
@@ -1974,7 +1974,8 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     assert(nz==nzmax);
     //cs_free(w);
     delete[] w;
-    cs_free(x);
+    delete[] x;
+    //cs_free(x);
     return C;    
   }
 
@@ -2152,6 +2153,9 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     else {
 #if defined(USETBB)
       {
+#ifndef NDEBUG
+	tbb::task_scheduler_init init(1);
+#endif
 	bool swap_and_transpose=NoSort ? 0 : (lhs.nz()+rhs.nz()<col_ptrs[rhs.cols()]);
 	if (swap_and_transpose){
 	  cs_free(col_ptrs); //need the swapped transpose version...
