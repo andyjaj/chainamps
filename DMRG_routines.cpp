@@ -584,7 +584,7 @@ namespace ajaj {
 
   void ExcitedStateFiniteDMRG::run(uMPXInt num_sweeps, uMPXInt chi, double smin){
     
-    if (init_flag_) init(chi,smin, 1/* (num_sweeps>1 && size()!=2) ? 0 : 1*/);
+    if (init_flag_) init(chi,smin, 1/*(num_sweeps>1 && size()!=2) ? 0 : 1*/);
 
     //    if (init_flag_) init(chi,(num_sweeps>1 && size()!=2) ? 0.0 : smin, (num_sweeps>1 && size()!=2) ? 0 : 1);
     std::cout << "Performing finite sweeps" << std::endl;
@@ -919,7 +919,7 @@ namespace ajaj {
       std::complex<double>* Evals = new std::complex<double>[numevals];
       SparseHED ans(fulldim,numevals);
       std::cout <<"Calling arpack_eigs()..." << std::endl;
-      arpack::arpack_eigs<TwoVertexComponents,SparseVectorWithRestriction> eigensystem(this,&TwoVertexMPOMPSMultiply,allowed_indices.size(),initial ? &guess_struct : NULL,&ConvertSparseVectorWithRestriction,numevals,which,Evals,Evecs,converge ? -0.0 : 1.0e-8);
+      arpack::arpack_eigs<TwoVertexComponents,SparseVectorWithRestriction> eigensystem(this,&TwoVertexMPOMPSMultiply,allowed_indices.size(),initial ? &guess_struct : NULL,&ConvertSparseVectorWithRestriction,numevals,which,Evals,Evecs,converge ? -0.0 : 1.0e-6);
       if (eigensystem.error_status()) {std::cout << "Error with tensor arpack" << std::endl;exit(1);}
 
       for (size_t v=0;v<static_cast<size_t>(numevals);++v){
