@@ -29,10 +29,10 @@ int main(int argc, char** argv){
     ajaj::iDMRG infvol(std::string("GroundState"),myModel.H_MPO,TargetState,results);
 
     ajaj::uMPXInt CHI(RuntimeArgs.chi());
-    double minS(0.0);
+    double trunc(RuntimeArgs.trunc());
     ajaj::uMPXInt steps(RuntimeArgs.number_of_steps());
 
-    infvol.run(steps > 2 ? 2 : steps ,convergence_test,CHI,minS);
+    infvol.run(steps > 2 ? 2 : steps ,convergence_test,CHI,trunc);
     //done for at least "steps" number of steps
     //now do orthogs and averaging
     //left orthogonalise the unit cell and produce the new singular values for the infinite state
@@ -48,7 +48,7 @@ int main(int argc, char** argv){
     ajaj::uMPXInt VarCHI(CHI);
 
     for (ajaj::uMPXInt r=0;r< (steps>2 ? steps-2 : 0) ;++r){
-      infvol.run(1,-0.0,VarCHI,minS);
+      infvol.run(1,-0.0,VarCHI,trunc);
 
 #ifdef TIMING
       ajaj::dmrg_print_time_info();

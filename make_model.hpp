@@ -178,20 +178,6 @@ namespace ajaj{
 	    std::vector<CouplingArray> cpas;
 	    std::vector<double> times;
 
-	    /*VertexParameterArray cp;
-	      {
-	      std::istringstream iss2(stringbuffer.at(2));
-	      std::string word;
-	      while (iss2 >> word){
-	      //use word
-	      std::string paramname(word);
-	      //advance
-	      if (!(iss2 >> word)) break;
-	      double paramvalue(stod(word));
-	      cp.push_back(VertexParameter(paramname,paramvalue));
-	      }
-	      }*/
-
 	    for (auto c_idx=2;c_idx<stringbuffer.size();++c_idx){
 	      std::istringstream css(stringbuffer.at(c_idx));
 	      css >> std::ws;
@@ -234,9 +220,7 @@ namespace ajaj{
 		std::cout << c <<std::endl;
 	      }
 	    }
-	    /*for (auto&& p : cp){
-	      p.print();
-	      }*/
+	    
 	    else {
 	      std::cout << "No inter vertex couplings defined! Are you sure you meant for this? Possible format error in input file.";
 	    }
@@ -481,7 +465,7 @@ namespace ajaj{
 
     QNCombinations differencecombinations(v.basis(),1); //1 means use difference
 
-    MPXInt lineardim((2+InterVertexCouplings.size()*differencecombinations.size())*v.basis().size());
+    MPXInt lineardim=(2+InterVertexCouplings.size()*differencecombinations.size())*v.basis().size();
     SparseMatrix harray(lineardim,lineardim,(2+InterVertexCouplings.size())*v.basis().size());
     MPXInt offset_to_last_block((1+InterVertexCouplings.size()*differencecombinations.size())*v.basis().size());
     //std::cout << "offset " << offset_to_last_block<<std::endl;

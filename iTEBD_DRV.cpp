@@ -29,7 +29,7 @@ int main(int argc, char** argv){
 #endif
 
     ajaj::uMPXInt CHI(RuntimeArgs.chi());
-    double minS(1.0e-14);
+    double trunc(RuntimeArgs.trunc());
     ajaj::uMPXInt number_of_time_steps(RuntimeArgs.number_of_steps());
     ajaj::uMPXInt trotter_order(RuntimeArgs.trotter_order());
     ajaj::uMPXInt measurement_interval(RuntimeArgs.measurement_interval());
@@ -79,7 +79,7 @@ int main(int argc, char** argv){
     if (!myModel.times().size()){ //need this for builtin models, with old style coupling params
       std::cout <<"Evolution hamiltonian is static." <<std::endl;
       ajaj::iTEBD infrun(myModel.H_MPO,Initial,time_step_size,results,InitialStateName,trotter_order);
-      infrun.evolve(number_of_time_steps,measured_operators,CHI/*bond dimension*/,minS/*min s val*/,measurement_interval);
+      infrun.evolve(number_of_time_steps,measured_operators,CHI/*bond dimension*/,trunc,measurement_interval);
       return 0;
     }
     else {
@@ -95,7 +95,7 @@ int main(int argc, char** argv){
       while (current_step_size_1>time_step_size){current_step_size_1=ramp_step_size_1/(++num_1);}
       if (num_1>number_of_time_steps) num_1=number_of_time_steps;
       ajaj::iTEBD infrun(myModel.H_MPO,Initial,current_step_size_1,results,InitialStateName,trotter_order);
-      infrun.evolve(num_1,measured_operators,CHI/*bond dimension*/,minS/*min s val*/,measurement_interval);
+      infrun.evolve(num_1,measured_operators,CHI/*bond dimension*/,trunc,measurement_interval);
       number_of_time_steps-=num_1;
       ++ramp_step;
 
@@ -108,7 +108,7 @@ int main(int argc, char** argv){
 	if (num>number_of_time_steps) num=number_of_time_steps;
 
 	infrun.change_bond_operator(myModel.change_H_MPO(myModel.coupling_arrays()[ramp_step-1]),current_step_size);
-	infrun.evolve(num,measured_operators,CHI/*bond dimension*/,minS/*min s val*/,measurement_interval);
+	infrun.evolve(num,measured_operators,CHI/*bond dimension*/,trunc,measurement_interval);
 	number_of_time_steps-=num;
 	++ramp_step;
       }
@@ -116,7 +116,7 @@ int main(int argc, char** argv){
       if (number_of_time_steps>0){
 	std::cout <<"End of time dependent hamiltonian stage." <<std::endl;
 	infrun.change_bond_operator(myModel.change_H_MPO(myModel.coupling_arrays()[ramp_step-1]),time_step_size);
-	infrun.evolve(number_of_time_steps,measured_operators,CHI/*bond dimension*/,minS/*min s val*/,measurement_interval);
+	infrun.evolve(number_of_time_steps,measured_operators,CHI/*bond dimension*/,trunc,measurement_interval);
       }
 
       return 0;

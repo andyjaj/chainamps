@@ -129,10 +129,10 @@ namespace ajaj {
 
     double getTruncation() const {return CentralDecomposition.Truncation;}
 
-    virtual Data initialise(uMPXInt chi=0, double smin=0.0); //two vertex initialisation, returns some two vertex measurements
-    virtual Data grow_two_vertex(uMPXInt chi=0, double smin=0.0);
-    virtual Data move_right_two_vertex(uMPXInt chi=0, double smin=0.0);
-    virtual Data move_left_two_vertex(uMPXInt chi=0, double smin=0.0);
+    virtual Data initialise(uMPXInt chi=0, double max_trun=0.0); //two vertex initialisation, returns some two vertex measurements
+    virtual Data grow_two_vertex(uMPXInt chi=0, double truncation=0.0);
+    virtual Data move_right_two_vertex(uMPXInt chi=0, double truncation=0.0);
+    virtual Data move_left_two_vertex(uMPXInt chi=0, double truncation=0.0);
   };
 
   class ProjectorBlocks : public BlocksStructure{
@@ -167,21 +167,21 @@ namespace ajaj {
     DataOutput& output_ref_;
   public:
     iDMRG(const std::string& Name, const MPO_matrix& H, const State& TargetState, DataOutput& resultsref) : SuperBlock(Name,H,TargetState),output_ref_(resultsref) {};
-    void run(uMPXInt number_of_steps=0, double convergence_criterion=0.0,  uMPXInt chi=0, double smin=0.0); /**< Perform infinite algorithm growth steps*/
+    void run(uMPXInt number_of_steps=0, double convergence_criterion=0.0,  uMPXInt chi=0, double truncation=0.0); /**< Perform infinite algorithm growth steps*/
     double fidelity() const {return fidelity_;}
   };
 
   class FiniteDMRG : public SuperBlock {
   private:
     double chi_;
-    double smin_;
+    double truncation_;
     DataOutput& output_ref_;
   public:
     FiniteDMRG(SuperBlock& previous, DataOutput& resultsref) : SuperBlock(std::move(previous)),output_ref_(resultsref) {}
     FiniteDMRG(iDMRG& infrun, DataOutput& resultsref) : SuperBlock(std::move(infrun)),output_ref_(resultsref) {}
-    void run(uMPXInt num_sweeps, uMPXInt chi=0, double smin=0.0);
+    void run(uMPXInt num_sweeps, uMPXInt chi=0, double truncation=0.0);
     double chi() const {return chi_;}
-    double smin() const {return smin_;}
+    double truncation() const {return truncation_;}
   };
 
   class ExcitedStateFiniteDMRG : public SuperBlock {
@@ -195,10 +195,10 @@ namespace ajaj {
   public:
     //steal resources from finite dmrg object if possible
     ExcitedStateFiniteDMRG(const std::string& Name, FiniteDMRG& FD, double Weight, DataOutput& resultsref) : SuperBlock(std::move(FD)),output_ref_(resultsref),BaseName_(Name),GSName_(ResetName(BaseName_,1)),HBlocksName_(GSName_),init_flag_(1),PBlocks_(1,ProjectorBlocks(HBlocksName_,getSpectrum(),size(),left_size(),middle_size(),Weight)) {}
-    void init(double chi, double smin, bool converge=1);
-    void run(uMPXInt number_of_sweeps, uMPXInt chi, double smin);
-    Data move_right_two_vertex(uMPXInt chi=0, double smin=0.0, bool converge=1);
-    Data move_left_two_vertex(uMPXInt chi=0, double smin=0.0, bool converge=1);
+    void init(double chi, double truncation, bool converge=1);
+    void run(uMPXInt number_of_sweeps, uMPXInt chi, double truncation);
+    Data move_right_two_vertex(uMPXInt chi=0, double truncation=0.0, bool converge=1);
+    Data move_left_two_vertex(uMPXInt chi=0, double truncation=0.0, bool converge=1);
 
     void next_state(double Weight){
       //push_back projectorblocks       //update name
@@ -214,7 +214,7 @@ namespace ajaj {
   /** Form a right end, open boundary conditions, Hamiltonian MPO_matrix. The rightmost matrix index will be a dummy. */
   inline MPO_matrix RightOpenBCHamiltonian(const MPO_matrix& H){return H.ExtractSubMPX(std::vector<MPXPair>(1,MPXPair(3,0)));}
   /** Do an SVD, with optional truncation, on an MPX_matrix object (with two physical indices and two matrix indices), forming two new MPS_matrix objects.*/
-  inline MPSDecomposition TwoVertexSVD(const MPX_matrix& M, size_t bond_dimension=0, double min_s_val=0.0){return MPSDecomposition(M.SVD(bond_dimension,min_s_val));}
+  inline MPSDecomposition TwoVertexSVD(const MPX_matrix& M, size_t bond_dimension=0, double truncation=0.0){return MPSDecomposition(M.SVD(bond_dimension,truncation));}
   /** Special initial left block with dummy indices, used for first DMRG step.*/
   MPX_matrix MakeInitialLeftBlock(const MPO_matrix& LeftH, const MPS_matrix& A);
   MPX_matrix MakeInitialRightBlock(const MPO_matrix& RightH, const MPS_matrix& B);

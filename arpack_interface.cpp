@@ -24,7 +24,7 @@ namespace arpack {
   void arpack_workspace::init(){
       
       ldv = n;
-      maxiter= 50;
+      maxiter = 50;
       ido = 0;
       iparam = new arpack_int[11];
       iparam[0] = 1;

@@ -87,7 +87,7 @@ private:
   const std::string MPSName_;
   const EigenStateArray& Basis_;
   const uMPXInt NumVertices_;
-  MPX_matrix SingleVertexOp_; //for open boundary conditions
+  MPO_matrix SingleVertexOp_; //for open boundary conditions
   TrotterDecomposition m_EvolutionOperators;
   bool GoodInitial_;
 
@@ -111,7 +111,7 @@ public:
 
   MPX_matrix MakeBondHamiltonian(const MPO_matrix& H); //Returns part of hamiltonian that refers to a single bond (no double counting of vertex part).
   MPX_matrix MakeBondEvolutionOperator(const MPX_matrix& BondH, double timestep);//Forms exponential bond update operator
-  MPX_matrix MakeSingleSiteEvolutionOperator(const MPO_matrix& H, double timestep);
+  MPO_matrix MakeSingleSiteEvolutionOperatorFromLowTriMPO(const MPO_matrix& H_MPO, double timestep);
 
 }
 

@@ -76,7 +76,15 @@ namespace ajaj{
       return H_MPO;
     }
 
+    //MPO_matrix H_local() const;
+
   };
+
+  /*MPO_matrix Model::H_local() const {
+    MPXInt dim=H_MPO.Index(1).size()*H_MPO.basis().size();
+    return H_MPO.ExtractMPOBlock(std::pair<ajaj::MPXInt,ajaj::MPXInt>(dim-1-H_MPO.basis().size(),dim-1),std::pair<ajaj::MPXInt,ajaj::MPXInt>(0,H_MPO.basis().size()-1));
+
+  }*/
 
   std::string trim(const std::string& s){
     size_t start = s.find_first_not_of(' ');

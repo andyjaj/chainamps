@@ -181,7 +181,7 @@ namespace ajaj {
 
   };
 
-  enum optionIndex {UNKNOWN,CHI,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET,FINITE_MEASUREMENT,NEV,ENTANGLEMENT,VERTEX_ENTANGLEMENT,C_SPECIFIER,TIMEFILE};
+  enum optionIndex {UNKNOWN,CHI,TRUNC,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET,FINITE_MEASUREMENT,NEV,ENTANGLEMENT,VERTEX_ENTANGLEMENT,C_SPECIFIER,TIMEFILE};
 
   const option::Descriptor store_usage[2] =
     {
@@ -190,40 +190,46 @@ namespace ajaj {
       { 0, 0, 0, 0, 0, 0 }
     };
 
-  const option::Descriptor iDMRG_usage[5] =
+  const option::Descriptor iDMRG_usage[6] =
     {
-      {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: iDMRG_DRV.bin [OPTIONS] <model_filename>"},
-      {CHI,0,"B","bond-dimension",Arg::PositiveNumeric,"  -B <number>, \t--bond-dimension=<number>"
+      {UNKNOWN, 0,"", "",Arg::Unknown, "USAGE: iDMRG_DRV.bin [OPTIONS] <model_filename>"},
+      {CHI,0,"B","bond-dimension",Arg::PositiveNumeric,"  -B <number>, --bond-dimension=<number>"
        "  \tThe maximum bond dimension, >= 0. If 0, then ignored." },
-      {NUMBER_OF_STEPS,0,"N","number-of-steps",Arg::PositiveNumeric,"  -N <number>, \t--number-of-steps=<number>"
+      {TRUNC,0,"e","truncation-error",Arg::PositiveDouble,"  -e <number>, --truncation-error=<number>"
+       "  \tThe allowed truncation error, >= 0." },
+      {NUMBER_OF_STEPS,0,"N","number-of-steps",Arg::PositiveNumeric,"  -N <number>, --number-of-steps=<number>"
        "  \tThe number of infinite volume steps, >= 0" },
-      {TARGET,0,"T","target-charges",Arg::CommaSepShorts,"  -T <number>,<number>,<number>, \t--target-charges=<n>,<n>,<n>"
+      {TARGET,0,"T","target-charges",Arg::CommaSepShorts,"  -T <number>,<number>,<number>, --target-charges=<n>,<n>,<n>"
        "  \t Charges to target for the unit cell."},
       { 0, 0, 0, 0, 0, 0 }
     };
 
-  const option::Descriptor fDMRG_usage[7] =
+  const option::Descriptor fDMRG_usage[8] =
     {
       {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: fDMRG_DRV.bin [OPTIONS] <model_filename> <number of vertices/chains> \n  <number of vertices/chains> must be EVEN.\n"
 	"Options:"},
-      {CHI,0,"B","bond-dimension",Arg::PositiveNumeric,"  -B <number>, \t--bond-dimension=<number>"
+      {CHI,0,"B","bond-dimension",Arg::PositiveNumeric,"  -B <number>, --bond-dimension=<number>"
        "  \tThe maximum bond dimension, >= 0. If 0, then ignored." },
-      {NUMBER_OF_EXCITED,0,"X","excited-states",Arg::PositiveNumeric,"  -X <number>, \t--excited-states=<number>"
+      {TRUNC,0,"e","truncation-error",Arg::PositiveDouble,"  -e <number>, --truncation-error=<number>"
+       "  \tThe allowed truncation error >= 0." },
+      {NUMBER_OF_EXCITED,0,"X","excited-states",Arg::PositiveNumeric,"  -X <number>, --excited-states=<number>"
        "  \tThe number of excited states to calculate, >= 0. If this is specified but a projective weight factor is not, then a default value of 100.0 is used." },
-      {NUMBER_OF_SWEEPS,0,"F","finite-size-sweeps",Arg::PositiveNumeric,"  -F <number>, \t--finite-size-sweeps=<number>"
+      {NUMBER_OF_SWEEPS,0,"F","finite-size-sweeps",Arg::PositiveNumeric,"  -F <number>, --finite-size-sweeps=<number>"
        "  \tThe number of finite size sweeps to perform, >= 0" },
-      {WEIGHT_FACTOR,0,"W","weight-factor",Arg::PositiveDouble,"  -W <number>, \t--weight-factor=<number>"
+      {WEIGHT_FACTOR,0,"W","weight-factor",Arg::PositiveDouble,"  -W <number>, --weight-factor=<number>"
        "  \tThe weight factor if calculating excited states. Must be > 0. Specifying this indicates that the number of requested excited states is at least 1." },
-      {TARGET,0,"T","target-charges",Arg::CommaSepShorts,"  -T <number>,<number>,<number>, \t--target-charges=<n>,<n>,<n>"
+      {TARGET,0,"T","target-charges",Arg::CommaSepShorts,"  -T <number>,<number>,<number>, --target-charges=<n>,<n>,<n>"
        "  \tCharges for target state."},
       { 0, 0, 0, 0, 0, 0 }
     };
 
-  const option::Descriptor iTEBD_usage[9] =
+  const option::Descriptor iTEBD_usage[10] =
     {
       {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: iTEBD_DRV.bin [-B <number> -n <number> -s <number> -O <number>] <model_filename>"},
       {CHI,0,"B","bond-dimension",Arg::PositiveNumeric,"  -B <number>, \t--bond-dimension=<number>"
        "  \tThe maximum bond dimension, >= 0. If 0, then ignored." },
+      {TRUNC,0,"e","truncation-error",Arg::PositiveDouble,"  -e <number>, \t--truncation-error=<number>"
+       "  \tThe allowed truncation error, >= 0." },
       {NUMBER_OF_STEPS,0,"n","time-steps",Arg::PositiveNumeric,"  -n <number>, \t--time-steps=<number>"
        "  \tThe number of time steps. Default is 1." },
       {STEP_SIZE,0,"s","step-size",Arg::PositiveDouble,"  -s <number>, \t--step-size=<number>"
@@ -239,11 +245,13 @@ namespace ajaj {
       { 0, 0, 0, 0, 0, 0 }
     };
 
-  const option::Descriptor TEBD_usage[10] =
+  const option::Descriptor TEBD_usage[11] =
     {
       {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: TEBD_DRV.bin [-B <number> -n <number> -s <number> -O <number> -i <initial_state_name>] <model_filename> <number of vertices(chains)> \n  <number of vertices/chains> must be EVEN.\n"},
       {CHI,0,"B","bond-dimension",Arg::PositiveNumeric,"  -B <number>, \t--bond-dimension=<number>"
        "  \tThe maximum bond dimension, >= 0. If 0, then ignored." },
+      {TRUNC,0,"e","truncation-error",Arg::PositiveDouble,"  -e <number>, \t--truncation-error=<number>"
+       "  \tThe allowed truncation error, >= 0." },
       {NUMBER_OF_STEPS,0,"n","time-steps",Arg::PositiveNumeric,"  -n <number>, \t--time-steps=<number>"
        "  \tThe number of time steps. Default is 1." },
       {STEP_SIZE,0,"s","step-size",Arg::PositiveDouble,"  -s <number>, \t--step-size=<number>"
@@ -323,6 +331,15 @@ namespace ajaj {
       }
       else {
 	return 0;
+      }
+    }
+
+    double trunc() const {
+      if (is_valid() && options[TRUNC]){
+	return stod(options[TRUNC].arg);
+      }
+      else {
+	return 1.0e-16;
       }
     }
 

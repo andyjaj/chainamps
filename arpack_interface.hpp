@@ -203,7 +203,7 @@ namespace arpack {
 
       else if (m_workspace.info==1){//if info is 1 at this point, then we need more iterations
 	std::cout << iterations() << " Arnoldi iterations taken" << std::endl;
-	if (iterations()<m_length/*5*m_workspace.maxiter*/){
+	if (iterations()<m_length){
 	  std::cout << "Poor convergence, altering ncv..." << std::endl;
 	  ncv_diff+=3;
 	}
@@ -211,7 +211,7 @@ namespace arpack {
 	  std::cout << "Too many arpack iterations, aborting..." << std::endl;
 	  exit(1);
 	}
-      } 
+      }
 
     } while (m_workspace.info==1 || m_workspace.info==-9);
 

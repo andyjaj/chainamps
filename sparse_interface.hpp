@@ -170,7 +170,7 @@ namespace ajaj {
     SparseMatrix ExtractColumnsAndPad(const std::vector<Sparseint>& cols,Sparseint extrarows,Sparseint extracols) const;
     SparseMatrix ZeroLastColumns(Sparseint c) const; //drop all finite values in the last c columns
 
-    SparseSVD SVD(const std::vector<std::vector<Sparseint> >& B,size_t D=0, double min_s_val=std::numeric_limits<double>::epsilon()) const;
+    SparseSVD SVD(const std::vector<std::vector<Sparseint> >& B,size_t D=0, double max_trunc=std::numeric_limits<double>::epsilon()) const;
     std::vector<double> SVD() const;
     //SparseLambdaB LambdaB(const std::vector<std::vector<Sparseint> >& B) const;
     //SparseALambda ALambda(const std::vector<std::vector<Sparseint> >& B) const;

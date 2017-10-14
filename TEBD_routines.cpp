@@ -311,11 +311,15 @@ namespace ajaj{
     std::stringstream StoreNameStream;
     StoreNameStream << "Evolving_" << MPSName_ << "_Right_" << 1 << ".MPS_matrix";
     
-    MPXDecomposition rot(MPS_matrix(std::move(contract(SingleVertexOp_,0,load_MPS_matrix(SpecialNameStream.str(),Basis_),0,contract10).CombineSimilarMatrixIndices())).right_shape().SVD());
+
+    MPXDecomposition rot(MPS_matrix(std::move(contract(SingleVertexOp_,0,load_MPS_matrix(SpecialNameStream.str(),Basis_),0,contract20).CombineSimilarMatrixIndices())).right_shape().SVD());
+
+
+    //    MPXDecomposition rot(MPS_matrix(std::move(contract(SingleVertexOp_,0,load_MPS_matrix(SpecialNameStream.str(),Basis_),0,contract10).CombineSimilarMatrixIndices())).right_shape().SVD());
+
     rot.RowMatrix.store(StoreNameStream.str()); //now should be right canonical
     if (rot.Truncation>max_truncation_) max_truncation_=rot.Truncation;
 
-      
     std::stringstream StartNameStream;
     StartNameStream << "Evolving_" << MPSName_ << "_Left_" << NumVertices_-1 << ".MPS_matrix";
     std::string RightName=StartNameStream.str();
@@ -323,7 +327,7 @@ namespace ajaj{
     
     if (NumVertices_>2){
 
-      for (uMPXInt v=NumVertices_-1;v>1;v-=2){ //need to start at right hand side off last even bond
+      for (uMPXInt v=NumVertices_-1;v>1;v-=2){ //need to start at right hand side of last even bond
 	std::stringstream LNameStream;
 	LNameStream << "Evolving_" << MPSName_ << "_Left_" << v-1 << ".MPS_matrix";
 	MPSDecomposition decomp(reorder(contract(BondOp,0,contract(load_MPS_matrix(LNameStream.str(),Basis_),0,R,0,contract21),0,contract2032),0,reorder0213,2).SVD(bond_dimension,minS));
@@ -495,7 +499,8 @@ namespace ajaj{
     std::cout << "Norm at end of left canonisation: " << abs(Vd.Trace()) << std::endl; 
   }
 
-  TEBD::TEBD(const MPO_matrix& H, FiniteMPS& F, double time_step_size, DataOutput& results, uMPXInt order) : TimeBase(time_step_size,results),MPSName_(F.name()),Basis_(H.basis()),NumVertices_(F.size()),SingleVertexOp_(MakeSingleSiteEvolutionOperator(H,time_step_size)),m_EvolutionOperators(TrotterDecomposition(H,time_step_size,order)),GoodInitial_(0) {
+  TEBD::TEBD(const MPO_matrix& H, FiniteMPS& F, double time_step_size, DataOutput& results, uMPXInt order) : TimeBase(time_step_size,results),MPSName_(F.name()),Basis_(H.basis()),NumVertices_(F.size()),SingleVertexOp_(MakeSingleSiteEvolutionOperatorFromLowTriMPO(H,time_step_size)),m_EvolutionOperators(TrotterDecomposition(H,time_step_size,order)),GoodInitial_(0) {
+
     std::stringstream Evolvingnamestream;
     Evolvingnamestream << "Evolving_" << MPSName_;
     std::complex<double> initial_weight(F.makeLC(Evolvingnamestream.str())); //combination of initial state norm and overall phase
@@ -508,7 +513,7 @@ namespace ajaj{
 
   void TEBD::change_bond_operator(const MPO_matrix& H, double time_step_size){
     m_time_step_size=time_step_size;
-    SingleVertexOp_=MakeSingleSiteEvolutionOperator(H,time_step_size);
+    SingleVertexOp_=MakeSingleSiteEvolutionOperatorFromLowTriMPO(H,time_step_size);
     m_EvolutionOperators=TrotterDecomposition(H,time_step_size,m_EvolutionOperators.order());
   }
 
@@ -570,7 +575,6 @@ namespace ajaj{
 	  //++m_current_time_step;
 	  update_time();
 	  std::cout << "Time " << current_time() << std::endl;
-	  //this is the first half of the time step....
 	  apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
 	  left_canonise();
 	  apply_to_even_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS);
@@ -643,16 +647,31 @@ namespace ajaj{
     indices.emplace_back(BondH.Index(1));
     indices.emplace_back(BondH.Index(2));
     indices.emplace_back(BondH.Index(3));
-    return MPX_matrix(BondH.GetPhysicalSpectrum(),indices,2,Exponentiate(BondH.Eigs(),std::complex<double>(0.0,-timestep)));
+    return MPX_matrix(BondH.basis(),indices,2,Exponentiate(BondH.Eigs(),std::complex<double>(0.0,-timestep)));
   }
 
-  MPX_matrix MakeSingleSiteEvolutionOperator(const MPO_matrix& H, double timestep){
-    std::cout << "Forming single site evolution operator (diagonal)" << std::endl;
+  //uses lower triangular MPO
+  MPO_matrix MakeSingleSiteEvolutionOperatorFromLowTriMPO(const MPO_matrix& H_MPO, double timestep){
+    
+    MPXInt dim=H_MPO.Index(1).size();
+
+    std::vector<MPXIndex> indices;
+    indices.emplace_back(H_MPO.Index(0));
+    indices.emplace_back(MPXIndex(H_MPO.Index(1),H_MPO.Index(1).size()-1));
+    indices.emplace_back(H_MPO.Index(2));
+    indices.emplace_back(MPXIndex(H_MPO.Index(3),0));
+
+    return MPO_matrix(H_MPO.basis(),indices,Exponentiate(H_MPO.ExtractMPOBlock(std::pair<ajaj::MPXInt,ajaj::MPXInt>(H_MPO.Index(1).size()-1,H_MPO.Index(1).size()-1),std::pair<ajaj::MPXInt,ajaj::MPXInt>(0,0)).Eigs(),std::complex<double>(0.0,-timestep)));
+
+    /*std::cout << "Forming single site evolution operator (diagonal)" << std::endl;
     std::vector<std::complex<double> > phase;
+
     for (auto i : H.GetPhysicalSpectrum().Energies()){
       phase.push_back(std::complex<double>(cos(timestep*i),-sin(timestep*i)));
+      std::cout << i << " " << phase.back() <<std::endl;
     }
-    return MPX_matrix(H.GetPhysicalSpectrum(),H.Index(0),phase);
+    exit(1);
+    return MPX_matrix(H.GetPhysicalSpectrum(),H.Index(0),phase);*/
   }
 
 }

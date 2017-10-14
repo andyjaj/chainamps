@@ -26,7 +26,8 @@ int main(int argc, char** argv){
     myModel.basis().print();
 
     ajaj::uMPXInt CHI(RuntimeArgs.chi());
-    double minS(SPARSETOL);
+    double trunc(RuntimeArgs.trunc());
+
     ajaj::uMPXInt number_of_vertices(RuntimeArgs.num_vertices());
     ajaj::uMPXInt number_of_excited_states(RuntimeArgs.num_excited());
     ajaj::uMPXInt number_of_finite_vol_sweeps(RuntimeArgs.num_sweeps());
@@ -36,23 +37,22 @@ int main(int argc, char** argv){
     ajaj::DataOutput results(ajaj::OutputName(RuntimeArgs.filename(),"Energies.dat"),"Index, Energy, Energy/vertices, Entropy, Truncation, 1-Fidelity"); //open file for output
     ajaj::iDMRG infvol(std::string("GroundState"),myModel.H_MPO,TargetState,results); //create an infinite sweep simulation object
     auto t1 = std::chrono::high_resolution_clock::now();
-    infvol.run(number_of_vertices/2,-1.0,CHI,minS); //convergence criterion: not used if negative, number of vertices used instead
+    infvol.run(number_of_vertices/2,-1.0,CHI,trunc); //convergence criterion: not used if negative, number of vertices used instead
     auto t2 = std::chrono::high_resolution_clock::now();
 
     ajaj::FiniteDMRG fvol(infvol,results); //create a finite sweep object from the output of infinite volume algorithm
-    fvol.run(number_of_finite_vol_sweeps,CHI,minS); //run for a set number of sweeps
+    fvol.run(number_of_finite_vol_sweeps,CHI,trunc); //run for a set number of sweeps
     auto t3 = std::chrono::high_resolution_clock::now();
     if (number_of_excited_states>0){
       ajaj::DataOutput ex_results(ajaj::OutputName(RuntimeArgs.filename(),"Excited_Energies.dat"),"Sweep Index, State Index, Energy, Entropy, Truncation, 1-abs(guess overlap)"); //open file for output
-      
       if (number_of_finite_vol_sweeps==0){
-	fvol.run(1,CHI,minS); //do a finite vol sweep to finish off.
+	fvol.run(1,CHI,trunc); //do a finite vol sweep to finish off if we didn't do so already
       }
       ajaj::ExcitedStateFiniteDMRG Exfvol(std::string("Excited"),fvol,weight_factor,ex_results);
-      Exfvol.run(number_of_finite_vol_sweeps,CHI,minS);
+      Exfvol.run(number_of_finite_vol_sweeps,CHI,trunc);
       for (ajaj::uMPXInt l=1;l<number_of_excited_states;++l){
 	Exfvol.next_state(weight_factor);
-	Exfvol.run(number_of_finite_vol_sweeps,CHI,minS);
+	Exfvol.run(number_of_finite_vol_sweeps,CHI,trunc);
       }
     }
     auto t4 = std::chrono::high_resolution_clock::now();
@@ -62,7 +62,7 @@ int main(int argc, char** argv){
     std::cout << "Finite Volume part took "<< std::chrono::duration_cast<std::chrono::milliseconds>(t3-t2).count()<< " milliseconds" << std::endl;
     if (number_of_excited_states>0)
       std::cout << "Excited States part took "<< std::chrono::duration_cast<std::chrono::milliseconds>(t4-t3).count()<< " milliseconds" << std::endl;
-    
+
     return 0;
   }
   else {

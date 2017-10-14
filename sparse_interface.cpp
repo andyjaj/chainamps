@@ -637,7 +637,7 @@ namespace ajaj {
       return *this;
     }
     else {
-      m_array=0;
+      m_array=nullptr;
       return *this;
     }
   }
@@ -1331,7 +1331,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     return sum;
   }
 
-  SparseSVD SparseMatrix::SVD(const std::vector<std::vector<Sparseint> >& B,size_t D, double min_s_val) const {
+  SparseSVD SparseMatrix::SVD(const std::vector<std::vector<Sparseint> >& B,size_t D, double max_trunc) const {
     //loop through groups doing svd
 #ifndef NDEBUG
     std::cout << "Forming objects for Sparse SVD" << std::endl;
@@ -1343,7 +1343,6 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     SparseMatrix UnsortedVstar(this->cols(),this->cols());
     UnsortedValues.reserve(this->rows() >this->cols() ? this->cols() : this->rows());
     double total_weight(0.0);
-    double tolerance=min_s_val < 0.0 ? 0.0 : min_s_val*min_s_val;
 
 #ifndef NDEBUG
     std::cout << "Looping over " << B.size() << " blocks" << std::endl;
@@ -1363,7 +1362,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 	this->print();
       }
 #endif
-      if (block_weight<= tolerance){
+      if (block_weight<= SPARSETOL*SPARSETOL/*tolerance*/){
 #ifndef NDEBUG
 	std::cout << "This block is empty, skipping" << std::endl; 
 #endif
@@ -1381,7 +1380,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 #ifndef NDEBUG
       std::cout << "Forming Dense Translation block" << std::endl;
 #endif
-      TranslationBlock<DenseMatrix> TB(*this,cols /* *cit*/ ); //form block
+      TranslationBlock<DenseMatrix> TB(*this,cols); //form block
 #ifndef NDEBUG
       std::cout << "Performing Dense SVD" << std::endl;
 #endif
@@ -1434,7 +1433,6 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     //Now sorted, use ref to avoid confusing name
     auto & SortedValues(UnsortedValues);
     
-    //We should also probably reject singular vals that are smaller the M_EPS times the largest singular value...
     std::vector<Sparseint> sortindices;
     sortindices.reserve(length);
     sortindices.push_back(SortedValues[0].first);
@@ -1443,32 +1441,21 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     Values.push_back(SortedValues[0].second);
     double kept_weight(SortedValues[0].second*SortedValues[0].second);
 
-    double max_trunc_error=1.0e-12;
     double trunc_error=0.0;
 
     size_t trunc_length=SortedValues.size();
     
-    while (trunc_error < max_trunc_error && trunc_length>0){
+    while (trunc_error < max_trunc && trunc_length>0){
       trunc_error+=SortedValues[trunc_length-1].second*SortedValues[trunc_length-1].second;
       --trunc_length;
     }
     ++trunc_length; //need trunc_error<max_trunc_error
     if (trunc_length < length) length=trunc_length;
     
-    
-    if (SortedValues[length-1].second <= min_s_val*SortedValues.begin()->second && length>1){//if we are at a tiny s val, check for slightly larger 'degenerate' singular values and remove them
-      //while (length>1 && ((SortedValues[length-2].second-SortedValues[length-1].second)/SortedValues[length-2].second <1.0e-3)){
-      //first get rid of the tiny one
-      std::cout << "Truncating further due to very small singular values. s_val: " << SortedValues[--length].second << std::endl;
-      while (length>1 && ( SortedValues[length-1].second <= min_s_val*SortedValues.begin()->second || (1.0-1.0e-3<=SortedValues[length].second/SortedValues[length-1].second))){
-	std::cout << "Truncating further due to very small singular values. s_val: " << SortedValues[--length].second << std::endl;
-      }
-    }
-    else { //if not tiny, then check for slightly smaller 'degenerate' s vals.
-      while (length<SortedValues.size() && ((SortedValues[length-1].second-SortedValues[length].second)/SortedValues[length-1].second <1.0e-3)){
+    //need to check for slightly smaller 'degenerate' s vals.
+    while (length<SortedValues.size() && ((SortedValues[length-1].second-SortedValues[length].second)/SortedValues[length-1].second <1.0e-1)){
       ++length;
       std::cout << "Increasing bond dimension, due to degeneracies. s_val: " << SortedValues[length-1].second << std::endl;
-      }
     }
 
     for (size_t s=1;s<length;++s){
@@ -1787,27 +1774,6 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     delete[] Evals;
     return ans;
   }
-
-  /*std::pair<SparseMatrix,SparseMatrix> SparseHermitianDecomposition(DenseHED decomp){
-    std::pair<SparseMatrix,SparseMatrix> ans(SparseMatrix(decomp.EigenVectors.cols(),decomp.EigenVectors.rows()),SparseMatrix(decomp.EigenVectors.rows(),decomp.EigenVectors.cols()));
-      //SparseMatrix ans(decomp.EigenVectors.cols(),decomp.EigenVectors.rows());
-      //SparseMatrix ansinv(decomp.EigenVectors.rows(),decomp.EigenVectors.cols());
-    for (Sparseint j=0;j<decomp.EigenVectors.cols();++j){
-      for (Sparseint i=0;i<decomp.EigenVectors.rows();++i){
-	if (decomp.Values[j]<=0.0){std::cout << "Matrix isn't positive, can't do Hermitian decomp" << std::endl; exit(1);}
-	{
-	  //complex<double> element=sqrt(decomp.Values[j])*decomp.EigenVectors.Value(i,j);
-	  if (abs(decomp.EigenVectors.Value(i,j))>SPARSETOL){
-	    ans.first.entry(j,i,sqrt(decomp.Values[j])*decomp.EigenVectors.Value(i,j));
-	    ans.second.entry(i,j,decomp.EigenVectors.Value(i,j)/sqrt(decomp.Values[j]));
-	  }
-	}
-      }
-    }
-    ans.first.finalise();
-    ans.second.finalise();
-    return ans;
-    }*/
 
   SparseMatrix Exponentiate(const SparseHED& decomp,std::complex<double> factor){
     std::vector<std::complex<double> > diagpart;
