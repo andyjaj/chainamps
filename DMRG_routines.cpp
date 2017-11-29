@@ -265,7 +265,7 @@ namespace ajaj {
 
     CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),nullptr,size(),energy,&(pred_.Guess)),chi,right_size()<=1 ? -0.0 : truncation);
     CentralDecomposition.SquareRescale(1.0);
-    CentralDecomposition.store(getName(),left_size()+1,right_size()+1,left_size()==right_size());
+    CentralDecomposition.store(getName(),left_size()+1,right_size()+1);
     //CentralDecomposition.OutputPhysicalIndexDensities(DensityFileStream_);
     double S_E(entropy(CentralDecomposition.Values));
     energy.Real_measurements.push_back(S_E);
@@ -301,7 +301,7 @@ namespace ajaj {
 
     CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),nullptr,size(),energy,&(pred_.Guess)),chi,left_size()<=1 ? -0.0 : truncation);
     CentralDecomposition.SquareRescale(1.0);
-    CentralDecomposition.store(getName(),left_size()+1,right_size()+1,left_size()==right_size());
+    CentralDecomposition.store(getName(),left_size()+1,right_size()+1);
     //CentralDecomposition.OutputPhysicalIndexDensities(DensityFileStream_);
     double S_E(entropy(CentralDecomposition.Values));
     energy.Real_measurements.push_back(S_E);
@@ -317,7 +317,8 @@ namespace ajaj {
     std::stringstream lnstream;
     std::stringstream rnstream;
     uMPXInt rs= size()-ls-middle_size();
-    if (ls+1>size()/2){
+    
+    if (ls+1>size()/2){ //to right of middle
       lnstream << ProjectorStateName_ << "_Right_"<< rs+middle_size() << ".MPS_matrix"; //B type matrix
     }
     else {
@@ -329,10 +330,17 @@ namespace ajaj {
     else {
       rnstream << ProjectorStateName_ << "_Right_"<< rs+1 << ".MPS_matrix"; //B type
     }
+    
     if (ls==rs){
+      //on a rightward sweep this is fine, lambda gets included in the left block as we shift right
       std::stringstream cnstream;
       cnstream << ProjectorStateName_ << "_Lambda_"<< ls+1 << "_" << rs+1 << ".MPX_matrix";
       return std::pair<MPS_matrix,MPS_matrix>(std::move(MPS_matrix(contract(load_MPS_matrix(lnstream.str(),getSpectrum()),0,load_MPX_matrix(cnstream.str(),getSpectrum()),0,contract20)).left_shape()),std::move(load_MPS_matrix(rnstream.str(),getSpectrum()).right_shape()));
+    }
+    else if (ls==size()/2-2){      //on a leftward sweep lambda can be missed when we refetch...
+      std::stringstream cnstream;
+      cnstream << ProjectorStateName_ << "_Lambda_"<< size()/2 << "_" << size()/2 << ".MPX_matrix";
+      return std::pair<MPS_matrix,MPS_matrix>(std::move(load_MPS_matrix(lnstream.str(),getSpectrum()).left_shape()),std::move(MPS_matrix(contract(load_MPS_matrix(rnstream.str(),getSpectrum()),0,load_MPX_matrix(cnstream.str(),getSpectrum()),0,contract20)).right_shape()));
     }
     else {
       return std::pair<MPS_matrix,MPS_matrix>(std::move(load_MPS_matrix(lnstream.str(),getSpectrum()).left_shape()),std::move(load_MPS_matrix(rnstream.str(),getSpectrum()).right_shape()));
@@ -411,7 +419,7 @@ namespace ajaj {
     if (size()==2) {
       //necessary to leave a well formed state to hand to excited states or TEBD
       //would be better to just store lambda, as left and right will have been stored by growth stage
-      CentralDecomposition.store(getName(),left_size()+1,right_size()+1,1);//store left and right
+      CentralDecomposition.store(getName(),left_size()+1,right_size()+1);//store left and right
       std::cout << "Skipping finite sweeps, only two vertices..." << std::endl;
     }
     else {
@@ -435,7 +443,7 @@ namespace ajaj {
 	  }
 	  cumulative_truncation+=CentralDecomposition.Truncation;
 	}
-	CentralDecomposition.store_left(getName(),left_size()+1);
+	//CentralDecomposition.store_left(getName(),left_size()+1);
 	for (uMPXInt r=right_size();r>left_size();--r){
 	  Data this_step(move_right_two_vertex(chi_,truncation_));
 	  //output_ref_.push(this_step);//at midpoint, push output
@@ -464,7 +472,7 @@ namespace ajaj {
     //not the best guess, as we want something orthogonal to this...
     SparseMatrix Guess(reshape_to_vector(contract(CentralDecomposition.LeftMatrix,0,contract(MPX_matrix(CentralDecomposition.basis(),CentralDecomposition.RightMatrix.Index(0),CentralDecomposition.Values),0,CentralDecomposition.RightMatrix,0,contract10),0,contract20)));
 
-    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),&PBlocks_,size(),results,&Guess,converge),chi,truncation);
+    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),&PBlocks_,size(),results,nullptr/*&Guess*/,converge),chi,truncation);
     CentralDecomposition.SquareRescale(1.0);
     CentralDecomposition.store(getName(),left_size()+1,right_size()+1);
 
@@ -513,9 +521,9 @@ namespace ajaj {
     namestream << StorageName << "_Right_" << right_size()+1 << ".MPS_matrix";
     pred_=MakeRFinitePrediction(CentralDecomposition,load_MPS_matrix(namestream.str(),basis()));
 
-    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),&PBlocks_,size(),results,&(pred_.Guess),converge),chi,right_size()<=1 ? -0.0 : truncation);
+    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),&PBlocks_,size(),results,nullptr/*&(pred_.Guess)*/,converge),chi,right_size()<=1 ? -0.0 : truncation);
     CentralDecomposition.SquareRescale(1.0);
-    CentralDecomposition.store(getName(),left_size()+1,right_size()+1,left_size()==right_size());
+    CentralDecomposition.store(getName(),left_size()+1,right_size()+1);
 
     double S_E(entropy(CentralDecomposition.Values));
     results.Real_measurements.push_back(S_E);
@@ -568,9 +576,9 @@ namespace ajaj {
     namestream << PredictionName << "_Left_" << left_size()+1 << ".MPS_matrix";
     pred_=MakeLFinitePrediction(CentralDecomposition,load_MPS_matrix(namestream.str(),basis()));
 
-    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),&PBlocks_,size(),results,&(pred_.Guess),converge),chi,left_size()<=1 ? -0.0 : truncation);
+    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),&PBlocks_,size(),results,nullptr/*(&(pred_.Guess)*/,converge),chi,left_size()<=1 ? -0.0 : truncation);
     CentralDecomposition.SquareRescale(1.0);
-    CentralDecomposition.store(getName(),left_size()+1,right_size()+1,left_size()==right_size());
+    CentralDecomposition.store(getName(),left_size()+1,right_size()+1);
 
     double S_E(entropy(CentralDecomposition.Values));
     results.Real_measurements.push_back(S_E);
@@ -595,10 +603,10 @@ namespace ajaj {
       std::cout << "Skipping finite sweeps, only two vertices..." << std::endl;
     }
     else {
+      bool converge=num_sweeps>1 ? 0 : 1;
+
       for (uMPXInt n=num_sweeps;n>0;--n){//sweep towards right
-      //if we request multiple sweeps, use first sweep as a quick warmup, with small bond dimension!
 	uMPXInt chi_local = chi;
-	bool converge=1; //if we have more than one sweep, run the first sweep with minimal convergence
 	
 	double cumulative_truncation=0.0;
 	std::cout << std::endl << "Starting sweep: " << num_sweeps-n+1<< std::endl;
@@ -879,7 +887,7 @@ namespace ajaj {
       const std::vector<ProjectorBlocks>& PBvec(*ProjectorsPtr);
       for (auto&& pb : PBvec){
 	std::cout << "Making PTensor" <<std::endl;
-	ProjectorTensors.emplace_back(pb.makePTensor());
+	ProjectorTensors.emplace_back(pb.makePTensor());	
       }
     }
   };
@@ -916,7 +924,7 @@ namespace ajaj {
       std::complex<double>* Evals = new std::complex<double>[numevals];
       SparseHED ans(fulldim,numevals);
       std::cout <<"Calling arpack_eigs()..." << std::endl;
-      arpack::arpack_eigs<TwoVertexComponents,SparseVectorWithRestriction> eigensystem(this,&TwoVertexMPOMPSMultiply,allowed_indices.size(),initial ? &guess_struct : NULL,&ConvertSparseVectorWithRestriction,numevals,which,Evals,Evecs);
+      arpack::arpack_eigs<TwoVertexComponents,SparseVectorWithRestriction> eigensystem(this,&TwoVertexMPOMPSMultiply,allowed_indices.size(),initial ? &guess_struct : NULL,&ConvertSparseVectorWithRestriction,numevals,which,Evals,Evecs,converge);
       if (eigensystem.error_status()) {std::cout << "Error with tensor arpack" << std::endl;exit(1);}
 
       for (size_t v=0;v<static_cast<size_t>(numevals);++v){

@@ -139,11 +139,13 @@ namespace ajaj{
   CanonicalType FiniteMPS::CheckFilesExist(){ //checks files exist for left, right or mixed, doesn't establish canon
     //assume nothing about defined Canonical_ or MixPoint_
 
-    //check for a lambda file
-    bool LAMBDA(0);
-    uMPXInt MP(NumVertices_+1);
 
-    for (uMPXInt L=1;L<=NumVertices_;++L){
+    
+    //check for lambda files, and establish the middle.
+    bool LAMBDA(0);
+    uMPXInt MP(NumVertices_+1);//initial guess is state is stored left shaped
+
+    /*for (uMPXInt L=1;L<=NumVertices_;++L){
       std::stringstream Lambdanamestream;
       Lambdanamestream << MPSName_ << "_Lambda_" << L << "_" << NumVertices_-L << ".MPX_matrix";
       std::ifstream lambdafile;
@@ -151,9 +153,23 @@ namespace ajaj{
       if (lambdafile.is_open()){
 	LAMBDA=1;
 	MP=L;
+	
 	break; //only find one
       }
+    }*/
+
+    //assume even lengths only, and output in mixed form is centred.
+    {
+      std::stringstream Lambdanamestream;
+      Lambdanamestream << MPSName_ << "_Lambda_" << NumVertices_/2 << "_" << NumVertices_/2 << ".MPX_matrix";
+      std::ifstream lambdafile;
+      lambdafile.open(Lambdanamestream.str().c_str(),ios::in);
+      if (lambdafile.is_open()){
+	LAMBDA=1;
+	MP=NumVertices_/2;
+      }
     }
+    
 
     //then check for left and right parts
     uMPXInt LMAX(0);

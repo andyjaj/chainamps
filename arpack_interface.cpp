@@ -24,7 +24,7 @@ namespace arpack {
   void arpack_workspace::init(){
       
       ldv = n;
-      maxiter = 50;
+      maxiter = 50;//converge_flag ? 50 : 3;
       ido = 0;
       iparam = new arpack_int[11];
       iparam[0] = 1;
@@ -48,7 +48,7 @@ namespace arpack {
 
   }
 
-  arpack_workspace::arpack_workspace(arpack_int length, arpack_int num_e_vals, char which_e_vals[3], std::complex<double>* Evals_ptr, arpack_int need_e_vectors, std::complex<double>* Evecs_ptr, std::complex<double>* resid_ptr,const double use_tolerance) : n(length), nev(num_e_vals),which(which_e_vals),Evals(Evals_ptr),rvec(need_e_vectors),Evecs(Evecs_ptr),resid(resid_ptr),info(resid_ptr ? 1 : 0),tol(use_tolerance){
+  arpack_workspace::arpack_workspace(arpack_int length, arpack_int num_e_vals, char which_e_vals[3], std::complex<double>* Evals_ptr, arpack_int need_e_vectors, std::complex<double>* Evecs_ptr, std::complex<double>* resid_ptr,bool converge, double use_tolerance) : n(length), nev(num_e_vals),which(which_e_vals),Evals(Evals_ptr),rvec(need_e_vectors),Evecs(Evecs_ptr),resid(resid_ptr),info(resid_ptr ? 1 : 0),converge_flag(converge),tol(use_tolerance){
     init();
   }
 

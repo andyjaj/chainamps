@@ -44,6 +44,9 @@ namespace arpack {
     arpack_int nev;
     arpack_int rvec;
     arpack_int info;
+
+    bool converge_flag;
+    
     double tol;
 
     arpack_int maxiter;
@@ -53,6 +56,7 @@ namespace arpack {
     arpack_int ierr;
     arpack_int lworkl;
 
+    
     double sigma;
 
     const char* which;
@@ -70,7 +74,7 @@ namespace arpack {
     std::complex<double> *d;
     std::complex<double> *workev;
 
-    arpack_workspace(arpack_int length, arpack_int num_e_vals, char which_e_vals[3], std::complex<double>* Evals_ptr, arpack_int need_e_vectors, std::complex<double>* Evecs_ptr, std::complex<double>* resid_ptr,const double use_tolerance=-0.0);
+    arpack_workspace(arpack_int length, arpack_int num_e_vals, char which_e_vals[3], std::complex<double>* Evals_ptr, arpack_int need_e_vectors, std::complex<double>* Evecs_ptr, std::complex<double>* resid_ptr, bool converge=1, double use_tolerance=-0.0);
     ~arpack_workspace();
     void init();
     void reset(arpack_int ncv_delta=0);    
@@ -88,7 +92,7 @@ namespace arpack {
     arpack_workspace m_workspace; //workspace storage objects and params
 
     //need to set up workspace and get pointers to array (or components to make array) and ptrs to output containers
-    arpack_eigs(const ArrayType* array_stuff, void (*MV)(const ArrayType*,std::complex<double>*,std::complex<double>*), arpack_int length, GuessType* initial_guess, void (*converter)(GuessType*,std::complex<double>*), arpack_int num_e_vals, char which_e_vals[3], std::complex<double> *Evals, std::complex<double> *Evecs=nullptr, double tol=-0.0);
+    arpack_eigs(const ArrayType* array_stuff, void (*MV)(const ArrayType*,std::complex<double>*,std::complex<double>*), arpack_int length, GuessType* initial_guess, void (*converter)(GuessType*,std::complex<double>*), arpack_int num_e_vals, char which_e_vals[3], std::complex<double> *Evals, std::complex<double> *Evecs=nullptr, bool converge=1, double tol=-0.0);
     ~arpack_eigs(){ delete[] resid; }
 
     void do_znaupd();
@@ -170,7 +174,7 @@ namespace arpack {
   }
   
   template <typename ArrayType, typename GuessType>
-  arpack_eigs<ArrayType,GuessType>::arpack_eigs(const ArrayType* array_stuff, void (*MV)(const ArrayType*,std::complex<double>*,std::complex<double>*), arpack_int length, GuessType* initial_guess, void (*converter)(GuessType*,std::complex<double>*), arpack_int num_e_vals, char which_e_vals[3], std::complex<double> *Evals, std::complex<double> *Evecs, double tol) : m_array_stuff(array_stuff), m_MV(MV), m_length(length), m_initial_guess(initial_guess),m_converter(converter),m_evals(Evals),m_evecs(Evecs),m_workspace(m_length,num_e_vals,which_e_vals,Evals,Evecs ? 1 : 0, Evecs,nullptr,tol), m_cumulative_iterations(0){
+  arpack_eigs<ArrayType,GuessType>::arpack_eigs(const ArrayType* array_stuff, void (*MV)(const ArrayType*,std::complex<double>*,std::complex<double>*), arpack_int length, GuessType* initial_guess, void (*converter)(GuessType*,std::complex<double>*), arpack_int num_e_vals, char which_e_vals[3], std::complex<double> *Evals, std::complex<double> *Evecs, bool converge, double tol) : m_array_stuff(array_stuff), m_MV(MV), m_length(length), m_initial_guess(initial_guess),m_converter(converter),m_evals(Evals),m_evecs(Evecs),m_workspace(m_length,num_e_vals,which_e_vals,Evals,Evecs ? 1 : 0, Evecs,nullptr,converge, tol), m_cumulative_iterations(0){
     //form resid
     resid = new std::complex<double>[m_length];
     m_workspace.resid=resid;
@@ -216,8 +220,10 @@ namespace arpack {
     } while (m_workspace.info==1 || m_workspace.info==-9);
 
     std::cout << "znaupd done, " << iterations() << " Arnoldi iterations taken" << std::endl;
+    
     if (m_workspace.info!=0) {std::cout << "Arpack Error in znaupd: " << m_workspace.info << std::endl;}
     else {
+      
       for (arpack_int s=0;s<m_workspace.nev;++s){
 	m_workspace.select[s]=1;
       }
