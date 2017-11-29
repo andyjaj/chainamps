@@ -143,10 +143,14 @@ namespace ajaj {
     uMPXInt left_mark_;
     uMPXInt right_mark_;
 
+    static const bool Rightwards_=1;
+    static const bool Leftwards_=0;
+
+    
     //useful once?
     std::pair<MPS_matrix,MPS_matrix> FetchProjectorStatePair(uMPXInt ls);
-    //void UpdateProjectorStatePair(uMPXInt ls);
-    
+    void ShiftProjectorStatePair(bool dir, uMPXInt new_pos);
+
     std::string MakeName(const std::string& Name) const{
       std::stringstream namestream;
       namestream << "Projector_" << Name;

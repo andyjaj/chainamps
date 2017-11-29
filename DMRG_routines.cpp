@@ -265,7 +265,7 @@ namespace ajaj {
 
     CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),nullptr,size(),energy,&(pred_.Guess)),chi,right_size()<=1 ? -0.0 : truncation);
     CentralDecomposition.SquareRescale(1.0);
-    CentralDecomposition.store(getName(),left_size()+1,right_size()+1);
+    CentralDecomposition.store(getName(),left_size()+1,right_size()+1,left_size()==right_size());
     //CentralDecomposition.OutputPhysicalIndexDensities(DensityFileStream_);
     double S_E(entropy(CentralDecomposition.Values));
     energy.Real_measurements.push_back(S_E);
@@ -301,7 +301,7 @@ namespace ajaj {
 
     CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),nullptr,size(),energy,&(pred_.Guess)),chi,left_size()<=1 ? -0.0 : truncation);
     CentralDecomposition.SquareRescale(1.0);
-    CentralDecomposition.store(getName(),left_size()+1,right_size()+1);
+    CentralDecomposition.store(getName(),left_size()+1,right_size()+1,left_size()==right_size());
     //CentralDecomposition.OutputPhysicalIndexDensities(DensityFileStream_);
     double S_E(entropy(CentralDecomposition.Values));
     energy.Real_measurements.push_back(S_E);
@@ -347,6 +347,56 @@ namespace ajaj {
     }
   }
 
+  void ProjectorBlocks::ShiftProjectorStatePair(bool dir, uMPXInt new_pos){
+    //first swap contents
+    std::swap(ProjectorStatePair_.first,ProjectorStatePair_.second);
+
+    std::stringstream nstream;
+    bool need_lambda=0;
+    
+    if (dir==Rightwards_){//moving right
+      if (new_pos<=size()/2){ //to right of middle
+	nstream << ProjectorStateName_ << "_Right_"<< new_pos << ".MPS_matrix"; //B type matrix
+      }
+      else {
+	nstream << ProjectorStateName_ << "_Left_"<< size()-new_pos+1 << ".MPS_matrix"; //A type
+	if (size()-new_pos+1==size()/2) need_lambda=1;
+      }
+    }
+    else {//moving left
+
+      if (new_pos<=size()/2){ //to left of middle
+	nstream << ProjectorStateName_ << "_Left_"<< new_pos << ".MPS_matrix"; //A type matrix
+	if (new_pos==size()/2) need_lambda=1;
+      }
+      else {
+	nstream << ProjectorStateName_ << "_Right_"<< size()-new_pos+1 << ".MPS_matrix"; //B type
+      }
+    }
+
+    //when to get lambda too?
+    //if we are loading _Left_N/2
+    if (need_lambda){
+      std::stringstream cnstream;
+      cnstream << ProjectorStateName_ << "_Lambda_"<< size()/2 << "_" << size()/2 << ".MPX_matrix";
+      if (dir)
+	ProjectorStatePair_.second=std::move(MPS_matrix(contract(load_MPS_matrix(nstream.str(),getSpectrum()),0,load_MPX_matrix(cnstream.str(),getSpectrum()),0,contract20)).right_shape());
+      else
+	ProjectorStatePair_.first=std::move(MPS_matrix(contract(load_MPS_matrix(nstream.str(),getSpectrum()),0,load_MPX_matrix(cnstream.str(),getSpectrum()),0,contract20)).left_shape());
+    }
+    else { //don't need to contract with lambda
+      if (dir)
+	ProjectorStatePair_.second=std::move(load_MPS_matrix(nstream.str(),getSpectrum()));
+      else
+	ProjectorStatePair_.first=std::move(load_MPS_matrix(nstream.str(),getSpectrum()));
+    }
+
+    ProjectorStatePair_.first.left_shape();
+    ProjectorStatePair_.second.right_shape();
+    
+  }
+
+  
   TensorWeightPair ProjectorBlocks::makePTensor() const{
     const MPX_matrix& PL=getLeftBlock();
     const MPX_matrix& PR=getRightBlock();
@@ -360,9 +410,9 @@ namespace ajaj {
     //make new LeftBlock
     MPX_matrix newLeftBlock(contract(ProjectorStatePair_.first,1,contract(getLeftBlock(),0,LeftMatrix,0,contract11),0,contract0110));
     //load in a new projector state pair
-    ProjectorStatePair_=FetchProjectorStatePair(left_size()+1);
-    //ProjectorStatePair_.first.print_indices();
-    //ProjectorStatePair_.second.print_indices();
+    //ProjectorStatePair_=FetchProjectorStatePair(left_size()+1);
+    ShiftProjectorStatePair(Rightwards_,right_size());
+    
     if (right_size()-1<right_mark_){
       // dummy case
       const MPXIndex& rightindex=ProjectorStatePair_.second.getOutwardMatrixIndex();
@@ -373,13 +423,18 @@ namespace ajaj {
       //recall from storage
       shift_right(std::move(newLeftBlock));
     }
+
+    //ShiftProjectorStatePair(Rightwards_);
+    
   }
 
   void ProjectorBlocks::move_left_two_vertex(const MPS_matrix& RightMatrix) {
     //make new RightBlock
     MPX_matrix newRightBlock(contract(ProjectorStatePair_.second,1,contract(getRightBlock(),0,RightMatrix,0,contract12),0,contract1220));
     //load in a new projector state pair
-    ProjectorStatePair_=FetchProjectorStatePair(left_size()-1);
+    //ProjectorStatePair_=FetchProjectorStatePair(left_size()-1);
+    ShiftProjectorStatePair(Leftwards_,left_size());
+
     //ProjectorStatePair_.first.print_indices();
     //ProjectorStatePair_.second.print_indices();
     if (left_size()-1<left_mark_){
@@ -392,6 +447,7 @@ namespace ajaj {
       //recall from storage
       shift_left(std::move(newRightBlock));
     }
+    //ShiftProjectorStatePair(Leftwards_);
   }
 
   void iDMRG::run(uMPXInt number_of_steps, double convergence_criterion, uMPXInt chi, double truncation){
@@ -419,7 +475,7 @@ namespace ajaj {
     if (size()==2) {
       //necessary to leave a well formed state to hand to excited states or TEBD
       //would be better to just store lambda, as left and right will have been stored by growth stage
-      CentralDecomposition.store(getName(),left_size()+1,right_size()+1);//store left and right
+      CentralDecomposition.store(getName(),left_size()+1,right_size()+1,left_size()==right_size());//store left and right
       std::cout << "Skipping finite sweeps, only two vertices..." << std::endl;
     }
     else {
@@ -474,7 +530,7 @@ namespace ajaj {
 
     CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),&PBlocks_,size(),results,nullptr/*&Guess*/,converge),chi,truncation);
     CentralDecomposition.SquareRescale(1.0);
-    CentralDecomposition.store(getName(),left_size()+1,right_size()+1);
+    CentralDecomposition.store(getName(),left_size()+1,right_size()+1,left_size()==right_size());
 
     double S_E(entropy(CentralDecomposition.Values));
     results.Real_measurements.push_back(S_E);
@@ -521,9 +577,9 @@ namespace ajaj {
     namestream << StorageName << "_Right_" << right_size()+1 << ".MPS_matrix";
     pred_=MakeRFinitePrediction(CentralDecomposition,load_MPS_matrix(namestream.str(),basis()));
 
-    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),&PBlocks_,size(),results,nullptr/*&(pred_.Guess)*/,converge),chi,right_size()<=1 ? -0.0 : truncation);
+    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),&PBlocks_,size(),results,&(pred_.Guess),converge),chi,right_size()<=1 ? -0.0 : truncation);
     CentralDecomposition.SquareRescale(1.0);
-    CentralDecomposition.store(getName(),left_size()+1,right_size()+1);
+    CentralDecomposition.store(getName(),left_size()+1,right_size()+1,left_size()==right_size());
 
     double S_E(entropy(CentralDecomposition.Values));
     results.Real_measurements.push_back(S_E);
@@ -576,9 +632,9 @@ namespace ajaj {
     namestream << PredictionName << "_Left_" << left_size()+1 << ".MPS_matrix";
     pred_=MakeLFinitePrediction(CentralDecomposition,load_MPS_matrix(namestream.str(),basis()));
 
-    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),&PBlocks_,size(),results,nullptr/*(&(pred_.Guess)*/,converge),chi,left_size()<=1 ? -0.0 : truncation);
+    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),&PBlocks_,size(),results,&(pred_.Guess),converge),chi,left_size()<=1 ? -0.0 : truncation);
     CentralDecomposition.SquareRescale(1.0);
-    CentralDecomposition.store(getName(),left_size()+1,right_size()+1);
+    CentralDecomposition.store(getName(),left_size()+1,right_size()+1,left_size()==right_size());
 
     double S_E(entropy(CentralDecomposition.Values));
     results.Real_measurements.push_back(S_E);
@@ -1015,9 +1071,9 @@ namespace ajaj {
 
       SparseMatrix s(contract_to_sparse(PT.first,0,Vector,0,contract00112233));//really should be a scalar
       //std:: cout << "s: " << s.get_x(0) <<std::endl;
-      std::cout << std::endl << std::endl;
-      s.print();
-      std::cout << std::endl << std::endl;
+      //std::cout << std::endl << std::endl;
+      //s.print();
+      //std::cout << std::endl << std::endl;
 
       if (s.rows()!=1 || s.cols()!=1){
 	std::cout << "Error contracting projector down to scalar: " << s.rows() << " " << s.cols() << std::endl;
