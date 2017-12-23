@@ -247,7 +247,7 @@ namespace ajaj {
 
   const option::Descriptor TEBD_usage[11] =
     {
-      {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: TEBD_DRV.bin [-B <number> -n <number> -s <number> -O <number> -i <initial_state_name>] <model_filename> <number of vertices(chains)> \n  <number of vertices/chains> must be EVEN.\n"},
+      {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: TEBD_DRV.bin [OPTIONS] <model_filename> <number of vertices(chains)> \n  <number of vertices/chains> must be EVEN.\n"},
       {CHI,0,"B","bond-dimension",Arg::PositiveNumeric,"  -B <number>, \t--bond-dimension=<number>"
        "  \tThe maximum bond dimension, >= 0. If 0, then ignored." },
       {TRUNC,0,"e","truncation-error",Arg::PositiveDouble,"  -e <number>, \t--truncation-error=<number>"
@@ -290,6 +290,14 @@ namespace ajaj {
        "  \tCalculate the entanglement entropy for <number> consecutive vertices in the infinite system."},
       {TIMEFILE,0,"t","time-filename",Arg::NonEmpty," -t <filename>, \t--time-filename=<filename>"
        "  \tUse time data from <filename> to include times in output file."},
+      { 0, 0, 0, 0, 0, 0 }
+    };
+
+  const option::Descriptor fMEAS_usage[3] =
+    {
+      {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: FINITE_MEASURE.bin [OPTIONS] <model_filename> <number of vertices(chains)> <state_name1> ... \n  <number of vertices/chains> must be EVEN.\n"},
+      {FINITE_MEASUREMENT,0,"M","finite-measurement",Arg::FiniteMeasurementInfo,"  -M <opfile1>,<vertex1>[,<opfile2>,<vertex2>], \t--finite-measurement=<opfile1>,<vertex1>[,<opfile2>,<vertex2>]"
+       "  \tSpecify a one or two point measurement."},
       { 0, 0, 0, 0, 0, 0 }
     };
 
@@ -633,7 +641,7 @@ namespace ajaj {
 	  for (size_t f=0;f<parse.nonOptionsCount();++f){
 	    files_.emplace_back(parse.nonOption(f));
 	  }
-	  if (options[SEPARATION]){ //has any spearation been explicitly defined, even if zero? Then definitely a two point function
+	  if (options[SEPARATION]){ //has any separation been explicitly defined, even if zero? Then definitely a two point function
 	    separation_=stoul(options[SEPARATION].arg);
 	    two_point_=1;
 	  }
@@ -679,6 +687,61 @@ namespace ajaj {
     const std::string& time_filename() const {return timefile_;}
   };
 
+class fMEAS_Args : public Base_Args{
+    std::string initial_state_name_;
+    unsigned int N_; //used by finite codes
+    std::vector<StringIndexPairs> finite_measurements_;
+    std::vector<std::string> state_names_;
+
+  public:
+    fMEAS_Args(int argc, char* argv[]) : Base_Args(argc,argv,fMEAS_usage) {
+      
+     if (parse.nonOptionsCount()<3 || std::string(parse.nonOption(0))==std::string("-")){
+	std::cout << "Incorrect command line arguments." << std::endl <<std::endl;
+	valid_=0;
+      }
+     else {
+       N_=stoul(parse.nonOption(1));
+       for (size_t f=2;f<parse.nonOptionsCount();++f){
+	 state_names_.emplace_back(parse.nonOption(f));
+       }
+       valid_=(valid_==1);
+     }
+      //
+     if (is_valid()){
+       if (N_==0 || (N_ % 2)){
+	 std::cout << "Illegal number of vertices requested: " << N_ << std::endl;
+	 std::cout << "Must be a positive even value!" <<std::endl<<std::endl;
+	 valid_=0;
+       }
+       if (options[FINITE_MEASUREMENT]){
+	 for (option::Option* opt = options[FINITE_MEASUREMENT]; opt; opt = opt->next()){
+	   StringIndexPairs temp;
+	   std::istringstream ss(opt->arg);
+	   ss >> temp;
+	   //check all locations specified in temp
+	   for (auto&& l : temp){
+	     if (l.second < 1 || l.second >N_) {
+	       std::cout << "Specified measurement vertex " << l.second << " is outside bounds 1:" <<N_<<std::endl<<std::endl;
+	       valid_=0;
+	     }
+	   }
+	   if (valid_)
+	     finite_measurements_.emplace_back(temp);
+	 }
+       }
+     }
+     print();
+    }
+
+    unsigned int num_vertices() const {return N_;}
+    const std::vector<std::string>& state_names() const {return state_names_;}
+    const std::vector<StringIndexPairs>& finite_measurements() const {
+      return finite_measurements_;
+    }
+
+  };
+  
   class Store_Args : public Base_Args{
   public:
     Store_Args(int argc, char* argv[]) : Base_Args(argc,argv,store_usage){

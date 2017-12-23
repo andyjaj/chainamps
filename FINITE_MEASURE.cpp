@@ -1,5 +1,5 @@
 /**
- *@file TEBD_DRV.cpp Driver file for TEBD.
+ *@file FINITE_MEASURE.cpp Driver file for measurements on finite states.
  */
 #include <cstdlib>
 #include <iostream>
@@ -21,18 +21,14 @@
 #include "make_model.hpp"
 
 int main(int argc, char** argv){
-
-  ajaj::TEBD_Args RuntimeArgs(argc,argv);
+  
+  ajaj::fMEAS_Args RuntimeArgs(argc,argv);
   if (RuntimeArgs.is_valid()){
     ajaj::Model myModel(ajaj::MakeModelFromArgs(RuntimeArgs));
-    ajaj::uMPXInt CHI(RuntimeArgs.chi());
-    double trunc(RuntimeArgs.trunc());
     ajaj::uMPXInt number_of_vertices(RuntimeArgs.num_vertices());
-    ajaj::uMPXInt number_of_time_steps(RuntimeArgs.number_of_steps());
-    ajaj::uMPXInt trotter_order(RuntimeArgs.trotter_order());
-    ajaj::uMPXInt measurement_interval(RuntimeArgs.measurement_interval());
-    double time_step_size(RuntimeArgs.step_size());
 
+
+    //We need to generate the operators and store them
     std::vector<ajaj::NamedMPO_matrix> generated_MPOs; //actual storage for MPOs
     typedef std::vector<std::vector<std::pair<size_t,ajaj::uMPXInt> > > MPOIndexVertexPairs;
     MPOIndexVertexPairs measurement_lookups;
@@ -98,7 +94,7 @@ int main(int argc, char** argv){
     std::vector<ajaj::MPO_matrix> measured_operators(1,myModel.vertex.make_one_site_operator(1)); //for Ising this is the fermion occupation number on a chain
     //ajaj::DataOutput results(ajaj::OutputName(RuntimeArgs.filename(),"Evolution.dat"),"Index, Time, Truncation, Entropy, abs(Overlap), Real(Overlap), Im(Overlap), Re(Op1), Im(Op1), ...");
     std::ostringstream commentline;
-    commentline << "Index, Time, Truncation, Entropy, abs(Overlap), Real(Overlap), Im(Overlap)";
+    commentline << "Index, Entropy"; //refers to order states are processed
     if (measurement_lookups.size()) commentline << measurednames.str(); 
 
     std::vector<ajaj::MultiVertexMeasurement> measurements;
@@ -115,81 +111,20 @@ int main(int argc, char** argv){
       }
     }
 
-    //TEBD, select between files, product state definition by c numbers, or default
-    std::string StateName;
-    ajaj::c_specifier_array CSpec;
-
-    if (!RuntimeArgs.initial_state_name().empty()){
-      StateName=RuntimeArgs.initial_state_name();
-    }
-    else if (!RuntimeArgs.c_number_filename().empty()){
-      StateName=RuntimeArgs.c_number_filename();
-      CSpec=ajaj::LoadCNumbers(RuntimeArgs.c_number_filename());
-    }
-    else {
-      //default case, product state of vertex states in
-      std::cout << "No initial state specified." << std::endl <<"Defaulting to product state of local basis [0] states." <<std::endl; 
-      StateName="DefaultState";
-      CSpec=ajaj::c_specifier_array(1,ajaj::c_specifier_vector(1,ajaj::c_specifier(0,1.0)));
-    }
-
-    std::cout << "Using initial state '" << StateName << "'." <<std::endl; 
-
-    std::stringstream Rss;
-    Rss<<RuntimeArgs.filename()<<"_TEBD_"<<number_of_vertices<<"_"<<StateName;
-    ajaj::DataOutput results(ajaj::OutputName(Rss.str(),"Evolution.dat"),commentline.str());
-    ajaj::FiniteMPS F(myModel.basis(),StateName,number_of_vertices,CSpec); //if CSpec is empty, nothing is changed.
+    ajaj::DataOutput results("FINITE_RESULTS.dat",commentline.str());
     
-    //do we have time dep couplings?
-    if (!myModel.times().size()){ //need this for builtin models, with old style coupling params
-      std::cout <<"Evolution hamiltonian is static." <<std::endl;
-      ajaj::TEBD finrun(myModel.H_MPO,F,time_step_size,results,trotter_order);
-      finrun.evolve(number_of_time_steps,measurements,CHI/*bond dimension*/,trunc,measurement_interval);
-      if (finrun.good()){
-	return 0;
+    size_t Index(0);
+    for (auto&& StateName : RuntimeArgs.state_names()){
+      std::cout << StateName <<std::endl;
+      ajaj::FiniteMPS F(myModel.basis(),StateName,number_of_vertices);
+      ajaj::TEBD finrun(myModel.H_MPO,F,results);
+      finrun.evolve(Index,measurements);
+      if (!finrun.good()){
+	return 1;
       }
+      ++Index;
     }
-    else {
-      std::cout <<"Evolution hamiltonian is time dependent." <<std::endl;
-      //if ramp step size is smaller than step size, then use that until ramp over (check each time)
-      //if step size smaller than ramp step size then use size that is commensurate with ramp step, but smaller than step size.
-      ajaj::uMPXInt ramp_step=1;
-      //do the first explicitly in order to creat the TEBD object
-      double ramp_step_size_1=myModel.times()[ramp_step]-myModel.times()[ramp_step-1];
-      double current_step_size_1=ramp_step_size_1;
-      ajaj::uMPXInt num_1=1;
-      while (current_step_size_1>time_step_size){current_step_size_1=ramp_step_size_1/(++num_1);}
-      if (num_1>number_of_time_steps) num_1=number_of_time_steps;
-
-      ajaj::TEBD finrun(myModel.H_MPO,F,current_step_size_1,results,trotter_order);
-      finrun.evolve(num_1,measurements,CHI/*bond dimension*/,trunc/*min s val*/,measurement_interval);
-      number_of_time_steps-=num_1;
-      ++ramp_step;
-
-      //now continue with time dep params
-      while (number_of_time_steps>0 && ramp_step < myModel.times().size() && finrun.good()){
-	double ramp_step_size=myModel.times()[ramp_step]-myModel.times()[ramp_step-1];
-	double current_step_size=ramp_step_size;
-	ajaj::uMPXInt num=1;
-	while (current_step_size>time_step_size){current_step_size=ramp_step_size/(++num);}
-	if (num>number_of_time_steps) num=number_of_time_steps;
-
-	finrun.change_bond_operator(myModel.change_H_MPO(myModel.coupling_arrays()[ramp_step-1]),current_step_size);
-	finrun.evolve(num,measurements,CHI/*bond dimension*/,trunc/*min s val*/,measurement_interval);
-	number_of_time_steps-=num;
-	++ramp_step;
-      }
-      
-      if (number_of_time_steps>0 && finrun.good()){
-	std::cout <<"End of time dependent hamiltonian stage." <<std::endl;
-	finrun.change_bond_operator(myModel.change_H_MPO(myModel.coupling_arrays()[ramp_step-1]),time_step_size);
-	finrun.evolve(number_of_time_steps,measurements,CHI/*bond dimension*/,trunc/*min s val*/,measurement_interval);
-      }
-
-      if (finrun.good()){
-	return 0;
-      }
-    }
+    return 0;
   }
   return 1;
 }

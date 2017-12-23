@@ -78,5 +78,8 @@ target_link_libraries(TEBD_DRV.bin TIME ${COMMON_LIBS})
 add_executable(UNITCELL_MEASURE.bin UNITCELL_MEASURE.cpp)
 target_link_libraries(UNITCELL_MEASURE.bin MEAS ${COMMON_LIBS})
 
+add_executable(FINITE_MEASURE.bin FINITE_MEASURE.cpp)
+target_link_libraries(FINITE_MEASURE.bin TIME ${COMMON_LIBS})
+
 add_executable(STORE_MODEL.bin STORE_MODEL.cpp)
 target_link_libraries(STORE_MODEL.bin ${COMMON_LIBS})

@@ -72,6 +72,9 @@ namespace arpack {
       iparam[2] = maxiter;
       iparam[6] = 1;
     }
+    else {
+      std::cout << "Null iparam! Allocation error" << std::endl; exit(1);
+    }
 
     if (ncv_delta!=0){
       ncv = ncv+ncv_delta*nev;
@@ -92,9 +95,7 @@ namespace arpack {
       workev = new std::complex<double>[2*ncv];
     }
 
-    else {
-      std::cout << "Null iparam! Allocation error" << std::endl; exit(1);
-    }
+   
   }
   
   bool cpparpack(const cs_cl* sparse,arpack_int n, arpack_int nev, std::complex<double> *Evals, std::complex<double> *Evecs, char which[3],cs_cl* initial){
