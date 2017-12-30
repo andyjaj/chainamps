@@ -181,7 +181,7 @@ namespace ajaj {
 
   };
 
-  enum optionIndex {UNKNOWN,CHI,TRUNC,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET,FINITE_MEASUREMENT,NEV,ENTANGLEMENT,VERTEX_ENTANGLEMENT,C_SPECIFIER,TIMEFILE};
+  enum optionIndex {UNKNOWN,CHI,TRUNC,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET,FINITE_MEASUREMENT,NEV,ENTANGLEMENT,VERTEX_ENTANGLEMENT,C_SPECIFIER,TIMEFILE,FDMRG_MODE};
 
   const option::Descriptor store_usage[2] =
     {
@@ -293,11 +293,14 @@ namespace ajaj {
       { 0, 0, 0, 0, 0, 0 }
     };
 
-  const option::Descriptor fMEAS_usage[3] =
+  const option::Descriptor fMEAS_usage[4] =
     {
       {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: FINITE_MEASURE.bin [OPTIONS] <model_filename> <number of vertices(chains)> <state_name1> ... \n  <number of vertices/chains> must be EVEN.\n"},
       {FINITE_MEASUREMENT,0,"M","finite-measurement",Arg::FiniteMeasurementInfo,"  -M <opfile1>,<vertex1>[,<opfile2>,<vertex2>], \t--finite-measurement=<opfile1>,<vertex1>[,<opfile2>,<vertex2>]"
        "  \tSpecify a one or two point measurement."},
+      {FDMRG_MODE,0,"D","fDMRG-mode",Arg::None,"  -D, \t--fDMRG-mode"
+       "  \tSpecial mode for fDMRG output files, needs no input filenames."},
+      
       { 0, 0, 0, 0, 0, 0 }
     };
 
@@ -688,23 +691,29 @@ namespace ajaj {
   };
 
 class fMEAS_Args : public Base_Args{
-    std::string initial_state_name_;
-    unsigned int N_; //used by finite codes
-    std::vector<StringIndexPairs> finite_measurements_;
-    std::vector<std::string> state_names_;
+  unsigned int N_; //used by finite codes
+  std::vector<StringIndexPairs> finite_measurements_;
+  std::vector<std::string> state_names_;
+  bool fdmrg_mode_;
 
   public:
     fMEAS_Args(int argc, char* argv[]) : Base_Args(argc,argv,fMEAS_usage) {
       
-     if (parse.nonOptionsCount()<3 || std::string(parse.nonOption(0))==std::string("-")){
+      if (parse.nonOptionsCount()<2 || (parse.nonOptionsCount()==2 && !options[FDMRG_MODE]) || (parse.nonOptionsCount()>=3 && options[FDMRG_MODE]) || std::string(parse.nonOption(0))==std::string("-")){
 	std::cout << "Incorrect command line arguments." << std::endl <<std::endl;
 	valid_=0;
       }
      else {
        N_=stoul(parse.nonOption(1));
-       for (size_t f=2;f<parse.nonOptionsCount();++f){
-	 state_names_.emplace_back(parse.nonOption(f));
+       if (!options[FDMRG_MODE]) {
+	fdmrg_mode_=0;
+	 for (size_t f=2;f<parse.nonOptionsCount();++f){
+	   state_names_.emplace_back(parse.nonOption(f));
+	 }
        }
+      else
+	fdmrg_mode_=1;
+      
        valid_=(valid_==1);
      }
       //
@@ -739,6 +748,7 @@ class fMEAS_Args : public Base_Args{
     const std::vector<StringIndexPairs>& finite_measurements() const {
       return finite_measurements_;
     }
+  bool fdmrg_mode() const {return fdmrg_mode_;}
 
   };
   

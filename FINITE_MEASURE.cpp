@@ -114,17 +114,44 @@ int main(int argc, char** argv){
     ajaj::DataOutput results("FINITE_RESULTS.dat",commentline.str());
     
     size_t Index(0);
-    for (auto&& StateName : RuntimeArgs.state_names()){
-      std::cout << StateName <<std::endl;
-      ajaj::FiniteMPS F(myModel.basis(),StateName,number_of_vertices);
-      ajaj::TEBD finrun(myModel.H_MPO,F,results);
-      finrun.evolve(Index,measurements);
-      if (!finrun.good()){
-	return 1;
+    if (!RuntimeArgs.fdmrg_mode()){
+      for (auto&& StateName : RuntimeArgs.state_names()){
+	std::cout << StateName <<std::endl;
+	ajaj::FiniteMPS F(myModel.basis(),StateName,number_of_vertices);
+	ajaj::TEBD finrun(myModel.H_MPO,F,results);
+	finrun.evolve(Index,measurements);
+	if (!finrun.good()){
+	  return 1;
+	}
+	++Index;
       }
-      ++Index;
+      return 0;
     }
-    return 0;
+    else {
+      bool gs=1;
+      bool bad_name=0;
+      while (!bad_name){
+	std::string StateName;
+	if (gs) {StateName="GroundState"; gs=0;}
+	else {
+	  std::stringstream fnss;
+	  fnss << "Excited_" << Index;
+	  StateName=fnss.str();
+	}
+	ajaj::FiniteMPS F(myModel.basis(),StateName,number_of_vertices);
+	if (!F.valid_files()) {bad_name=1; continue;}
+	
+	std::cout << StateName <<std::endl;
+
+	ajaj::TEBD finrun(myModel.H_MPO,F,results);
+	finrun.evolve(Index,measurements);
+	if (!finrun.good()){
+	  return 1;
+	}
+	++Index;  
+      }
+      return 0;
+    }
   }
   return 1;
 }
