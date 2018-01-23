@@ -24,8 +24,8 @@ namespace arpack {
   void arpack_workspace::init(){
       
       ldv = n;
-      maxiter = converge_flag ? 50 : 3;
-      if (!converge_flag) tol=0.001;
+      maxiter = converge_flag ? 50 : 2;
+      if (!converge_flag) tol=0.1;
       ido = 0;
       iparam = new arpack_int[11];
       iparam[0] = 1;
