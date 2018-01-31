@@ -86,7 +86,7 @@ namespace ll{
     ModelVertex.Operators.push_back(ajaj::VertexOperator("Psi_dagger",ModelVertex.Spectrum.size()));      
     ModelVertex.Operators.push_back(ajaj::VertexOperator("Density",ModelVertex.Spectrum.size()));   
     ModelVertex.Operators.push_back(ajaj::VertexOperator("Density_integrated",ModelVertex.Spectrum.size()));   
-    ModelVertex.Operators.push_back(ajaj::VertexOperator("Phase",ModelVertex.Spectrum.size()));   
+    ModelVertex.Operators.push_back(ajaj::VertexOperator("Phase",ModelVertex.Spectrum.size()));
 
     double factor=pow(tpi_R,Beta*Beta);
 

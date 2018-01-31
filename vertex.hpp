@@ -146,6 +146,24 @@ namespace ajaj{
       return MPO_matrix();
     }
 
+    MPO_matrix make_one_site_operator(const ShiftedOperatorInfo& s1, const ShiftedOperatorInfo& s2) const{
+      std::vector<MPXIndex> indices;
+      StateArray dummy(1,State(basis().getChargeRules()));
+      indices.emplace_back(1,basis());
+      indices.emplace_back(1,dummy);
+      indices.emplace_back(0,basis());
+      indices.emplace_back(0,dummy);
+
+      //want to combine two operators at the matrix element level (i.e. by simple matrix multiplication), but with possible unitary transform...
+      if (operator_exists(s1.Name) && operator_exists(s2.Name)){
+	if (s1.WhichCharge<basis().getChargeRules().size() && s2.WhichCharge<basis().getChargeRules().size()){
+	  return UnitaryTransformMPO_matrix(basis(),indices,get_operator_matrix(s1.Name),s1.WhichCharge,s1.Factor,get_operator_matrix(s2.Name),s2.WhichCharge,s2.Factor);
+	}
+	else {std::cout << "Requested quantum number outside bounds! " << s1.WhichCharge << " and " << s2.WhichCharge << " out of " << basis().getChargeRules().size() << std::endl;}
+      }
+      return MPO_matrix();
+    }
+    
     const Basis& basis() const {return Spectrum;}
 
     const QNVector& getChargeRules() const {

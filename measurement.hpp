@@ -36,77 +36,24 @@ namespace ajaj {
     std::vector<meas_pair> VertexOperatorPtrs_;
     MPX_matrix T_;
     std::complex<double> Result_;
+    uMPXInt start_; //should be set by find_start_and_finish_()
+    uMPXInt finish_; //should be set as above
 
-    void link_(const std::vector<const MPO_matrix*>& ops /*const MPO_matrix* Op*/, const MPX_matrix& A);
-    void start_chain_(/*const MPO_matrix* Op,*/ const MPX_matrix& A);
+    void link_(const std::vector<const MPO_matrix*>& ops, const MPX_matrix& A);
+    void start_chain_(const MPX_matrix& A);
     void finish_chain_(const MPX_matrix& Lambda);
-
-    std::vector<const MPO_matrix*> get_ops(uMPXInt v){
-      std::vector<const MPO_matrix*> ans; 
-      for (auto&& vop : VertexOperatorPtrs_){
-	  if (vop.position()>v) break; //stop searching when we reach a point past v.
-	  if (v==vop.position()) {
-	    ans.emplace_back(vop.MPO_ptr());
-	  }	
-	}
-      return ans;
-    }
+    std::vector<const MPO_matrix*> get_ops(uMPXInt v);
+    void find_start_and_finish_();
+    
   public:
-    MultiVertexMeasurement(uMPXInt start, const MPO_matrix* Op1Ptr, uMPXInt finish, const MPO_matrix* Op2Ptr) : VertexOperatorPtrs_({{meas_pair(start,Op1Ptr), meas_pair(finish,Op2Ptr)}}), T_(Op1Ptr->GetPhysicalSpectrum()),Result_(0.0) {
-      if (start>finish || start<1){
-	std::cout << "Incorrectly defined MultiVertexMeasurement positions, start, finish: " << start << "," << finish <<std::endl;
-	std::cout << "start must be >=1 and < finish. finish must be <= Number of Vertices"<<std::endl;
-	exit(1);
-      }
-      /*else if (start==finish && Op2Ptr!=nullptr){ //2 operators on the same vertex
-	//std::cout << "Incorrectly defined MultiVertexMeasurement" << start << "," << finish <<std::endl;
-	//std::cout << "If start==finish, no second operator should be defined."<<std::endl;
-	std::cout <<"Measuring two point function on a single vertex" <<std::endl;
-	//make this a special single vertex measurement...
-	exit(1);
-	}*/
-    }
-
-    MultiVertexMeasurement(uMPXInt start, const MPO_matrix* OpPtr) : VertexOperatorPtrs_({{meas_pair(start,OpPtr)}}), T_(OpPtr->basis()),Result_(0.0) {}
-    //MultiVertexMeasurement() : VertexOperatorPtrs_({{meas_pair(0,nullptr), meas_pair(0,nullptr)}}), Result_(0.0) {}
+    MultiVertexMeasurement(uMPXInt start, const MPO_matrix* OpPtr) : VertexOperatorPtrs_({{meas_pair(start,OpPtr)}}), T_(OpPtr->basis()),Result_(0.0) {find_start_and_finish_();} //special single measurement case
+    MultiVertexMeasurement(uMPXInt start, const MPO_matrix* Op1Ptr, uMPXInt finish, const MPO_matrix* Op2Ptr);//two measurement case
+    MultiVertexMeasurement(const std::vector<meas_pair>& VOPs) : VertexOperatorPtrs_(VOPs) {find_start_and_finish_();}
+    
     const meas_pair& operator[](uMPXInt i) const {return VertexOperatorPtrs_.at(i);}
-    uMPXInt start() const {return VertexOperatorPtrs_.begin()->position();}
-    uMPXInt finish() const {return VertexOperatorPtrs_.back().position();}
-    void update(uMPXInt v, const MPXDecomposition& D) {
-      if (v<finish() && v>start()){
-	/*const MPO_matrix* op_p=nullptr;
-	  for (auto&& vop : VertexOperatorPtrs_){
-	  if (vop.position()>v) break; //stop searching when we reach a point past v.
-	  if (v==vop.position()) {
-	    op_p=vop.MPO_ptr(); break;
-	  }
-	  }
-	  link_(op_p,D.ColumnMatrix);*/
-	link_(get_ops(v),D.ColumnMatrix);
-
-      }
-      else {
-	//depending on v, start measurement chain, or continue it
-	if (v==start()){
-	  std::vector<const MPO_matrix*> ops(get_ops(v));
-	  //start_chain_(VertexOperatorPtrs_.begin()->MPO_ptr(),D.ColumnMatrix); //contract first measurement etc.
-	  start_chain_(D.ColumnMatrix); //contract first measurement etc.
-
-	}
-	if (v==finish()){
-	  //apply and finish off with lambda^2
-	  if (finish()!=start()) {//one vertex measurement doesn't need this step
-	    //link_(VertexOperatorPtrs_.back().MPO_ptr(),D.ColumnMatrix);
-	    link_(get_ops(v),D.ColumnMatrix);
-	  }
-	  
-	  finish_chain_(MPX_matrix(D.ColumnMatrix.GetPhysicalSpectrum(),D.ColumnMatrix.Index(2),D.Values));
-	}
-	else { //v<start() or v>finish()
-	  //do nothing
-	}
-      }
-    }
+    uMPXInt start() const {return start_;}//argh!
+    uMPXInt finish() const {return finish_;}
+    void update(uMPXInt v, const MPXDecomposition& D); //update measurement with next vertex
     std::complex<double> result() const {
       return Result_;
     }
