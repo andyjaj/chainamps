@@ -15,12 +15,11 @@ namespace ajaj {
   MultiVertexMeasurement::MultiVertexMeasurement(uMPXInt start, const MPO_matrix* Op1Ptr, uMPXInt finish, const MPO_matrix* Op2Ptr) : VertexOperatorPtrs_({{meas_pair(start,Op1Ptr), meas_pair(finish,Op2Ptr)}}), T_(Op1Ptr->GetPhysicalSpectrum()),Result_(0.0) {
     start_=start;
     finish_=finish;
-      if (start>finish || start<1){
-	std::cout << "Incorrectly defined MultiVertexMeasurement positions, start, finish: " << start << "," << finish <<std::endl;
-	std::cout << "start must be >=1 and < finish. finish must be <= Number of Vertices"<<std::endl;
-	exit(1);
-      }
+    if (start>finish || start<1){
+      std::cout << "Incorrectly defined MultiVertexMeasurement positions, start, finish: " << start << "," << finish <<std::endl;
+      exit(1);
     }
+  }
 
   void MultiVertexMeasurement::find_start_and_finish_(){
     if (VertexOperatorPtrs_.size()){
@@ -32,6 +31,14 @@ namespace ajaj {
       }
       start_=Ts;
       finish_=Tf;
+
+      
+
+      if (start_ > finish_) {
+	std::cout << "Incorrectly defined MultiVertexMeasurement positions, start, finish: " << start_ << "," << finish_ <<std::endl;
+	exit(1);
+      }
+      
     }
     else {
       start_=0;
@@ -42,7 +49,7 @@ namespace ajaj {
   std::vector<const MPO_matrix*> MultiVertexMeasurement::get_ops(uMPXInt v){
       std::vector<const MPO_matrix*> ans; 
       for (auto&& vop : VertexOperatorPtrs_){
-	  if (vop.position()>v) break; //stop searching when we reach a point past v.
+	//if (vop.position()>v) break; //stop searching when we reach a point past v.
 	  if (v==vop.position()) {
 	    ans.emplace_back(vop.MPO_ptr());
 	  }	
