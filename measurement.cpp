@@ -357,6 +357,13 @@ namespace ajaj {
     return BondEnergy-ExcessEnergy;
   }
 
+  std::complex<double> iTwoVertexEnergy(const MPO_matrix& H_MPO,const UnitCell& Ortho){
+    const ajaj::MPO_matrix H1(H_MPO.ExtractMPOBlock(std::pair<ajaj::MPXInt,ajaj::MPXInt>(H_MPO.Index(1).size()-1,H_MPO.Index(1).size()-1),std::pair<ajaj::MPXInt,ajaj::MPXInt>(0,0))); //form the on-vertex part of a Hamiltonian
+    const ajaj::MPO_matrix ColX(H_MPO.ExtractMPOBlock(std::pair<ajaj::MPXInt,ajaj::MPXInt>(1,H_MPO.Index(1).size()-2),std::pair<ajaj::MPXInt,ajaj::MPXInt>(0,0)));
+    const ajaj::MPO_matrix RowX(H_MPO.ExtractMPOBlock(std::pair<ajaj::MPXInt,ajaj::MPXInt>(H_MPO.Index(1).size()-1,H_MPO.Index(1).size()-1),std::pair<ajaj::MPXInt,ajaj::MPXInt>(1,H_MPO.Index(3).size()-2)));
+    return iTwoVertexEnergy(ColX,RowX,H1,Ortho);
+  }
+  
   std::complex<double> iTwoVertexEnergy(const MPO_matrix& ColX,const MPO_matrix& RowX,const MPO_matrix& H1,const UnitCell& Ortho){
     if (Ortho.Matrices.size()!=2){std::cout << "Only two vertex basis accepted for now" <<std::endl; return 0.0;}
 

@@ -24,10 +24,6 @@ int main(int argc, char** argv){
     ajaj::Model myModel(ajaj::MakeModelFromArgs(RuntimeArgs));
     myModel.basis().print();
 
-#ifndef DNDEBUG
-    myModel.H_MPO.print_matrix();
-#endif
-
     ajaj::uMPXInt CHI(RuntimeArgs.chi());
     double trunc(RuntimeArgs.trunc());
     ajaj::uMPXInt number_of_time_steps(RuntimeArgs.number_of_steps());
@@ -75,6 +71,10 @@ int main(int argc, char** argv){
 
     ajaj::DataOutput results(ajaj::OutputName(Rss.str(),"Evolution.dat"),"Index, Time, Truncation, Entropy, abs(Overlap), Real(Overlap), Im(Overlap)");
 
+    //before going further, let's measure the energy density
+    std::complex<double> InitEnPerVertex = ajaj::iTwoVertexEnergy(myModel.H_MPO,OrthogonaliseInversionSymmetric(Initial));
+    std::cout << std::endl << "INITIAL ENERGY PER VERTEX IS " <<  InitEnPerVertex << std::endl << std::endl;
+    
     //do we have time dep couplings?
     if (!myModel.times().size()){ //need this for builtin models, with old style coupling params
       std::cout <<"Evolution hamiltonian is static." <<std::endl;
@@ -88,7 +88,7 @@ int main(int argc, char** argv){
       //if ramp step size is smaller than step size, then use that until ramp over (check each time)
       //if step size smaller than ramp step size then use size that is commensurate with ramp step, but smaller than step size.
       ajaj::uMPXInt ramp_step=1;
-      //do the first explicitly in order to creat the TEBD object
+      //do the first explicitly in order to create the TEBD object
       double ramp_step_size_1=myModel.times()[ramp_step]-myModel.times()[ramp_step-1];
       double current_step_size_1=ramp_step_size_1;
       ajaj::uMPXInt num_1=1;

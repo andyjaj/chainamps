@@ -53,6 +53,15 @@ int main(int argc, char** argv){
       }
     }
 
+    std::vector<ajaj::MPO_matrix> H1ColXRowX;
+    if (!RuntimeArgs.model_filename().empty()){
+      ajaj::Model myModel(ajaj::MakeModelFromFile(RuntimeArgs.model_filename()));
+      myModel.basis().print();
+      H1ColXRowX.emplace_back(myModel.H_MPO.ExtractMPOBlock(std::pair<ajaj::MPXInt,ajaj::MPXInt>(myModel.H_MPO.Index(1).size()-1,myModel.H_MPO.Index(1).size()-1),std::pair<ajaj::MPXInt,ajaj::MPXInt>(0,0)));
+      H1ColXRowX.emplace_back(myModel.H_MPO.ExtractMPOBlock(std::pair<ajaj::MPXInt,ajaj::MPXInt>(1,myModel.H_MPO.Index(1).size()-2),std::pair<ajaj::MPXInt,ajaj::MPXInt>(0,0)));
+      H1ColXRowX.emplace_back(myModel.H_MPO.ExtractMPOBlock(std::pair<ajaj::MPXInt,ajaj::MPXInt>(myModel.H_MPO.Index(1).size()-1,myModel.H_MPO.Index(1).size()-1),std::pair<ajaj::MPXInt,ajaj::MPXInt>(1,myModel.H_MPO.Index(3).size()-2)));
+    }
+    
     ajaj::Vertex iMEAS_vertex; // a dummy vertex
     std::vector<ajaj::ShiftedOperatorInfo> opinfo;
 
@@ -162,12 +171,16 @@ int main(int argc, char** argv){
 	  if (RuntimeArgs.vert_entanglement()){
 	    indexed_results.back().second.Real_measurements.emplace_back(MultiVertexEntropy(AA,RuntimeArgs.vert_entanglement()));
 	  }
+	  if (!RuntimeArgs.model_filename().empty()){
+	    indexed_results.back().second.Real_measurements.emplace_back(std::real(ajaj::iTwoVertexEnergy(H1ColXRowX[0],H1ColXRowX[1],H1ColXRowX[2],AA)));
+	  }
 	  if (RuntimeArgs.nev()){
 	    std::vector<std::complex<double> > Transfer_eigs(ajaj::TransferMatrixEigs(AA,RuntimeArgs.nev(),TargetState));
 	    for (auto&& eig : Transfer_eigs) {
 	      indexed_results.back().second.Real_measurements.emplace_back(abs(eig));
 	    }
 	  }
+
 	  if (iMEAS_vertex.Operators.size()){
 	    if (iMEAS_vertex.Spectrum.size()!=dim){
 	      std::cout << "UnitCell Basis size doesn't match operator dimensions! " << iMEAS_vertex.Spectrum.size() << " " << dim << std::endl;
@@ -253,6 +266,10 @@ int main(int argc, char** argv){
       commentstream << "," << RuntimeArgs.vert_entanglement() <<" vertex S_E";
     }
 
+    if (!RuntimeArgs.model_filename().empty()){
+      commentstream << ",Energy/vertex";
+    }
+    
     for (size_t l=0; l<RuntimeArgs.nev();++l){
       commentstream << ",abs(Lambda_" << l+1 << ")";
     }
@@ -264,7 +281,7 @@ int main(int argc, char** argv){
       }
       commentstream << ",Re(" << opss.str() <<"),Im(" << opss.str() << ")";
     }
-
+    
     ajaj::DataOutput results_file(outfilename.str(),commentstream.str());
 
     for (auto&& i : indexed_results){

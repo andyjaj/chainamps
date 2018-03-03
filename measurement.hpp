@@ -84,6 +84,7 @@ namespace ajaj {
 
   /** Special routine to measure the energy per vertex, because Hamiltonian is a lower triangular matrix product operator */
   std::complex<double> SimpleEnergy(const MPO_matrix& LeftH,const MPO_matrix& RightH,const MPO_matrix& H1,const MPO_matrix& I,const UnitCell& Ortho);
+  std::complex<double> iTwoVertexEnergy(const MPO_matrix& H_MPO,const UnitCell& Ortho);
   std::complex<double> iTwoVertexEnergy(const MPO_matrix& ColX,const MPO_matrix& RowX,const MPO_matrix& H1,const UnitCell& Ortho);
 
   class TransferMatrixComponents {
@@ -94,7 +95,6 @@ namespace ajaj {
 
     const UnitCell& KetCell_;
     const UnitCell& BraCell_;
-
 
     std::vector<std::pair<const MPS_matrix*,const MPS_matrix*> > BraKetMatrixPtrs_;
 

@@ -181,7 +181,7 @@ namespace ajaj {
 
   };
 
-  enum optionIndex {UNKNOWN,CHI,TRUNC,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET,FINITE_MEASUREMENT,NEV,ENTANGLEMENT,VERTEX_ENTANGLEMENT,C_SPECIFIER,TIMEFILE,FDMRG_MODE};
+  enum optionIndex {UNKNOWN,CHI,TRUNC,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET,FINITE_MEASUREMENT,NEV,ENTANGLEMENT,VERTEX_ENTANGLEMENT,C_SPECIFIER,TIMEFILE,FDMRG_MODE,IENERGY};
 
   const option::Descriptor store_usage[2] =
     {
@@ -271,7 +271,7 @@ namespace ajaj {
       { 0, 0, 0, 0, 0, 0 }
     };
 
-  const option::Descriptor iMEAS_usage[10] =
+  const option::Descriptor iMEAS_usage[11] =
     {
       {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: UNITCELL_MEASURE.bin [OPTIONS] <unitcell_filename1> ... \n"},
       {OPERATORFILE,0,"O","operator filename",Arg::NonEmpty,"  -O <filename>, \t--operator-file=<filename>"
@@ -290,6 +290,8 @@ namespace ajaj {
        "  \tCalculate the entanglement entropy for <number> consecutive vertices in the infinite system."},
       {TIMEFILE,0,"t","time-filename",Arg::NonEmpty," -t <filename>, \t--time-filename=<filename>"
        "  \tUse time data from <filename> to include times in output file."},
+      {IENERGY,0,"H","Energy per Vertex",Arg::NonEmpty," -H <model_filename>, \t--hamiltonian-modelfile=<model_filename>"
+       "  \tCalculate the energy per vertex for the unitcell using Hamiltonian defined in the model file."},
       { 0, 0, 0, 0, 0, 0 }
     };
 
@@ -635,6 +637,7 @@ namespace ajaj {
     std::vector<std::string> files_;
     std::vector<short int> target_;
     std::string timefile_;
+    std::string modelfile_;
 
   public:
     iMEAS_Args(int argc, char* argv[]) : Base_Args(argc,argv,iMEAS_usage),separation_(0),nev_(0),use_filename_index_(1),two_point_(0),calc_entanglement_(0),vert_entanglement_(0),timefile_(std::string()){
@@ -672,6 +675,8 @@ namespace ajaj {
 	    vert_entanglement_=stoul(options[VERTEX_ENTANGLEMENT].arg);
 	  if (options[TIMEFILE])
 	    timefile_=std::string(options[TIMEFILE].arg);
+	  if (options[IENERGY])
+	    modelfile_=std::string(options[IENERGY].arg);
 	}
       }
       else valid_=0;
@@ -688,6 +693,7 @@ namespace ajaj {
     unsigned long vert_entanglement() const {return vert_entanglement_;}
     const std::vector<short int>& target() const {return target_;}
     const std::string& time_filename() const {return timefile_;}
+    const std::string& model_filename() const {return modelfile_;}
   };
 
 class fMEAS_Args : public Base_Args{

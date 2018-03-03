@@ -69,115 +69,57 @@ namespace ajaj{
 
   MPO_matrix MakeGeneralHMPO(const Vertex& v, const CouplingArray& couplings);
 
-  Model MakeModelFromArgs(Base_Args& cmdln) {
+  Model MakeModelFromFile(const std::string& filename) {
     //check valid
-    if (cmdln.is_valid()){
-      std::ifstream infile;
-      infile.open(cmdln.filename().c_str(),std::ios::in);
-      if (infile.is_open()){
-	std::cout << "Opened " << cmdln.filename() << std::endl;
-
-	//read input file line by line into buffer
-	std::string line;
-	std::vector<std::string> stringbuffer;
-	while (getline(infile,line)){
-	  if (!line.empty())
-	    stringbuffer.push_back(line);
+    std::ifstream infile;
+    infile.open(filename.c_str(),std::ios::in);
+    if (infile.is_open()){
+      std::cout << "Opened " << filename << std::endl;
+      
+      //read input file line by line into buffer
+      std::string line;
+      std::vector<std::string> stringbuffer;
+      while (getline(infile,line)){
+	if (!line.empty())
+	  stringbuffer.push_back(line);
+      }
+      infile.close();
+      
+      if (stringbuffer.size()<3){
+	std::cout << "Input file error. File needs 3 non empty lines, but " << stringbuffer.size() << " present." << std::endl;
+      }
+      else { //parse strings
+	if (stringbuffer.size()>3){
+	  std::cout << "Input file has more than 3 non empty lines." << std::endl;
+	  std::cout << "Only the first coupling definition line will be used by static routines." << std::endl;
+	  std::cout << "Time routines will interpret suitably formatted extra lines as time dependent coupling information." << std::endl;
 	}
-	infile.close();
-
-	if (stringbuffer.size()<3){
-	  std::cout << "Input file error. File needs 3 non empty lines, but " << stringbuffer.size() << " present." << std::endl;
-	}
-	else { //parse strings
-	  if (stringbuffer.size()>3){
-	    std::cout << "Input file has more than 3 non empty lines." << std::endl;
-	    std::cout << "Only the first coupling definition line will be used by static routines." << std::endl;
-	    std::cout << "Time routines will interpret suitably formatted extra lines as time dependent coupling information." << std::endl;
-	  }
-	  //first line is Model Name
-	  const std::string& ModelName(stringbuffer.at(0));
-	  NameGroup the_model(ModelNameChecker(ModelName));
-	  VertexParameterArray vp;
+	//first line is Model Name
+	const std::string& ModelName(stringbuffer.at(0));
+	NameGroup the_model(ModelNameChecker(ModelName));
+	VertexParameterArray vp;
 	  
-	  if (the_model.int_name==BuiltinModels::last){
-	    std::cout << "No builtin model with name " << ModelName << std::endl;
-	    //will default to empty model at end
-	  }
-	  else if(the_model.int_name==BuiltinModels::user) {
-	    std::cout << "User Defined" <<std::endl;
-	    //file format is model name
-	    //spectrum and matrix element files (instead of vertex params)
-	    std::istringstream iss(stringbuffer.at(1));
-	    std::string Vertex_Basis_Filename;
-	    std::string Vertex_Hamiltonian_Filename;
-	    std::vector<std::string> Vertex_Operator_Filenames;
-	    if (iss >> Vertex_Basis_Filename && iss >> Vertex_Hamiltonian_Filename){
-	      std::string op_filename;
-	      while (iss >> op_filename){
-		Vertex_Operator_Filenames.push_back(op_filename);
-	      }
-	      //also read in coupling params
-	      std::vector<CouplingArray> cpas;
-	      std::vector<double> times;
-	      //do we have time dep data, or not?
-	      for (auto c_idx=2;c_idx<stringbuffer.size();++c_idx){
-		std::istringstream css(stringbuffer.at(c_idx));
-		css >> std::ws;
-		double temp_time;
-		bool is_time(0);
-		if (std::isdigit(css.peek())){
-		  is_time=1;
-		  css >> temp_time;
-		}
-		else if (stringbuffer.size()>3){ //no time dep info and yet more than 1 coupling line
-		  std::cout << "ERROR: no time data, but more than one coupling defs line!" << std::endl;
-		  return Model();
-		}
-		cpas.push_back(CouplingArray());
-		Coupling c;
-		while (css >> c){
-		  cpas.back().push_back(c);
-		}
-		if (cpas.back().size() && is_time){
-		  times.push_back(temp_time);
-		}
-	      }
-	      //print error if no couplings, but proceed
-	      if (cpas.size()==0 || cpas[0].size()==0){
-		std::cout << "NO INTER-VERTEX COUPLINGS DEFINED!" << std::endl;
-		std::cout << "This is allowed, but is it what you intended?" <<std::endl;
-	      }
-	      //what if couplings didn't read in correctly?
-	      //won't be able to find them and will error below
-	      return MakeUserModel(Vertex_Basis_Filename,Vertex_Hamiltonian_Filename,Vertex_Operator_Filenames,cpas,times);
+	if (the_model.int_name==BuiltinModels::last){
+	  std::cout << "No builtin model with name " << ModelName << std::endl;
+	  //will default to empty model at end
+	}
+	else if(the_model.int_name==BuiltinModels::user) {
+	  std::cout << "User Defined" <<std::endl;
+	  //file format is model name
+	  //spectrum and matrix element files (instead of vertex params)
+	  std::istringstream iss(stringbuffer.at(1));
+	  std::string Vertex_Basis_Filename;
+	  std::string Vertex_Hamiltonian_Filename;
+	  std::vector<std::string> Vertex_Operator_Filenames;
+	  if (iss >> Vertex_Basis_Filename && iss >> Vertex_Hamiltonian_Filename){
+	    std::string op_filename;
+	    while (iss >> op_filename){
+	      Vertex_Operator_Filenames.push_back(op_filename);
 	    }
-	    //didn't work
-	    std::cout << "Not enough files specified." <<std::endl;
-	    return Model();
-	  }
-
-	  else {
-	    //builtin model
-	    //now parse next line, containing vertex params
-	    {
-	      std::istringstream iss1(stringbuffer.at(1));
-	      std::string word;
-	      while (iss1 >> word){
-		//use word
-		std::string paramname(word);
-		//advance
-		if (!(iss1 >> word)) break;
-		double paramvalue(stod(word));
-		vp.push_back(VertexParameter(paramname,paramvalue));
-		//vp.back().print();
-	      }
-	    }
-	    //last lines, containing coupling params
-
+	    //also read in coupling params
 	    std::vector<CouplingArray> cpas;
 	    std::vector<double> times;
-
+	    //do we have time dep data, or not?
 	    for (auto c_idx=2;c_idx<stringbuffer.size();++c_idx){
 	      std::istringstream css(stringbuffer.at(c_idx));
 	      css >> std::ws;
@@ -192,11 +134,9 @@ namespace ajaj{
 		return Model();
 	      }
 	      cpas.push_back(CouplingArray());
-	      //Coupling c;
-	      std::string word;
-	      std::complex<double> value;
-	      while (css >> word >> value){
-		cpas.back().push_back(Coupling(word,value));
+	      Coupling c;
+	      while (css >> c){
+		cpas.back().push_back(c);
 	      }
 	      if (cpas.back().size() && is_time){
 		times.push_back(temp_time);
@@ -207,39 +147,106 @@ namespace ajaj{
 	      std::cout << "NO INTER-VERTEX COUPLINGS DEFINED!" << std::endl;
 	      std::cout << "This is allowed, but is it what you intended?" <<std::endl;
 	    }
+	    //what if couplings didn't read in correctly?
+	    //won't be able to find them and will error below
+	    return MakeUserModel(Vertex_Basis_Filename,Vertex_Hamiltonian_Filename,Vertex_Operator_Filenames,cpas,times);
+	  }
+	  //didn't work
+	  std::cout << "Not enough files specified." <<std::endl;
+	  return Model();
+	}
+
+	else {
+	  //builtin model
+	  //now parse next line, containing vertex params
+	  {
+	    std::istringstream iss1(stringbuffer.at(1));
+	    std::string word;
+	    while (iss1 >> word){
+	      //use word
+	      std::string paramname(word);
+	      //advance
+	      if (!(iss1 >> word)) break;
+	      double paramvalue(stod(word));
+	      vp.push_back(VertexParameter(paramname,paramvalue));
+	      //vp.back().print();
+	    }
+	  }
+	  //last lines, containing coupling params
+
+	  std::vector<CouplingArray> cpas;
+	  std::vector<double> times;
+
+	  for (auto c_idx=2;c_idx<stringbuffer.size();++c_idx){
+	    std::istringstream css(stringbuffer.at(c_idx));
+	    css >> std::ws;
+	    double temp_time;
+	    bool is_time(0);
+	    if (std::isdigit(css.peek())){
+	      is_time=1;
+	      css >> temp_time;
+	    }
+	    else if (stringbuffer.size()>3){ //no time dep info and yet more than 1 coupling line
+	      std::cout << "ERROR: no time data, but more than one coupling defs line!" << std::endl;
+	      return Model();
+	    }
+	    cpas.push_back(CouplingArray());
+	    //Coupling c;
+	    std::string word;
+	    std::complex<double> value;
+	    while (css >> word >> value){
+	      cpas.back().push_back(Coupling(word,value));
+	    }
+	    if (cpas.back().size() && is_time){
+	      times.push_back(temp_time);
+	    }
+	  }
+	  //print error if no couplings, but proceed
+	  if (cpas.size()==0 || cpas[0].size()==0){
+	    std::cout << "NO INTER-VERTEX COUPLINGS DEFINED!" << std::endl;
+	    std::cout << "This is allowed, but is it what you intended?" <<std::endl;
+	  }
 	  
-	    std::cout << std::endl;
-	    std::cout << "Builtin model, coupled array of: " << the_model.name_variants.back() << " vertices" << std::endl;
-	    std::cout << "Vertex Parameters:" <<std::endl;
-	    for (auto&& p : vp){
-	      p.print();
+	  std::cout << std::endl;
+	  std::cout << "Builtin model, coupled array of: " << the_model.name_variants.back() << " vertices" << std::endl;
+	  std::cout << "Vertex Parameters:" <<std::endl;
+	  for (auto&& p : vp){
+	    p.print();
+	  }
+	  if (cpas.size()){
+	    std::cout << "Inter Vertex Coupling Parameters:" <<std::endl;
+	    for (auto&& c : cpas[0]){
+	      std::cout << c <<std::endl;
 	    }
-	    if (cpas.size()){
-	      std::cout << "Inter Vertex Coupling Parameters:" <<std::endl;
-	      for (auto&& c : cpas[0]){
-		std::cout << c <<std::endl;
-	      }
-	    }
+	  }
 	    
-	    else {
-	      std::cout << "No inter vertex couplings defined! Are you sure you meant for this? Possible format error in input file.";
-	    }
-	    std::cout << std::endl;
+	  else {
+	    std::cout << "No inter vertex couplings defined! Are you sure you meant for this? Possible format error in input file.";
+	  }
+	  std::cout << std::endl;
 	    
 
-	    return Model(vp,the_model.generator,cpas,the_model.makeH,times);
-	  }
+	  return Model(vp,the_model.generator,cpas,the_model.makeH,times);
 	}
       }
-      else {
-	std::cout << "Could not open " << cmdln.filename() << std::endl;
-      }
     }
-    std::cout << "Invalid command line arguments." << std::endl;
-    std::cout << "Returning empty model..." << std::endl;
+    else {
+      std::cout << "Could not open " << filename << std::endl;
+    }
     return Model();
   }
 
+  Model MakeModelFromArgs(Base_Args& cmdln){
+    if (cmdln.is_valid()){
+      return MakeModelFromFile(cmdln.filename());
+    }
+    else {
+      std::cout <<"Invalid command line args, returning empty model." <<std::endl;
+      return Model();
+    }
+  }
+  
+  
   //user defined model, using file input
   //uses NRVO
   //really important not to mess this up, as it can invalidate the ref to ChargeRules used by all the states.

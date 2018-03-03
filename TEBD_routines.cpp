@@ -127,7 +127,7 @@ namespace ajaj{
   }
 
   const UnitCell& iTEBD::evolve(uMPXInt num_steps, const std::vector<MPO_matrix>& measuredMPOs, uMPXInt bond_dimension, double minS, uMPXInt measurement_interval){
-    //depends on order, as 2nd order is special
+    
     if (order()==1){
       std::cout <<"1st order time step evolution" <<std::endl;
       for (uMPXInt n=0;n<num_steps;++n){
@@ -202,6 +202,7 @@ namespace ajaj{
 	  if (m_unit.size()){ //only if unitcell isn't empty
 	    m_unit.store(Name_,m_current_time_step);
 	    this->do_measurements(m_unit,measuredMPOs);
+	    m_unit.OutputOneVertexDensityMatrix("OneVertexRho",m_current_time_step);
 	  }
 	  else {
 	    std::cout<<"Orthogonalisation Error" <<std::endl; exit(1);
