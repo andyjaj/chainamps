@@ -344,7 +344,6 @@ namespace ajaj {
     }
   }
 
-
   std::complex<double> SimpleEnergy(const MPO_matrix& LeftH,const MPO_matrix& RightH,const MPO_matrix& H1,const MPO_matrix& I,const UnitCell& Ortho){
     if (Ortho.Matrices.size()>2){std::cout << "Only two vertex basis accepted for now" <<std::endl; return 0.0;}
     //Need to make an MPX with the lambda
@@ -367,11 +366,6 @@ namespace ajaj {
   std::complex<double> iTwoVertexEnergy(const MPO_matrix& ColX,const MPO_matrix& RowX,const MPO_matrix& H1,const UnitCell& Ortho){
     if (Ortho.Matrices.size()!=2){std::cout << "Only two vertex basis accepted for now" <<std::endl; return 0.0;}
 
-    //ColX.print_indices();
-    //RowX.print_indices();
-    //Ortho.Matrices.at(0).print_indices();
-    //Ortho.Matrices.at(1).print_indices();
-
     MPX_matrix LAMBDA0(H1.basis(),Ortho.Matrices.at(0).Index(1),Ortho.Lambdas.at(0));
 
     std::complex<double> LocalEnergy(contract_to_sparse(contract(Ortho.Matrices.at(1),1,contract(contract(Ortho.Matrices.at(0),1,contract(H1,0,Ortho.Matrices.at(0),0,contract20),0,contract0013),0,Ortho.Matrices.at(1),0,contract31),0,contract0310),0,contract(LAMBDA0,0,LAMBDA0,0,contract10),0,contract0130).trace());
@@ -379,6 +373,10 @@ namespace ajaj {
     std::complex<double> Bond1Energy(TwoVertexMeasurement(RowX,ColX,Ortho.Matrices.at(0),Ortho.Matrices.at(1),LAMBDA0));
     //and now a more complicated thing...
     std::complex<double> Bond2Energy(contract_to_sparse(contract(Ortho.Matrices.at(1),1,contract(contract(Ortho.Matrices.at(0),1,contract(contract(Ortho.Matrices.at(0),0,contract(Ortho.Matrices.at(1),1,contract(contract(contract(Ortho.Matrices.at(0),1,Ortho.Matrices.at(0),0,contract0011),0,Ortho.Matrices.at(1),0,contract11),0,RowX,0,contract12),0,contract0210),0,contract11),0,ColX,0,contract0241),0,contract0311),0,Ortho.Matrices.at(1),0,contract11),0,contract0310),0,contract(LAMBDA0,0,LAMBDA0,0,contract10),0,contract0130).trace());
+
+    std::cout << LocalEnergy <<std::endl;
+    std::cout << Bond1Energy <<std::endl;
+    std::cout << Bond2Energy <<std::endl;
 
     return 0.5*(LocalEnergy+Bond1Energy+Bond2Energy);
 
@@ -394,7 +392,6 @@ namespace ajaj {
 	BraKetMatrixPtrs_.push_back({std::addressof(*(cits.first)),std::addressof(*(cits.second))});
       }
     }
-      
 
     left_indices_.emplace_back(1,BraMatrix(0).getInwardMatrixIndex());
     left_indices_.emplace_back(0,KetMatrix(0).getInwardMatrixIndex());

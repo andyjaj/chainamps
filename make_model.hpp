@@ -71,6 +71,9 @@ namespace ajaj{
 
   Model MakeModelFromFile(const std::string& filename) {
     //check valid
+    if (filename.empty())
+      return Model();
+    
     std::ifstream infile;
     infile.open(filename.c_str(),std::ios::in);
     if (infile.is_open()){

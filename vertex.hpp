@@ -87,10 +87,10 @@ namespace ajaj{
     Basis Spectrum; /**< Describes basis states*/
     VertexOperatorArray Operators; /**< Collection of all necessary matrix elements. */
     QNVector ChargeRules; //vertex should know about its good quantum numbers
-
+    
     Vertex(){};
     Vertex(const VertexParameterArray& inputs) : Parameters(inputs){};
-
+    
     const SparseMatrix& get_operator_matrix(const std::string& Name) const {
       for (auto&& o : Operators){
 	if (Name==o.Name) return o.MatrixElements;
@@ -170,7 +170,29 @@ namespace ajaj{
       return ChargeRules;
     }
 
+    friend void swap(Vertex& first, Vertex& second){
+      std::swap(first.Name,second.Name);
+      std::swap(first.Parameters,second.Parameters);
+      std::swap(first.Spectrum,second.Spectrum);
+      std::swap(first.Operators,second.Operators);
+      std::swap(first.ChargeRules,second.ChargeRules);
+
+    }
+
+    Vertex(Vertex&& other) : Vertex() {
+      swap(*this,other);
+    }
+
+    Vertex& operator=(Vertex other)
+    {
+      swap(*this, other);
+      
+      return *this;
+    }
+    
   };
 
+  
+  
 }
 #endif

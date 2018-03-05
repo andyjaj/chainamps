@@ -872,19 +872,9 @@ namespace continuumIsing {
     // JK  0   0
     // HV  K'  I  //note the charges are such that K' and K differ in that Q[K[i]]+Q[K'[i]]=0
     ajaj::QNCombinations differencecombinations(modelvertex.Spectrum,1); //1 means use difference
-
-    ajaj::MPXInt lineardim=modelvertex.Spectrum.size()*(2+couplingparams.size()*differencecombinations.size()); //the actual length of the sparse matrix needed
-    ajaj::MPXInt offset_to_last_block=modelvertex.Spectrum.size()*(1+couplingparams.size()*differencecombinations.size()); //offset to get to the last row of operators
-    ajaj::SparseMatrix M(lineardim,lineardim,lineardim);
-
-    //start with the really easy bits, the Identities, I, and the vertex Hamiltonian HV
-    for (size_t i=0;i<modelvertex.Spectrum.size();++i){
-      M.entry(i,i,1.0);
-      M.entry(i+offset_to_last_block,i,modelvertex.Spectrum[i].en);
-      M.entry(i+offset_to_last_block,i+offset_to_last_block,1.0);
-    }
-    //now the more annoying pieces
-    if (couplingparams.size()>1){
+    
+    //one of the coupling params could be field, which is a single vertex thing...
+    if (couplingparams.size()>1){//if a local field was defined
       if (couplingparams[1].Value!=0.0){
 	//must check that use sector is turned off, or quit
 	if (modelvertex.Spectrum.getChargeRules().size()!=1){
@@ -897,6 +887,25 @@ namespace continuumIsing {
 	  std::cout << "ERROR: applied local field must be real, imaginary part="<<couplingparams[1].Value.imag()<<std::endl;
 	  exit(1);
 	}
+      }
+    }
+    
+    ajaj::CouplingArray couplingparams_(couplingparams.begin(),couplingparams.begin()+1);
+    std::cout << couplingparams_.size() << " " << differencecombinations.size() << std::endl;
+
+    ajaj::MPXInt lineardim=modelvertex.Spectrum.size()*(2+couplingparams_.size()*differencecombinations.size()); //the actual length of the sparse matrix needed
+    ajaj::MPXInt offset_to_last_block=modelvertex.Spectrum.size()*(1+couplingparams_.size()*differencecombinations.size()); //offset to get to the last row of operators
+    ajaj::SparseMatrix M(lineardim,lineardim,lineardim);
+
+    //start with the really easy bits, the Identities, I, and the vertex Hamiltonian HV
+    for (size_t i=0;i<modelvertex.Spectrum.size();++i){
+      M.entry(i,i,1.0);
+      M.entry(i+offset_to_last_block,i,modelvertex.Spectrum[i].en);
+      M.entry(i+offset_to_last_block,i+offset_to_last_block,1.0);
+    }
+    //now the more annoying pieces
+    if (couplingparams.size()>1){//if a local field was defined
+      if (couplingparams[1].Value!=0.0){
 	const double long_field(couplingparams[1].Value.real());
 	//loop over Operators[0] and multiply by param
 	const ajaj::SparseMatrix& spin=modelvertex.Operators[0].MatrixElements;
@@ -914,12 +923,12 @@ namespace continuumIsing {
     //for each coupling operator
     for (size_t c=0;c<1;++c){ //assume each of the coupling params refers to an operator
       ajaj::Sparseint operator_col_offset=c*differencecombinations.size()+1; //+1 for identity matrix in first block
-      ajaj::Sparseint operator_row_offset=(couplingparams.size()-c-1)*differencecombinations.size()+1; //reversal, +1 for identity
+      ajaj::Sparseint operator_row_offset=(couplingparams_.size()-c-1)*differencecombinations.size()+1; //reversal, +1 for identity
 
-      if (couplingparams[c].Value.imag()!=0.0){
-	std::cout << "ERROR: coupling param " <<c << " must have a real value. Imag part=" << couplingparams[c].Value.imag() <<std::endl;
+      if (couplingparams_[c].Value.imag()!=0.0){
+	std::cout << "ERROR: coupling param " <<c << " must have a real value. Imag part=" << couplingparams_[c].Value.imag() <<std::endl;
       }
-      double operatorparam=couplingparams[c].Value.real();
+      double operatorparam=couplingparams_[c].Value.real();
       if (operatorparam!=0.0){
 	for (ajaj::Sparseint col=0;col<modelvertex.Operators[c].MatrixElements.cols();++col){
 	  for (ajaj::Sparseint p=modelvertex.Operators[c].MatrixElements.get_p(col);p<modelvertex.Operators[c].MatrixElements.get_p(col+1);++p){
@@ -962,7 +971,7 @@ namespace continuumIsing {
 
     ajaj::StateArray b;
     b.push_back(ajaj::State(modelvertex.Spectrum[0].getChargeRules())); //push back 'zero state'
-    for (size_t c=0;c<couplingparams.size();++c){ //do for each operator
+    for (size_t c=0;c<couplingparams_.size();++c){ //do for each actual coupling operator
       for (size_t l=0;l<differencecombinations.InvolutionPairs.size();++l){
 	b.push_back(differencecombinations.InvolutionPairs[l].PairState);
       }

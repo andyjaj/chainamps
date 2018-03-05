@@ -52,17 +52,20 @@ int main(int argc, char** argv){
 	return 1;
       }
     }
-
+    
     std::vector<ajaj::MPO_matrix> H1ColXRowX;
+    ajaj::Model myModel(ajaj::MakeModelFromFile(RuntimeArgs.model_filename()));//returns empty model if no filename was given
+    
     if (!RuntimeArgs.model_filename().empty()){
-      ajaj::Model myModel(ajaj::MakeModelFromFile(RuntimeArgs.model_filename()));
       myModel.basis().print();
+      myModel.H_MPO.print_matrix();
       H1ColXRowX.emplace_back(myModel.H_MPO.ExtractMPOBlock(std::pair<ajaj::MPXInt,ajaj::MPXInt>(myModel.H_MPO.Index(1).size()-1,myModel.H_MPO.Index(1).size()-1),std::pair<ajaj::MPXInt,ajaj::MPXInt>(0,0)));
       H1ColXRowX.emplace_back(myModel.H_MPO.ExtractMPOBlock(std::pair<ajaj::MPXInt,ajaj::MPXInt>(1,myModel.H_MPO.Index(1).size()-2),std::pair<ajaj::MPXInt,ajaj::MPXInt>(0,0)));
       H1ColXRowX.emplace_back(myModel.H_MPO.ExtractMPOBlock(std::pair<ajaj::MPXInt,ajaj::MPXInt>(myModel.H_MPO.Index(1).size()-1,myModel.H_MPO.Index(1).size()-1),std::pair<ajaj::MPXInt,ajaj::MPXInt>(1,myModel.H_MPO.Index(3).size()-2)));
     }
+
+    ajaj::Vertex& iMEAS_vertex=myModel.vertex;
     
-    ajaj::Vertex iMEAS_vertex; // a dummy vertex
     std::vector<ajaj::ShiftedOperatorInfo> opinfo;
 
     //read in (possible) operators    
@@ -147,9 +150,7 @@ int main(int argc, char** argv){
       std::vector<idx_dble>::iterator time_it = std::find_if(idx_times.begin(),idx_times.end(), [Index] (const idx_dble& i_t) { return i_t.first == Index; } );
       
       if (!idx_times.size() || time_it!=idx_times.end()){
-
-	//if (!idx_times.size() || Index<=times.size()){
-      
+	
 	//now open unitcell file
 	std::ifstream infile;
 	infile.open(f.c_str(),ios::in | ios::binary);

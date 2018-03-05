@@ -865,6 +865,8 @@ namespace continuumIsingNoSector {
     // HV  K'  I  //note the charges are such that K' and K differ in that Q[K[i]]+Q[K'[i]]=0
     ajaj::QNCombinations differencecombinations(modelvertex.Spectrum,1); //1 means use difference
 
+    std::cout << couplingparams.size() << " " << differencecombinations.size() <<std::endl;
+    
     ajaj::MPXInt lineardim=modelvertex.Spectrum.size()*(2+couplingparams.size()*differencecombinations.size()); //the actual length of the sparse matrix needed
     ajaj::MPXInt offset_to_last_block=modelvertex.Spectrum.size()*(1+couplingparams.size()*differencecombinations.size()); //offset to get to the last row of operators
     ajaj::SparseMatrix M(lineardim,lineardim,lineardim);
