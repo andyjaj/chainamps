@@ -94,11 +94,14 @@ private:
   void apply_to_odd_bonds(const MPX_matrix& BondOp,uMPXInt  bond_dimension, double minS);
   void apply_to_even_bonds(const MPX_matrix& BondOp,uMPXInt  bond_dimension, double minS);
   void left_canonise(uMPXInt chi=0,double minS=0);
-  void left_canonise_measure(std::vector<MultiVertexMeasurement>& measurements,uMPXInt chi=0,double minS=0);
+  void left_canonise_measure(std::vector<MultiVertexMeasurement>& measurements,uMPXInt chi=0,double minS=0,bool overlap_requested=1);
+  void left_canonise_measure_special(std::vector<MultiVertexMeasurement>& measurements, uMPXInt Index=0);
 
+  
   double max_truncation_=0.0;
 
 public:
+  TEBD(const MPO_matrix& H, FiniteMPS& F, DataOutput& results);
   TEBD(const MPO_matrix& H, FiniteMPS& F, double time_step_size, DataOutput& results, uMPXInt order=1); //use FiniteMPS class
 
   void change_bond_operator(const MPO_matrix& H, double time_step_size);

@@ -1428,6 +1428,8 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 #endif
     //we will always sort, in case we want to truncate later
     std::sort(UnsortedValues.begin(),UnsortedValues.end(),singular_value_compare);
+
+    //set initial length to be bond dimension or total number of singular values, whichever is smaller.
     size_t length=(D>0 && D< UnsortedValues.size()) ? D : UnsortedValues.size();
 
     //Now sorted, use ref to avoid confusing name
@@ -1439,12 +1441,13 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     std::vector<double> Values;
     Values.reserve(length);
     Values.push_back(SortedValues[0].second);
+    //For accuracy store the kept weight and the truncated weight as separate variables.
     double kept_weight(SortedValues[0].second*SortedValues[0].second);
-
     double trunc_error=0.0;
 
     size_t trunc_length=SortedValues.size();
-    
+
+    //find the number of singular values we need to satisfy the truncation error (if one was requested).
     while (trunc_error < max_trunc && trunc_length>0){
       trunc_error+=SortedValues[trunc_length-1].second*SortedValues[trunc_length-1].second;
       --trunc_length;
@@ -1453,7 +1456,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     if (trunc_length < length) length=trunc_length;
     
     //need to check for slightly smaller 'degenerate' s vals.
-    while (length<SortedValues.size() && ((SortedValues[length-1].second-SortedValues[length].second)/SortedValues[length-1].second <1.0e-1)){
+    while (length<SortedValues.size() && ((SortedValues[length-1].second-SortedValues[length].second)/SortedValues[length-1].second <1.0e-3)){
       ++length;
       std::cout << "Increasing bond dimension, due to degeneracies. s_val: " << SortedValues[length-1].second << std::endl;
     }

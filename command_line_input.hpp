@@ -181,7 +181,7 @@ namespace ajaj {
 
   };
 
-  enum optionIndex {UNKNOWN,CHI,TRUNC,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET,FINITE_MEASUREMENT,NEV,ENTANGLEMENT,VERTEX_ENTANGLEMENT,C_SPECIFIER,TIMEFILE};
+  enum optionIndex {UNKNOWN,CHI,TRUNC,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET,FINITE_MEASUREMENT,NEV,ENTANGLEMENT,VERTEX_ENTANGLEMENT,C_SPECIFIER,TIMEFILE,FDMRG_MODE,IENERGY};
 
   const option::Descriptor store_usage[2] =
     {
@@ -247,7 +247,7 @@ namespace ajaj {
 
   const option::Descriptor TEBD_usage[11] =
     {
-      {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: TEBD_DRV.bin [-B <number> -n <number> -s <number> -O <number> -i <initial_state_name>] <model_filename> <number of vertices(chains)> \n  <number of vertices/chains> must be EVEN.\n"},
+      {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: TEBD_DRV.bin [OPTIONS] <model_filename> <number of vertices(chains)> \n  <number of vertices/chains> must be EVEN.\n"},
       {CHI,0,"B","bond-dimension",Arg::PositiveNumeric,"  -B <number>, \t--bond-dimension=<number>"
        "  \tThe maximum bond dimension, >= 0. If 0, then ignored." },
       {TRUNC,0,"e","truncation-error",Arg::PositiveDouble,"  -e <number>, \t--truncation-error=<number>"
@@ -271,7 +271,7 @@ namespace ajaj {
       { 0, 0, 0, 0, 0, 0 }
     };
 
-  const option::Descriptor iMEAS_usage[10] =
+  const option::Descriptor iMEAS_usage[11] =
     {
       {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: UNITCELL_MEASURE.bin [OPTIONS] <unitcell_filename1> ... \n"},
       {OPERATORFILE,0,"O","operator filename",Arg::NonEmpty,"  -O <filename>, \t--operator-file=<filename>"
@@ -290,6 +290,19 @@ namespace ajaj {
        "  \tCalculate the entanglement entropy for <number> consecutive vertices in the infinite system."},
       {TIMEFILE,0,"t","time-filename",Arg::NonEmpty," -t <filename>, \t--time-filename=<filename>"
        "  \tUse time data from <filename> to include times in output file."},
+      {IENERGY,0,"H","Energy per Vertex",Arg::NonEmpty," -H <model_filename>, \t--hamiltonian-modelfile=<model_filename>"
+       "  \tCalculate the energy per vertex for the unitcell using Hamiltonian defined in the model file."},
+      { 0, 0, 0, 0, 0, 0 }
+    };
+
+  const option::Descriptor fMEAS_usage[4] =
+    {
+      {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: FINITE_MEASURE.bin [OPTIONS] <model_filename> <number of vertices(chains)> <state_name1> ... \n  <number of vertices/chains> must be EVEN.\n"},
+      {FINITE_MEASUREMENT,0,"M","finite-measurement",Arg::FiniteMeasurementInfo,"  -M <opfile1>,<vertex1>[,<opfile2>,<vertex2>], \t--finite-measurement=<opfile1>,<vertex1>[,<opfile2>,<vertex2>]"
+       "  \tSpecify a one or two point measurement."},
+      {FDMRG_MODE,0,"D","fDMRG-mode",Arg::None,"  -D, \t--fDMRG-mode"
+       "  \tSpecial mode for fDMRG output files, needs no input filenames."},
+      
       { 0, 0, 0, 0, 0, 0 }
     };
 
@@ -624,6 +637,7 @@ namespace ajaj {
     std::vector<std::string> files_;
     std::vector<short int> target_;
     std::string timefile_;
+    std::string modelfile_;
 
   public:
     iMEAS_Args(int argc, char* argv[]) : Base_Args(argc,argv,iMEAS_usage),separation_(0),nev_(0),use_filename_index_(1),two_point_(0),calc_entanglement_(0),vert_entanglement_(0),timefile_(std::string()){
@@ -633,7 +647,7 @@ namespace ajaj {
 	  for (size_t f=0;f<parse.nonOptionsCount();++f){
 	    files_.emplace_back(parse.nonOption(f));
 	  }
-	  if (options[SEPARATION]){ //has any spearation been explicitly defined, even if zero? Then definitely a two point function
+	  if (options[SEPARATION]){ //has any separation been explicitly defined, even if zero? Then definitely a two point function
 	    separation_=stoul(options[SEPARATION].arg);
 	    two_point_=1;
 	  }
@@ -661,6 +675,8 @@ namespace ajaj {
 	    vert_entanglement_=stoul(options[VERTEX_ENTANGLEMENT].arg);
 	  if (options[TIMEFILE])
 	    timefile_=std::string(options[TIMEFILE].arg);
+	  if (options[IENERGY])
+	    modelfile_=std::string(options[IENERGY].arg);
 	}
       }
       else valid_=0;
@@ -677,8 +693,71 @@ namespace ajaj {
     unsigned long vert_entanglement() const {return vert_entanglement_;}
     const std::vector<short int>& target() const {return target_;}
     const std::string& time_filename() const {return timefile_;}
+    const std::string& model_filename() const {return modelfile_;}
   };
 
+class fMEAS_Args : public Base_Args{
+  unsigned int N_; //used by finite codes
+  std::vector<StringIndexPairs> finite_measurements_;
+  std::vector<std::string> state_names_;
+  bool fdmrg_mode_;
+
+  public:
+    fMEAS_Args(int argc, char* argv[]) : Base_Args(argc,argv,fMEAS_usage) {
+      
+      if (parse.nonOptionsCount()<2 || (parse.nonOptionsCount()==2 && !options[FDMRG_MODE]) || (parse.nonOptionsCount()>=3 && options[FDMRG_MODE]) || std::string(parse.nonOption(0))==std::string("-")){
+	std::cout << "Incorrect command line arguments." << std::endl <<std::endl;
+	valid_=0;
+      }
+     else {
+       N_=stoul(parse.nonOption(1));
+       if (!options[FDMRG_MODE]) {
+	fdmrg_mode_=0;
+	 for (size_t f=2;f<parse.nonOptionsCount();++f){
+	   state_names_.emplace_back(parse.nonOption(f));
+	 }
+       }
+      else
+	fdmrg_mode_=1;
+      
+       valid_=(valid_==1);
+     }
+      //
+     if (is_valid()){
+       if (N_==0 || (N_ % 2)){
+	 std::cout << "Illegal number of vertices requested: " << N_ << std::endl;
+	 std::cout << "Must be a positive even value!" <<std::endl<<std::endl;
+	 valid_=0;
+       }
+       if (options[FINITE_MEASUREMENT]){
+	 for (option::Option* opt = options[FINITE_MEASUREMENT]; opt; opt = opt->next()){
+	   StringIndexPairs temp;
+	   std::istringstream ss(opt->arg);
+	   ss >> temp;
+	   //check all locations specified in temp
+	   for (auto&& l : temp){
+	     if (l.second < 1 || l.second >N_) {
+	       std::cout << "Specified measurement vertex " << l.second << " is outside bounds 1:" <<N_<<std::endl<<std::endl;
+	       valid_=0;
+	     }
+	   }
+	   if (valid_)
+	     finite_measurements_.emplace_back(temp);
+	 }
+       }
+     }
+     print();
+    }
+
+    unsigned int num_vertices() const {return N_;}
+    const std::vector<std::string>& state_names() const {return state_names_;}
+    const std::vector<StringIndexPairs>& finite_measurements() const {
+      return finite_measurements_;
+    }
+  bool fdmrg_mode() const {return fdmrg_mode_;}
+
+  };
+  
   class Store_Args : public Base_Args{
   public:
     Store_Args(int argc, char* argv[]) : Base_Args(argc,argv,store_usage){

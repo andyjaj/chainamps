@@ -10,9 +10,124 @@
 namespace ajaj {
 
   static const double IMAGTOL(100.0*std::numeric_limits<double>::epsilon());
-
   static const int NUMEVALS(1);
 
+  MultiVertexMeasurement::MultiVertexMeasurement(uMPXInt start, const MPO_matrix* Op1Ptr, uMPXInt finish, const MPO_matrix* Op2Ptr) : VertexOperatorPtrs_({{meas_pair(start,Op1Ptr), meas_pair(finish,Op2Ptr)}}), T_(Op1Ptr->GetPhysicalSpectrum()),Result_(0.0) {
+    start_=start;
+    finish_=finish;
+    if (start>finish || start<1){
+      std::cout << "Incorrectly defined MultiVertexMeasurement positions, start, finish: " << start << "," << finish <<std::endl;
+      exit(1);
+    }
+  }
+
+  void MultiVertexMeasurement::find_start_and_finish_(){
+    if (VertexOperatorPtrs_.size()){
+      uMPXInt Ts=VertexOperatorPtrs_.begin()->position();
+      uMPXInt Tf=Ts;
+      for (auto&& vop : VertexOperatorPtrs_){
+	if (vop.position()<Ts) Ts=vop.position();
+	else if (vop.position()>Tf) Tf=vop.position();
+      }
+      start_=Ts;
+      finish_=Tf;
+
+      
+
+      if (start_ > finish_) {
+	std::cout << "Incorrectly defined MultiVertexMeasurement positions, start, finish: " << start_ << "," << finish_ <<std::endl;
+	exit(1);
+      }
+      
+    }
+    else {
+      start_=0;
+      finish_=0;
+    }
+  }
+  
+  std::vector<const MPO_matrix*> MultiVertexMeasurement::get_ops(uMPXInt v){
+      std::vector<const MPO_matrix*> ans; 
+      for (auto&& vop : VertexOperatorPtrs_){
+	//if (vop.position()>v) break; //stop searching when we reach a point past v.
+	  if (v==vop.position()) {
+	    ans.emplace_back(vop.MPO_ptr());
+	  }	
+	}
+      return ans;
+    }
+  
+  void MultiVertexMeasurement::link_(const std::vector<const MPO_matrix*>& ops /*const MPO_matrix* Op*/, const MPX_matrix& A) {
+    //if (Op){
+    if (ops.size()){
+      //make sure to strip 'dummy' indices by contract to sparse and rebuild indices
+      //we assume single site operators, so MPO _matrix_ indices are dummies...
+      std::vector<MPXIndex> indices;
+      indices.emplace_back(1,A.Index(2));
+      indices.emplace_back(0,A.Index(2));
+      T_=std::move(contract(*ops[0],0,contract(T_,0,A,0,contract11),0,contract21).RemoveDummyIndices(std::vector<MPXInt>({{1,2}})));
+      for (size_t o=1;o<ops.size();++o){
+	T_=std::move(contract(*ops[o],0,T_,0,contract20).RemoveDummyIndices(std::vector<MPXInt>({{1,2}})));
+      }
+      T_=std::move(contract(A,1,T_,0,contract0011));
+    }
+    else {
+      T_=std::move(contract(A,1,contract(T_,0,A,0,contract11),0,contract0110));
+    }
+  }
+  
+  void MultiVertexMeasurement::start_chain_(const MPX_matrix& A) {
+    std::vector<const MPO_matrix*> ops(get_ops(start()));
+    if (ops.size()){
+      //make sure to strip 'dummy' indices by contract to sparse and rebuild indices
+      //we assume single site operators, so MPO _matrix_ indices are dummies...
+      std::vector<MPXIndex> indices;
+      indices.emplace_back(1,A.Index(2));
+      indices.emplace_back(0,A.Index(2));
+      //first special
+      T_=std::move(contract(*ops[0],0,A,0,contract20).RemoveDummyIndices(std::vector<MPXInt>({{1,2}})));
+      for (size_t o=1;o<ops.size();++o){
+	T_=std::move(contract(*ops[o],0,T_,0,contract20).RemoveDummyIndices(std::vector<MPXInt>({{1,2}}))); //get rid of the single vertex MPO indices.
+      }
+      T_=std::move(contract(A,1,T_,0,contract0011));//contract on bra
+    }
+    else {
+      T_=std::move(contract(A,1,A,0,contract0011));//no ops, for canonical matrices this should just give the identity
+    }
+  }
+  
+  void MultiVertexMeasurement::finish_chain_(const MPX_matrix& Lambda) {
+    std::cout << "Finishing measurement contraction chain" << std::endl;
+    //contract density matrix (lambda squared) onto end and trace
+    Result_=contract_to_sparse(Lambda,0,contract(T_,0,Lambda,0,contract10),0,contract0110).trace();
+    std::cout << "Done" << std::endl;
+  }
+
+  void MultiVertexMeasurement::update(uMPXInt v, const MPXDecomposition& D) {
+    if (v<finish() && v>start()){
+      link_(get_ops(v),D.ColumnMatrix);
+    }
+    else {
+      //depending on v, start measurement chain, or continue it
+      if (v==start()){
+	//std::vector<const MPO_matrix*> ops(get_ops(v));
+	start_chain_(D.ColumnMatrix); //contract first measurement etc.
+	
+      }
+      if (v==finish()){
+	//apply and finish off with lambda^2
+	if (finish()!=start()) {//one vertex measurement doesn't need this step
+	  link_(get_ops(v),D.ColumnMatrix);
+	}
+	
+	finish_chain_(MPX_matrix(D.ColumnMatrix.GetPhysicalSpectrum(),D.ColumnMatrix.Index(2),D.Values));
+      }
+      else { //v<start() or v>finish()
+	//do nothing
+      }
+    }
+  }
+  
   UnitCell OrthogonaliseInversionSymmetric(const UnitCell& C){
     std::cout << "Orthogonalising..." << std::endl;
     const Basis& basis(C.Matrices.front().basis());
@@ -229,7 +344,6 @@ namespace ajaj {
     }
   }
 
-
   std::complex<double> SimpleEnergy(const MPO_matrix& LeftH,const MPO_matrix& RightH,const MPO_matrix& H1,const MPO_matrix& I,const UnitCell& Ortho){
     if (Ortho.Matrices.size()>2){std::cout << "Only two vertex basis accepted for now" <<std::endl; return 0.0;}
     //Need to make an MPX with the lambda
@@ -242,13 +356,15 @@ namespace ajaj {
     return BondEnergy-ExcessEnergy;
   }
 
+  std::complex<double> iTwoVertexEnergy(const MPO_matrix& H_MPO,const UnitCell& Ortho){
+    const ajaj::MPO_matrix H1(H_MPO.ExtractMPOBlock(std::pair<ajaj::MPXInt,ajaj::MPXInt>(H_MPO.Index(1).size()-1,H_MPO.Index(1).size()-1),std::pair<ajaj::MPXInt,ajaj::MPXInt>(0,0))); //form the on-vertex part of a Hamiltonian
+    const ajaj::MPO_matrix ColX(H_MPO.ExtractMPOBlock(std::pair<ajaj::MPXInt,ajaj::MPXInt>(1,H_MPO.Index(1).size()-2),std::pair<ajaj::MPXInt,ajaj::MPXInt>(0,0)));
+    const ajaj::MPO_matrix RowX(H_MPO.ExtractMPOBlock(std::pair<ajaj::MPXInt,ajaj::MPXInt>(H_MPO.Index(1).size()-1,H_MPO.Index(1).size()-1),std::pair<ajaj::MPXInt,ajaj::MPXInt>(1,H_MPO.Index(3).size()-2)));
+    return iTwoVertexEnergy(ColX,RowX,H1,Ortho);
+  }
+  
   std::complex<double> iTwoVertexEnergy(const MPO_matrix& ColX,const MPO_matrix& RowX,const MPO_matrix& H1,const UnitCell& Ortho){
     if (Ortho.Matrices.size()!=2){std::cout << "Only two vertex basis accepted for now" <<std::endl; return 0.0;}
-
-    //ColX.print_indices();
-    //RowX.print_indices();
-    //Ortho.Matrices.at(0).print_indices();
-    //Ortho.Matrices.at(1).print_indices();
 
     MPX_matrix LAMBDA0(H1.basis(),Ortho.Matrices.at(0).Index(1),Ortho.Lambdas.at(0));
 
@@ -258,77 +374,17 @@ namespace ajaj {
     //and now a more complicated thing...
     std::complex<double> Bond2Energy(contract_to_sparse(contract(Ortho.Matrices.at(1),1,contract(contract(Ortho.Matrices.at(0),1,contract(contract(Ortho.Matrices.at(0),0,contract(Ortho.Matrices.at(1),1,contract(contract(contract(Ortho.Matrices.at(0),1,Ortho.Matrices.at(0),0,contract0011),0,Ortho.Matrices.at(1),0,contract11),0,RowX,0,contract12),0,contract0210),0,contract11),0,ColX,0,contract0241),0,contract0311),0,Ortho.Matrices.at(1),0,contract11),0,contract0310),0,contract(LAMBDA0,0,LAMBDA0,0,contract10),0,contract0130).trace());
 
+    std::cout << LocalEnergy <<std::endl;
+    std::cout << Bond1Energy <<std::endl;
+    std::cout << Bond2Energy <<std::endl;
+
     return 0.5*(LocalEnergy+Bond1Energy+Bond2Energy);
 
   }
-
-
-  void MultiVertexMeasurement::link_(const std::vector<const MPO_matrix*>& ops /*const MPO_matrix* Op*/, const MPX_matrix& A) {
-    //if (Op){
-    if (ops.size()){
-      //make sure to strip 'dummy' indices by contract to sparse and rebuild indices
-      //we assume single site operators, so MPO _matrix_ indices are dummies...
-      std::vector<MPXIndex> indices;
-      indices.emplace_back(1,A.Index(2));
-      indices.emplace_back(0,A.Index(2));
-      T_=std::move(contract(*ops[0],0,contract(T_,0,A,0,contract11),0,contract21).RemoveDummyIndices(std::vector<MPXInt>({{1,2}})));
-      for (size_t o=1;o<ops.size();++o){
-	T_=std::move(contract(*ops[o],0,T_,0,contract20).RemoveDummyIndices(std::vector<MPXInt>({{1,2}})));
-      }
-      T_=std::move(contract(A,1,T_,0,contract0011));
-      //T_=std::move(MPX_matrix(A.GetPhysicalSpectrum(),indices,1,contract_to_sparse(A,1,contract(*Op,0,contract(T_,0,A,0,contract11),0,contract21),0,contract0013)));
-    }
-    else {
-      T_=std::move(contract(A,1,contract(T_,0,A,0,contract11),0,contract0110));
-    }
-  }
   
-  void MultiVertexMeasurement::start_chain_(/*const MPO_matrix* Op,*/ const MPX_matrix& A) {
-    std::vector<const MPO_matrix*> ops(get_ops(start()));
-    // if (Op){
-    if (ops.size()){
-      //make sure to strip 'dummy' indices by contract to sparse and rebuild indices
-      //we assume single site operators, so MPO _matrix_ indices are dummies...
-      std::vector<MPXIndex> indices;
-      indices.emplace_back(1,A.Index(2));
-      indices.emplace_back(0,A.Index(2));
-      //first special
-      T_=std::move(contract(*ops[0],0,A,0,contract20).RemoveDummyIndices(std::vector<MPXInt>({{1,2}})));
-      for (size_t o=1;o<ops.size();++o){
-	T_=std::move(contract(*ops[o],0,T_,0,contract20).RemoveDummyIndices(std::vector<MPXInt>({{1,2}}))); //get rid of the single vertex MPO indices.
-      }
-      T_=std::move(contract(A,1,T_,0,contract0011));
-      //T_=std::move(MPX_matrix(A.GetPhysicalSpectrum(),indices,1,contract_to_sparse(A,1,T_,0,contract0011)));
-    }
-    else {
-      T_=std::move(contract(A,1,A,0,contract0011));
-    }
-  }
-  
-  void MultiVertexMeasurement::finish_chain_(const MPX_matrix& Lambda) {
-    std::cout << "Finishing measurement contraction chain" << std::endl;
-    Result_=contract_to_sparse(Lambda,0,contract(T_,0,Lambda,0,contract10),0,contract0110).trace();
-    std::cout << "Done" << std::endl;
-  }
-
-  //  TransferMatrixComponents::TransferMatrixComponents(const std::vector<const MPS_matrix*>& KetPtrs, bool HV, const State S) : TransferMatrixComponents(KetPtrs,KetPtrs,HV,S) {}
-
   TransferMatrixComponents::TransferMatrixComponents(const UnitCell& KetCell, bool HV, const State S) : TransferMatrixComponents(KetCell,KetCell,HV,S) {}
 
-
-  // TransferMatrixComponents::TransferMatrixComponents(const std::vector<const MPS_matrix*>& BraPtrs, const std::vector<const MPS_matrix*>& KetPtrs, bool HV, const State S) : CellSize_(BraPtrs.size()), Hermitian_answer_(HV),TargetState_(S) {
-
   TransferMatrixComponents::TransferMatrixComponents(const UnitCell& BraCell, const UnitCell& KetCell, bool HV, const State S) : CellSize_(BraCell.size()), Hermitian_answer_(HV),TargetState_(S),BraCell_(BraCell), KetCell_(KetCell) {
-
-    //init ptr lists
-
-    //range check
-    /*if (BraPtrs.size()!=KetPtrs.size()){std::cout << "Bra and Ket fragments have different sizes! " << BraPtrs.size() << " " << KetPtrs.size() <<std::endl; exit(1);}
-    else {
-      for (std::pair<std::vector<const MPS_matrix*>::const_iterator,std::vector<const MPS_matrix*>::const_iterator> cits={BraPtrs.begin(),KetPtrs.begin()};cits.first!= BraPtrs.end() && cits.second!= KetPtrs.end(); ++cits.first, ++cits.second) {
-	BraKetMatrixPtrs_.push_back({*(cits.first),*(cits.second)});
-      }
-    }*/
 
     if (BraCell.size()!=KetCell.size()){std::cout << "Bra and Ket fragments have different sizes! " << BraCell.size() << " " << KetCell.size() <<std::endl; exit(1);}
     else {
@@ -336,7 +392,6 @@ namespace ajaj {
 	BraKetMatrixPtrs_.push_back({std::addressof(*(cits.first)),std::addressof(*(cits.second))});
       }
     }
-      
 
     left_indices_.emplace_back(1,BraMatrix(0).getInwardMatrixIndex());
     left_indices_.emplace_back(0,KetMatrix(0).getInwardMatrixIndex());

@@ -136,6 +136,46 @@ namespace ajaj{
     }
   }
 
+  std::complex<double> FiniteMPS::makeRC(const std::string& name){
+    std::cout << "Right canonising initial state..." <<std::endl;
+    //do a check
+    if (CheckFilesExist()==CanonicalType::Error){
+      return 0.0;
+    }
+
+    MPX_matrix U; //temp storage
+    if (Canonical_ && MixPoint_ < NumVertices_ && MixPoint_ > 0){ //lambda should exist and be used
+      std::stringstream Lambdanamestream;
+      Lambdanamestream << MPSName_ << "_Lambda_" << MixPoint_ << "_" << NumVertices_-MixPoint_ << ".MPX_matrix";
+      U=load_MPX_matrix(Lambdanamestream.str(),Basis_);
+    }
+
+    for (uMPXInt p=NumVertices_;p>0;--p){
+      fetch_matrix(p,!Canonical_ || p<=MixPoint_); //if not canonical, load left, otherwise load left if left before mix point
+      
+      if (!Canonical_ || p<=MixPoint_){ //if not canonical, or on left side of mix point
+	//contract U on and decompose, if initial step for left canonical or non canonical, U will be empty
+	MPXDecomposition decomp((U.empty() ? Current_.second : MPS_matrix(contract(matrix(),0,U,0,contract20))).right_shape().SVD());
+	U=std::move(contract(decomp.ColumnMatrix,0,MPX_matrix(Basis_,decomp.ColumnMatrix.Index(1),decomp.Values),0,contract10));
+	Current_.second=std::move(decomp.RowMatrix);
+	store_current(); //store new right canonical matrix
+      }
+
+      //at end of step store copy if requested
+      if (!name.empty() && name!=MPSName_)
+	matrix().store(filename(position(),matrix().is_left_shape(),name));
+    }
+
+    Canonical_=1;
+    MixPoint_=0;
+    if (U.empty()){
+      return 1.0;
+    }
+    else {
+      return U.Trace();
+    }
+  }
+  
   CanonicalType FiniteMPS::CheckFilesExist(){ //checks files exist for left, right or mixed, doesn't establish canon
     //assume nothing about defined Canonical_ or MixPoint_
 

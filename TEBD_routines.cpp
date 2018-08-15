@@ -14,51 +14,59 @@ namespace ajaj{
   TrotterDecomposition::TrotterDecomposition(const MPO_matrix& H,double time_step_size,uMPXInt order) : m_H_ptr(&H), m_time_step_size(time_step_size), m_order(order){
 
     double tau=m_time_step_size;
-    
-//make bond operator
-    if (m_order>4 || m_order==0 || m_order==3){std::cout <<"Only 1st, 2nd and 4th order decompositions are supported. Aborting..." << std::endl; exit(1);}
-    //make the Hamiltonian for a single bond
-    MPX_matrix BondH(MakeBondHamiltonian(*m_H_ptr));
-    
-    //now make the trotter operators  
-    if (m_order==1){
-      BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,tau));
-      //safeish to have pointer to vector element if the vector no longer grows
-      OrderedOperatorPtrs.emplace_back(&BondOperators.at(0));
+    if (m_order==0){
+      //nothing
     }
-    if (m_order==2){ //second order is a special case with a nice simplification for timesteps where no measurement is made
-      BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,0.5*tau));
-      BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,tau));
-      //safeish to have pointer to vector element if the vector no longer grows
-      OrderedOperatorPtrs.emplace_back(&BondOperators.at(0));
-      OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
-      OrderedOperatorPtrs.emplace_back(&BondOperators.at(0));
-    }
-
-    if (m_order==4){
-      double f1=0.414490771794375737142354062860761495711774604016707133323;
-      double f3=-0.657963087177502948569416251443045982847098416066828533293;
-      double f1_3=-0.24347231538312721142706218858228448713532381205012139996;
-
-      BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,0.5*tau*f1)); //odd half t1 step
-      BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,tau*f1)); //odd or even full t1 step
-      BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,0.5*tau*f1_3)); //odd t1+t3 half step
-      BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,tau*f3)); //even t3 step
-
-      //11 pieces per full step
-      OrderedOperatorPtrs.emplace_back(&BondOperators.at(0));
-      OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
-      OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
-      OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
-      OrderedOperatorPtrs.emplace_back(&BondOperators.at(2));
-      OrderedOperatorPtrs.emplace_back(&BondOperators.at(3));
-      OrderedOperatorPtrs.emplace_back(&BondOperators.at(2));
-      OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
-      OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
-      OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
-      OrderedOperatorPtrs.emplace_back(&BondOperators.at(0));
-    }  
+    else {
+      //make bond operator
+      if (m_order>4 || m_order==3){std::cout <<"Only 1st, 2nd and 4th order decompositions are supported. Aborting..." << std::endl; exit(1);}
+      //make the Hamiltonian for a single bond
+      MPX_matrix BondH(MakeBondHamiltonian(*m_H_ptr));
     
+      //now make the trotter operators
+
+      if (m_order==1){
+	BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,tau));
+	//safeish to have pointer to vector element if the vector no longer grows
+	OrderedOperatorPtrs.emplace_back(&BondOperators.at(0));
+      }
+      else if (m_order==2){ //second order is a special case with a nice simplification for timesteps where no measurement is made
+	BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,0.5*tau));
+	BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,tau));
+	//safeish to have pointer to vector element if the vector no longer grows
+	OrderedOperatorPtrs.emplace_back(&BondOperators.at(0));
+	OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
+	OrderedOperatorPtrs.emplace_back(&BondOperators.at(0));
+      }
+
+      else if (m_order==4){
+	double f1=0.414490771794375737142354062860761495711774604016707133323;
+	double f3=-0.657963087177502948569416251443045982847098416066828533293;
+	double f1_3=-0.24347231538312721142706218858228448713532381205012139996;
+
+	BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,0.5*tau*f1)); //odd half t1 step
+	BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,tau*f1)); //odd or even full t1 step
+	BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,0.5*tau*f1_3)); //odd t1+t3 half step
+	BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,tau*f3)); //even t3 step
+
+	//11 pieces per full step
+	OrderedOperatorPtrs.emplace_back(&BondOperators.at(0));
+	OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
+	OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
+	OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
+	OrderedOperatorPtrs.emplace_back(&BondOperators.at(2));
+	OrderedOperatorPtrs.emplace_back(&BondOperators.at(3));
+	OrderedOperatorPtrs.emplace_back(&BondOperators.at(2));
+	OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
+	OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
+	OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
+	OrderedOperatorPtrs.emplace_back(&BondOperators.at(0));
+      }
+      else {
+	std::cout <<"Unsupported Trotter Order!" <<std::endl;
+	exit(1);
+      }
+    }
   }
 
   SeparatedTrotterDecomposition::SeparatedTrotterDecomposition(const MPO_matrix& H,double time_step_size,uMPXInt order) : H_(H),TimeStepSize_(time_step_size),Order_(order){
@@ -119,7 +127,7 @@ namespace ajaj{
   }
 
   const UnitCell& iTEBD::evolve(uMPXInt num_steps, const std::vector<MPO_matrix>& measuredMPOs, uMPXInt bond_dimension, double minS, uMPXInt measurement_interval){
-    //depends on order, as 2nd order is special
+    
     if (order()==1){
       std::cout <<"1st order time step evolution" <<std::endl;
       for (uMPXInt n=0;n<num_steps;++n){
@@ -194,6 +202,7 @@ namespace ajaj{
 	  if (m_unit.size()){ //only if unitcell isn't empty
 	    m_unit.store(Name_,m_current_time_step);
 	    this->do_measurements(m_unit,measuredMPOs);
+	    m_unit.OutputOneVertexDensityMatrix("OneVertexRho",m_current_time_step);
 	  }
 	  else {
 	    std::cout<<"Orthogonalisation Error" <<std::endl; exit(1);
@@ -407,7 +416,7 @@ namespace ajaj{
   }
 
 
-  void TEBD::left_canonise_measure(std::vector<MultiVertexMeasurement>& measurements,uMPXInt chi,double minS){
+  void TEBD::left_canonise_measure(std::vector<MultiVertexMeasurement>& measurements,uMPXInt chi,double minS,bool overlap_requested){
     std::cout << "Begin left canonisation" << std::endl; 
 
     //it can be useful to measure as we step through the system
@@ -436,7 +445,7 @@ namespace ajaj{
 	}
 	m.update(1,RightEnddecomp); //first vertex is position 1!
       }
-      {
+      if (overlap_requested) {
 	const MPX_matrix& current=RightEnddecomp.ColumnMatrix;
 	std::stringstream Initialstream;
 	Initialstream << MPSName_ << "_Left_" << 1 << ".MPS_matrix";
@@ -470,7 +479,7 @@ namespace ajaj{
       for (auto&& m : measurements){
 	m.update(v,decomp);
       }
-      {
+      if (overlap_requested) {
 	const MPX_matrix& current=decomp.ColumnMatrix;
 	std::stringstream Initialstream;
 	Initialstream << MPSName_ << "_Left_" << v << ".MPS_matrix";
@@ -486,10 +495,14 @@ namespace ajaj{
       decomp.ColumnMatrix.store(LeftNamestream.str());
     }
 
-    std::complex<double> overlap=overlap_matrix.Trace();
     std::vector<std::complex<double> > complex_results;
-    real_results.push_back(abs(overlap));
-    complex_results.push_back(overlap);
+
+    if (overlap_requested) {
+      std::complex<double> overlap=overlap_matrix.Trace();
+      real_results.push_back(abs(overlap));
+      complex_results.push_back(overlap);
+    }
+    
     for (auto&& m : measurements){
       complex_results.push_back(m.result());
     }
@@ -499,6 +512,86 @@ namespace ajaj{
     std::cout << "Norm at end of left canonisation: " << abs(Vd.Trace()) << std::endl; 
   }
 
+  void TEBD::left_canonise_measure_special(std::vector<MultiVertexMeasurement>& measurements, uMPXInt Index){
+    std::cout << "Begin left canonisation" << std::endl; 
+
+    //it can be useful to measure as we step through the system
+    std::vector<double> real_results;
+
+    MPX_matrix Vd(Basis_);
+    {
+      //treats first vertex as a special case
+      std::stringstream RightEndstream;
+      RightEndstream << "Evolving_" << MPSName_ << "_Right_" << NumVertices_ << ".MPS_matrix";
+      MPXDecomposition RightEnddecomp(load_MPS_matrix(RightEndstream.str(),Basis_).left_shape().SVD());
+      RightEnddecomp.SquareRescale(1.0);
+      std::cout << "Bond dimension: " << RightEnddecomp.Values.size() << std::endl;
+      if (NumVertices_==2){ //special case for two vertices only
+	real_results.push_back(entropy(RightEnddecomp.Values));
+      }
+      for (auto&& m : measurements){
+	if (m.finish()>NumVertices_){
+	  std::cout << "MultiVertexMeasurements incorrectly defined, final measurement position is > number of vertices: " << m.finish() << " " << NumVertices_ << std::endl;
+	  exit(1);
+	}
+	m.update(1,RightEnddecomp); //first vertex is position 1!
+      }
+     
+      Vd=std::move(contract(MPX_matrix(Basis_,RightEnddecomp.RowMatrix.Index(0),RightEnddecomp.Values),0,RightEnddecomp.RowMatrix,0,contract10));
+      std::stringstream LeftStartstream;
+      LeftStartstream << "Evolving_" << MPSName_ << "_Left_1" << ".MPS_matrix";
+      RightEnddecomp.ColumnMatrix.store(LeftStartstream.str());
+
+    }
+    for (uMPXInt n=NumVertices_-1;n>0;--n){
+      std::stringstream RightNamestream;
+      RightNamestream << "Evolving_" << MPSName_ << "_Right_" << n << ".MPS_matrix";
+      //contract U onto current
+      //and reshape to left form
+      //do SVD
+      const uMPXInt v=NumVertices_-n+1;
+      MPXDecomposition decomp(MPS_matrix(contract(Vd,0,load_MPS_matrix(RightNamestream.str(),Basis_),0,contract10)).left_shape().SVD());
+      decomp.SquareRescale(1.0);
+      std::cout << "Bond dimension: " << decomp.Values.size() << std::endl;
+      if (v==NumVertices_/2){ //if we only have two chains, this is never obeyed...
+	//measure truncation and entropy
+	real_results.push_back(entropy(decomp.Values));
+      }
+      for (auto&& m : measurements){
+	m.update(v,decomp);
+      }
+      
+      //record row vectors (Vdagger part) as new Vd
+      Vd=std::move(contract(MPX_matrix(Basis_,decomp.RowMatrix.Index(0),decomp.Values),0,decomp.RowMatrix,0,contract10));
+      //store updated 'current' vertex matrix
+      std::stringstream LeftNamestream;
+      LeftNamestream << "Evolving_" << MPSName_ << "_Left_" << v << ".MPS_matrix";
+      decomp.ColumnMatrix.store(LeftNamestream.str());
+    }
+
+    std::vector<std::complex<double> > complex_results;
+    
+    for (auto&& m : measurements){
+      complex_results.push_back(m.result());
+    }
+    m_results.push(Index,Data(real_results,complex_results));
+    //at end Vd should be trivial
+
+    std::cout << "Norm at end of left canonisation: " << abs(Vd.Trace()) << std::endl; 
+  }
+  
+  TEBD::TEBD(const MPO_matrix& H, FiniteMPS& F, DataOutput& results) : TimeBase(0.0,results),MPSName_(F.name()),Basis_(H.basis()),NumVertices_(F.size()),SingleVertexOp_(MPO_matrix()),m_EvolutionOperators(TrotterDecomposition(H,0.0,0)),GoodInitial_(0) {
+    std::stringstream Evolvingnamestream;
+    Evolvingnamestream << "Evolving_" << MPSName_;
+    std::complex<double> initial_weight(F.makeRC(Evolvingnamestream.str())); //combination of initial state norm and overall phase
+    //it is useful to do the above for measurements, just to ensure normalisation, and that all files exist.
+    
+    std::cout << "Initial state weight was " << initial_weight <<std::endl;
+
+    if (initial_weight!=0.0)
+      GoodInitial_=1;
+  }
+  
   TEBD::TEBD(const MPO_matrix& H, FiniteMPS& F, double time_step_size, DataOutput& results, uMPXInt order) : TimeBase(time_step_size,results),MPSName_(F.name()),Basis_(H.basis()),NumVertices_(F.size()),SingleVertexOp_(MakeSingleSiteEvolutionOperatorFromLowTriMPO(H,time_step_size)),m_EvolutionOperators(TrotterDecomposition(H,time_step_size,order)),GoodInitial_(0) {
 
     std::stringstream Evolvingnamestream;
@@ -520,8 +613,10 @@ namespace ajaj{
   void TEBD::evolve(uMPXInt num_steps, std::vector<MultiVertexMeasurement>& measurements, uMPXInt bond_dimension, double minS, uMPXInt measurement_interval){
     //do the evolution
     if (GoodInitial_){
-
-      if (m_EvolutionOperators.order()==1){
+      if (m_EvolutionOperators.order()==0){
+	left_canonise_measure_special(measurements, num_steps);
+      }
+      else if (m_EvolutionOperators.order()==1){
 	std::cout <<"1st order time step evolution" <<std::endl;
 	for (uMPXInt n=0;n<num_steps;++n){
 	  //++m_current_time_step;
@@ -653,25 +748,13 @@ namespace ajaj{
   //uses lower triangular MPO
   MPO_matrix MakeSingleSiteEvolutionOperatorFromLowTriMPO(const MPO_matrix& H_MPO, double timestep){
     
-    MPXInt dim=H_MPO.Index(1).size();
-
     std::vector<MPXIndex> indices;
     indices.emplace_back(H_MPO.Index(0));
     indices.emplace_back(MPXIndex(H_MPO.Index(1),H_MPO.Index(1).size()-1));
     indices.emplace_back(H_MPO.Index(2));
     indices.emplace_back(MPXIndex(H_MPO.Index(3),0));
-
     return MPO_matrix(H_MPO.basis(),indices,Exponentiate(H_MPO.ExtractMPOBlock(std::pair<ajaj::MPXInt,ajaj::MPXInt>(H_MPO.Index(1).size()-1,H_MPO.Index(1).size()-1),std::pair<ajaj::MPXInt,ajaj::MPXInt>(0,0)).Eigs(),std::complex<double>(0.0,-timestep)));
-
-    /*std::cout << "Forming single site evolution operator (diagonal)" << std::endl;
-    std::vector<std::complex<double> > phase;
-
-    for (auto i : H.GetPhysicalSpectrum().Energies()){
-      phase.push_back(std::complex<double>(cos(timestep*i),-sin(timestep*i)));
-      std::cout << i << " " << phase.back() <<std::endl;
-    }
-    exit(1);
-    return MPX_matrix(H.GetPhysicalSpectrum(),H.Index(0),phase);*/
+   
   }
 
 }

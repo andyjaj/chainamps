@@ -59,7 +59,8 @@ namespace ajaj{
     return MPO_matrix(spectrum,dummy,std::vector<complex<double> >(spectrum.size(),1.0));  //create diagonal matrix
   }
 
-  MPO_matrix UnitaryTransformMPO_matrix(const Basis&, const std::vector<MPXIndex>&, const SparseMatrix&, size_t, double);/**< To unitarily transform a local operator*/
+  MPO_matrix UnitaryTransformMPO_matrix(const Basis&, const std::vector<MPXIndex>&, const SparseMatrix&, size_t c, double f);/**< To unitarily transform a local operator*/
+  MPO_matrix UnitaryTransformMPO_matrix(const Basis&, const std::vector<MPXIndex>&, const SparseMatrix& s1, size_t c1, double f1, const SparseMatrix& s2, size_t c2, double f2);/**< To unitarily transform a local operator*/
 
   MPO_matrix load_MPO_matrix(const std::string& filename,const Basis& spectrum);
 

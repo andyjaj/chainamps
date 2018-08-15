@@ -37,7 +37,7 @@ namespace ajaj {
     State(const QNVector& CHARGE_RULES); /**< Constructs a 'dummy' state with identity like properties.*/
     State(const QNVector& CHARGE_RULES, QNVector v); /**< Constructs a state with the charges given by v.*/
     State(const State& other) : m_CHARGE_RULES(other.m_CHARGE_RULES), values(other.values) {} /**< Copy constructor.*/
-    State(State&& other) noexcept : m_CHARGE_RULES(std::move(other.m_CHARGE_RULES)), values(std::move(other.values)) {} /**< Move constructor.*/
+    State(State&& other) noexcept : m_CHARGE_RULES(other.m_CHARGE_RULES), values(std::move(other.values)) {} /**< Move constructor.*/
     QuantumNumberInt& operator[](const QuantumNumberInt i); /**< Access to the value of charge i.*/
     State& operator=(State rhs);
     State& operator+=(const State& rhs);

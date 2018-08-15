@@ -55,7 +55,8 @@ namespace ajaj{
     const std::string& name() {return MPSName_;}
 
     std::complex<double> makeLC(const std::string& new_name=std::string()); /**< 'Ensures' left canonical, and makes an optional copy, returns 0.0 if there is an error. */
-
+    std::complex<double> makeRC(const std::string& new_name=std::string()); /**< 'Ensures' right canonical, and makes an optional copy, returns 0.0 if there is an error. */
+    bool valid_files() {return CheckFilesExist()==CanonicalType::Error ? 0 : 1;}
   };
 
 }

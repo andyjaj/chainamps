@@ -36,11 +36,14 @@ int main(int argc, char** argv){
     std::vector<ajaj::NamedMPO_matrix> generated_MPOs; //actual storage for MPOs
     typedef std::vector<std::vector<std::pair<size_t,ajaj::uMPXInt> > > MPOIndexVertexPairs;
     MPOIndexVertexPairs measurement_lookups;
+    
     std::ostringstream measurednames;
     //build all required measurement MPOs (no repeats) and index them
     for (auto&& fm : RuntimeArgs.finite_measurements()){ //loop over all measurements
       std::ostringstream currentname;
       std::vector<std::pair<size_t,ajaj::uMPXInt> > temp_measurement_vec;
+      //std::vector<ajaj::meas_pair> temp_mp_vec;
+      
       for (auto&& op : fm){//for all operators in an individual measurement
 	//first see if we already generated this
 	bool found(0);
@@ -58,6 +61,9 @@ int main(int argc, char** argv){
 	    found=1;
 	    index=generated_MPOs.size();
 	    generated_MPOs.emplace_back(op.first,myModel.vertex.make_one_site_operator(op.first));
+	    //generated_MPOs.back().Matrix.print_matrix();
+	    //generated_MPOs.back().Matrix.print_indices(); /**< Print the dimensions of the indices. Colon indicates how many correspond to rows and how many to columns. */
+	    //generated_MPOs.back().Matrix.print_indices_values();
 	  }
 	  else {
 	    std::cout <<"Assuming name includes position info" <<std::endl;
@@ -81,38 +87,38 @@ int main(int argc, char** argv){
 	  temp_measurement_vec.emplace_back(index,op.second);
 	}
 	else {
-	  std::cout << "Operator " << op.first << "couldn't be found or created from predefined matrix elements." <<std::endl;
-	  std::cout << "Note that the name should be a name defined in your operators file, or by a built-in model," <<std::endl;
-	  std::cout << "NOT a .SPARSEMATRIX file name!" <<std::endl;
+	  std::cout << "Operator " << op.first << " couldn't be found or created from predefined matrix elements." <<std::endl;
+	  std::cout << "Note that the name should be a name defined in your operators file, or by a built-in model." <<std::endl;
+	  std::cout << "It should NOT be a .SPARSEMATRIX file name!" <<std::endl;
 	  return 0;
 	} //not found
       }
       if (temp_measurement_vec.size()==fm.size()){ //if we correctly generated enough mpos for measurement...
-	measurement_lookups.emplace_back(temp_measurement_vec);
+	measurement_lookups.emplace_back(std::move(temp_measurement_vec));
 	measurednames << ", Re(" << currentname.str() << "), Im(" << currentname.str() << ") ";
       }
     }
 
-    //go through and make pointers
-
-    std::vector<ajaj::MPO_matrix> measured_operators(1,myModel.vertex.make_one_site_operator(1)); //for Ising this is the fermion occupation number on a chain
-    //ajaj::DataOutput results(ajaj::OutputName(RuntimeArgs.filename(),"Evolution.dat"),"Index, Time, Truncation, Entropy, abs(Overlap), Real(Overlap), Im(Overlap), Re(Op1), Im(Op1), ...");
     std::ostringstream commentline;
     commentline << "Index, Time, Truncation, Entropy, abs(Overlap), Real(Overlap), Im(Overlap)";
     if (measurement_lookups.size()) commentline << measurednames.str(); 
 
     std::vector<ajaj::MultiVertexMeasurement> measurements;
-    for (auto&& m : measurement_lookups){
-      if (m.size()==2){
-	measurements.emplace_back(ajaj::MultiVertexMeasurement(m[0].second/*first measurement position*/,&(generated_MPOs[m[0].first].Matrix),m[1].second/* second measurement position*/,&(generated_MPOs[m[1].first].Matrix)));
+    
+    for (auto&& m : measurement_lookups){//loop over all measurements
+      std::vector<ajaj::meas_pair> mvmd;
+      for (auto&& idx_v : m){//loop through all operators in measurement
+	if (m.size()){
+	  mvmd.emplace_back(idx_v.second,&(generated_MPOs[idx_v.first].Matrix));
+	}
+	else {
+	  std::cout <<"Unsupported measurement!" <<std::endl;
+	  return 0;
+	}
       }
-      else if (m.size()==1){
-	measurements.emplace_back(ajaj::MultiVertexMeasurement(m[0].second/*first measurement position*/,&(generated_MPOs[m[0].first].Matrix)));
-      }
-      else {
-	std::cout <<"Unsupported measurement!" <<std::endl;
-	return 0;
-      }
+
+      measurements.emplace_back(ajaj::MultiVertexMeasurement(std::move(mvmd)));
+
     }
 
     //TEBD, select between files, product state definition by c numbers, or default
@@ -137,11 +143,7 @@ int main(int argc, char** argv){
 
     std::stringstream Rss;
     Rss<<RuntimeArgs.filename()<<"_TEBD_"<<number_of_vertices<<"_"<<StateName;
-
- 
     ajaj::DataOutput results(ajaj::OutputName(Rss.str(),"Evolution.dat"),commentline.str());
-    //measurements.emplace_back(ajaj::MultiVertexMeasurement(number_of_vertices/2/*first measurement position*/,&measured_operators[0],number_of_vertices/2+1/* second measurement position*/,&measured_operators[0]));
-
     ajaj::FiniteMPS F(myModel.basis(),StateName,number_of_vertices,CSpec); //if CSpec is empty, nothing is changed.
     
     //do we have time dep couplings?

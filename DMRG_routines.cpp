@@ -690,7 +690,7 @@ namespace ajaj {
 	  }
 	  cumulative_truncation+=CentralDecomposition.Truncation;
 	}
-	cumulative_truncation=cumulative_truncation/(2.0*size());
+	cumulative_truncation=cumulative_truncation/(2.0*size()); //factor of two for sweep back and forth
 	std::cout << "Average (per vertex) truncation for sweep = " << cumulative_truncation <<std::endl;
       }
     }

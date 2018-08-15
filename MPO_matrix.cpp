@@ -101,6 +101,36 @@ namespace ajaj{
     return MPO_matrix(b,idxs,std::move(T));
   }
 
+  MPO_matrix UnitaryTransformMPO_matrix(const Basis& b, const std::vector<MPXIndex>& idxs, const SparseMatrix& s1, size_t c1, double f1, const SparseMatrix& s2, size_t c2, double f2){
+    if (c1>=b.getChargeRules().size()){std::cout <<"Error, requested quantum number " <<  c1 << " outside bounds!" <<std::endl; return MPO_matrix();}
+    if (c2>=b.getChargeRules().size()){std::cout <<"Error, requested quantum number " <<  c2 << " outside bounds!" <<std::endl; return MPO_matrix();}
+
+    
+    SparseMatrix T1(copy(s1)); //make a copy (default constructor is private)
+    if (f1!=0.0){
+      for (MPXInt col=0;col<T1.cols();++col){
+	std::complex<double> Udagger(cos(b[col][c1]*f1),sin(-b[col][c1]*f1));
+	for (MPXInt p=T1.get_p(col);p<T1.get_p(col+1);++p){
+	  MPXInt row(T1.get_i(p));
+	  std::complex<double> U(cos(b[row][c1]*f1),sin(b[row][c1]*f1));
+	  T1.put_x(p)=U*T1.get_x(p)*Udagger;
+	}
+      }
+    }
+    SparseMatrix T2(copy(s2)); //make a copy (default constructor is private)
+    if (f2!=0.0){
+      for (MPXInt col=0;col<T2.cols();++col){
+	std::complex<double> Udagger(cos(b[col][c2]*f2),sin(-b[col][c2]*f2));
+	for (MPXInt p=T2.get_p(col);p<T2.get_p(col+1);++p){
+	  MPXInt row(T2.get_i(p));
+	  std::complex<double> U(cos(b[row][c2]*f2),sin(b[row][c2]*f2));
+	  T2.put_x(p)=U*T2.get_x(p)*Udagger;
+	}
+      }
+    }
+    return MPO_matrix(b,idxs,std::move(T1*T2));
+  }
+
   MPO_matrix load_MPO_matrix(const std::string& filename,const Basis& spectrum){
     return MPO_matrix(std::move(load_MPX_matrix_binary(filename,spectrum)));
   }
