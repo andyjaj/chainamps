@@ -142,6 +142,8 @@ int main(int argc, char** argv){
     //if we don't have time dependent couplings...
     if (!myModel.times().size()){ //need this for builtin models, with old style coupling params
       std::cout <<"Evolution hamiltonian is static." <<std::endl;
+      ajaj::TwoVE two_vertex_run(myModel.H_MPO,F,time_step_size,results);
+      two_vertex_run.evolve(number_of_time_steps,measurements);
       /*ajaj::TEBD finrun(myModel.H_MPO,F,time_step_size,results,trotter_order);
       finrun.evolve(number_of_time_steps,measurements,CHI,trunc,measurement_interval);
       */
