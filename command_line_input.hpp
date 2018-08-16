@@ -166,19 +166,6 @@ namespace ajaj {
       return option::ARG_ILLEGAL;
     }
 
-    /*static option::ArgStatus CNumberSpecifier(const option::Option& option, bool msg)
-    {
-      if (option.arg != 0 && option.arg[0] && option.arg[0] != '-'){
-	C_Spec check;
-	std::istringstream ss(option.arg);
-	ss >>check;
-	if (check.size()) return option::ARG_OK;
-      }
-
-      if (msg) std::cout << "Option '" << std::string(option.name,option.namelen) << "' requires list of c number specifications." <<std::endl;
-      return option::ARG_ILLEGAL;
-    }*/
-
   };
 
   enum optionIndex {UNKNOWN,CHI,TRUNC,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET,FINITE_MEASUREMENT,NEV,ENTANGLEMENT,VERTEX_ENTANGLEMENT,C_SPECIFIER,TIMEFILE,FDMRG_MODE,IENERGY};
@@ -269,7 +256,7 @@ namespace ajaj {
       {C_SPECIFIER,0,"c","c-number-file",Arg::NonEmpty," -c <c-specifier-file>,"
        "  \tFile with c-numbers for initial state."},
       { 0, 0, 0, 0, 0, 0 }
-    };
+    };  
 
   const option::Descriptor iMEAS_usage[11] =
     {
@@ -302,10 +289,25 @@ namespace ajaj {
        "  \tSpecify a one or two point measurement."},
       {FDMRG_MODE,0,"D","fDMRG-mode",Arg::None,"  -D, \t--fDMRG-mode"
        "  \tSpecial mode for fDMRG output files, needs no input filenames."},
-      
       { 0, 0, 0, 0, 0, 0 }
     };
 
+  const option::Descriptor TwoVE_usage[7] =
+    {
+      {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: 2VE_DRV.bin [OPTIONS] <model_filename> \n Exact diagonalisation used to time evolve two vertices."},
+      {STEP_SIZE,0,"s","step-size",Arg::PositiveDouble,"  -s <number>, \t--step-size=<number>"
+       "  \tMeasurements are taken at time intervals separated by the step size. Default is 0.1" },
+      {NUMBER_OF_STEPS,0,"n","time-steps",Arg::PositiveNumeric,"  -n <number>, \t--time-steps=<number>"
+       "  \tThe number of time steps. Default is 1." },
+      {INITIAL_STATE_NAME,0,"i","initial-state-name",Arg::NonEmpty,"  -i <initial_state_name>, \t--initial-state-name=<initial_state_name>"
+       "  \tSpecify an initial state." },
+      {FINITE_MEASUREMENT,0,"M","finite-measurement",Arg::FiniteMeasurementInfo,"  -M <opfile1>,<vertex1>[,<opfile2>,<vertex2>], \t--finite-measurement=<opfile1>,<vertex1>[,<opfile2>,<vertex2>]"
+       "  \tSpecify a one or two point measurement."},
+      {C_SPECIFIER,0,"c","c-number-file",Arg::NonEmpty," -c <c-specifier-file>,"
+       "  \tFile with c-numbers for initial state."},
+      { 0, 0, 0, 0, 0, 0 }
+    };
+  
   class Base_Args{
 
   protected:
@@ -767,6 +769,85 @@ class fMEAS_Args : public Base_Args{
       }
       print();
     }
+  };
+
+  class TwoVE_Args : public Base_Args{
+    unsigned long num_steps_;
+    double step_size_;
+    std::string initial_state_name_;
+    std::vector<StringIndexPairs> finite_measurements_;
+    std::string c_number_filename_;
+    
+  public:
+    TwoVE_Args(int argc, char* argv[]) : Base_Args(argc,argv,TwoVE_usage), num_steps_(1), step_size_(0.1) {
+      
+      //Need at least the model specified on command line
+     if (parse.nonOptionsCount()!=1 || std::string(parse.nonOption(0))==std::string("-")){
+	std::cout << "Incorrect command line arguments." << std::endl <<std::endl;
+	valid_=0;
+      }
+      else {
+	valid_=(valid_==1);
+      }
+      //
+      if (is_valid()){
+	if (options[NUMBER_OF_STEPS])
+	  num_steps_=stoul(options[NUMBER_OF_STEPS].arg);
+	if (options[STEP_SIZE])
+	  step_size_=stod(options[STEP_SIZE].arg);
+	if (options[INITIAL_STATE_NAME])
+	  initial_state_name_=std::string(options[INITIAL_STATE_NAME].arg);
+	if (options[FINITE_MEASUREMENT]){
+	  for (option::Option* opt = options[FINITE_MEASUREMENT]; opt; opt = opt->next()){
+	    StringIndexPairs temp;
+	    std::istringstream ss(opt->arg);
+	    ss >> temp;
+	    //check all locations specified in temp
+	    for (auto&& l : temp){
+	      if (l.second < 1 || l.second >2) {
+		std::cout << "Specified measurement vertex " << l.second << " is not 1 or 2!" <<std::endl;
+		valid_=0;
+	      }
+	    }
+	    if (valid_)
+	      finite_measurements_.emplace_back(temp);
+	  }
+	}
+	if (options[C_SPECIFIER]){
+	  c_number_filename_=std::string(options[C_SPECIFIER].arg);
+	}
+
+	if (options[C_SPECIFIER] && options[INITIAL_STATE_NAME]){
+	  valid_=0;
+	  std::cout <<"Cannot specify initial state through options -c and -i simultaneously!"<<std::endl;
+	}
+	  
+
+      }
+      print();
+    }
+
+    unsigned int num_vertices() const {return 2;}
+
+    unsigned long number_of_steps() const {
+      return num_steps_;
+    }
+    double step_size() const {
+      return step_size_;
+    }
+
+    const std::string& initial_state_name() const {
+      return initial_state_name_;
+    }
+
+    const std::vector<StringIndexPairs>& finite_measurements() const {
+      return finite_measurements_;
+    }
+
+    const std::string& c_number_filename() const {
+      return c_number_filename_;
+    }
+
   };
 
 }

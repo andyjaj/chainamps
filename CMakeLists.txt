@@ -57,9 +57,10 @@ endif(TBB)
 
 add_library(MATRIX_LIB STATIC sparse_interface.cpp dense_interface.cpp arpack_interface.cpp dense_matrix_functions.cpp)
 add_library(MPX_LIB STATIC FiniteMPS.cpp UnitCell.cpp MPS_matrix.cpp MPO_matrix.cpp MPX_matrix.cpp MPXIndex.cpp states.cpp)
-add_library(DMRG STATIC DMRG_routines.cpp TwoVertexOnly.cpp measurement.cpp)
-add_library(TIME STATIC TEBD_routines.cpp TwoVertexOnly.cpp measurement.cpp)
+add_library(DMRG STATIC DMRG_routines.cpp measurement.cpp)
+add_library(TIME STATIC TEBD_routines.cpp measurement.cpp)
 add_library(MEAS STATIC measurement.cpp)
+add_library(TWOVE STATIC TwoVertexEvolution.cpp measurement.cpp)
 
 set (COMMON_LIBS MPX_LIB MATRIX_LIB ${EXTERNAL_LIBS})
 
@@ -74,6 +75,9 @@ target_link_libraries(iTEBD_DRV.bin TIME ${COMMON_LIBS})
 
 add_executable(TEBD_DRV.bin TEBD_DRV.cpp)
 target_link_libraries(TEBD_DRV.bin TIME ${COMMON_LIBS})
+
+add_executable(2VE_DRV.bin 2VE_DRV.cpp)
+target_link_libraries(2VE_DRV.bin TWOVE ${COMMON_LIBS})
 
 add_executable(UNITCELL_MEASURE.bin UNITCELL_MEASURE.cpp)
 target_link_libraries(UNITCELL_MEASURE.bin MEAS ${COMMON_LIBS})

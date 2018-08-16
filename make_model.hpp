@@ -156,7 +156,6 @@ namespace ajaj{
 	  }
 	  //didn't work
 	  std::cout << "Not enough files specified." <<std::endl;
-	  return Model();
 	}
 
 	else {
@@ -191,7 +190,6 @@ namespace ajaj{
 	    }
 	    else if (stringbuffer.size()>3){ //no time dep info and yet more than 1 coupling line
 	      std::cout << "ERROR: no time data, but more than one coupling defs line!" << std::endl;
-	      return Model();
 	    }
 	    cpas.push_back(CouplingArray());
 	    //Coupling c;
@@ -236,7 +234,7 @@ namespace ajaj{
     else {
       std::cout << "Could not open " << filename << std::endl;
     }
-    return Model();
+    return Model(); //return empty model, error
   }
 
   Model MakeModelFromArgs(Base_Args& cmdln){

@@ -87,9 +87,11 @@ namespace ajaj{
     Model(Model&& other) : Model() {
       swap(*this,other);
     }
-    
-    //MPO_matrix H_local() const;
 
+    bool empty() const {
+      return makeH_==nullptr;
+    }
+    
     Model& operator=(Model other)
     {
       swap(*this, other);
