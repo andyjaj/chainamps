@@ -1498,11 +1498,19 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
   //////////////////////////////////////////////////////////
   //first variant finds all eigenvalues and vectors using blocks and a dense method
   SparseHED SparseMatrix::HED(const std::vector<std::vector<Sparseint> >& B) const{
+    Sparseint NumEvals=0;
+    for (auto&& cvec : B){
+      for (auto cidx : cvec) {
+	++NumEvals;
+      }
+    }
+    
     //std::cout << "METHOD 1" << std::endl;
     if (!this->is_finalised()){std::cout << "Not finalised!" << std::endl; exit(1);}
     //std::cout << "HED on matrix, size " << this->rows() << " * " << this->cols() << std::endl;
     if (this->rows()!=this->cols()){std::cout << "Hermitian matrix not square!" << std::endl; exit(1);}
-    SparseHED ans(this->rows(),this->cols());
+    //SparseHED ans(this->rows(),this->cols());
+    SparseHED ans(this->rows(),NumEvals);
     for (std::vector<std::vector<Sparseint> >::const_iterator cit=B.begin();cit!=B.end();++cit){
       TranslationBlock<DenseMatrix> TB(*this,*cit,*cit); //form block
       DenseHED Blockans=TB.Block.HED(); //do eigen decomposition on block (which will destroy the original block)
@@ -1783,6 +1791,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     for (std::vector<double>::const_iterator cit=decomp.Values.begin();cit!=decomp.Values.end();++cit ){
       diagpart.push_back(exp(factor*(*cit)));
     }
+    
     return (decomp.EigenVectors*SparseMatrix(diagpart))*decomp.EigenVectors.copy_dagger();
   }
 

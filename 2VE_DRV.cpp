@@ -1,3 +1,4 @@
+
 /**
  *@file 2VE_DRV.cpp Driver file for two vertex evolution (TSA time evolution).
  */
@@ -18,7 +19,7 @@
 #include "command_line_input.hpp"
 #include "model.hpp"
 #include "make_model.hpp"
-#include "TwoVertexEvolution.hpp"
+#include "TEBD_routines.hpp"
 
 int main(int argc, char** argv){
 
@@ -138,59 +139,67 @@ int main(int argc, char** argv){
     Rss<<RuntimeArgs.filename()<<"_2VE_"<<StateName;
     ajaj::DataOutput results(ajaj::OutputName(Rss.str(),"Evolution.dat"),commentline.str());
     ajaj::FiniteMPS F(myModel.basis(),StateName,number_of_vertices,CSpec); //if CSpec is empty, nothing is changed.
-    
-    //if we don't have time dependent couplings...
-    if (!myModel.times().size()){ //need this for builtin models, with old style coupling params
-      std::cout <<"Evolution hamiltonian is static." <<std::endl;
-      ajaj::TwoVE two_vertex_run(myModel.H_MPO,F,time_step_size,results);
-      two_vertex_run.evolve(number_of_time_steps,measurements);
-      /*ajaj::TEBD finrun(myModel.H_MPO,F,time_step_size,results,trotter_order);
-      finrun.evolve(number_of_time_steps,measurements,CHI,trunc,measurement_interval);
-      */
-      if (1 /*finrun.good()*/){
-	return 0;
-      }
+
+    F.makeLC();
+    ajaj::MPXIndex RightIndex=F.matrix(2,1).Index(2);
+    ajaj::MPXIndex LeftIndex=F.matrix(1,1).Index(1);
+    std::cout << LeftIndex.size() << " " << RightIndex.size() <<std::endl;
+    if (RightIndex.size()!=1 || LeftIndex.size()!=1){
+      std::cout << "Not an acceptable initial state for a two vertex only system!" << std::endl;
     }
-    //if we do have time dep couplings...
     else {
-      std::cout <<"Evolution hamiltonian is time dependent." <<std::endl;
-      //if ramp step size is smaller than step size, then use that until ramp over (check each time)
-      //if step size smaller than ramp step size then use size that is commensurate with ramp step, but smaller than step size.
-      ajaj::uMPXInt ramp_step=1;
-      //do the first explicitly in order to creat the TEBD object
-      double ramp_step_size_1=myModel.times()[ramp_step]-myModel.times()[ramp_step-1];
-      double current_step_size_1=ramp_step_size_1;
-      ajaj::uMPXInt num_1=1;
-      while (current_step_size_1>time_step_size){current_step_size_1=ramp_step_size_1/(++num_1);}
-      if (num_1>number_of_time_steps) num_1=number_of_time_steps;
-
-      //ajaj::TEBD finrun(myModel.H_MPO,F,current_step_size_1,results,trotter_order);
-      //finrun.evolve(num_1,measurements,CHI/*bond dimension*/,trunc/*min s val*/,measurement_interval);
-      number_of_time_steps-=num_1;
-      ++ramp_step;
-
-      //now continue with time dep params
-      while (number_of_time_steps>0 && ramp_step < myModel.times().size() /*&& finrun.good()*/){
-	double ramp_step_size=myModel.times()[ramp_step]-myModel.times()[ramp_step-1];
-	double current_step_size=ramp_step_size;
-	ajaj::uMPXInt num=1;
-	while (current_step_size>time_step_size){current_step_size=ramp_step_size/(++num);}
-	if (num>number_of_time_steps) num=number_of_time_steps;
-
-	//finrun.change_bond_operator(myModel.change_H_MPO(myModel.coupling_arrays()[ramp_step-1]),current_step_size);
-	//finrun.evolve(num,measurements,CHI/*bond dimension*/,trunc/*min s val*/,measurement_interval);
-	number_of_time_steps-=num;
-	++ramp_step;
-      }
+      ajaj::State blockstate=RightIndex.at(0)-LeftIndex.at(0);
+      //if we don't have time dependent couplings...
+      if (!myModel.times().size()){ //need this for builtin models, with old style coupling params
+	std::cout <<"Evolution hamiltonian is static." <<std::endl;
+	ajaj::TEBD finrun(myModel.H_MPO,F,time_step_size,results,1,&blockstate);
+	finrun.evolve(number_of_time_steps,measurements);
       
-      if (number_of_time_steps>0 /*&& finrun.good()*/){
-	std::cout <<"End of time dependent hamiltonian stage." <<std::endl;
-	//finrun.change_bond_operator(myModel.change_H_MPO(myModel.coupling_arrays()[ramp_step-1]),time_step_size);
-	//finrun.evolve(number_of_time_steps,measurements,CHI/*bond dimension*/,trunc/*min s val*/,measurement_interval);
+	if (finrun.good()){
+	  return 0;
+	}
       }
+      //if we do have time dep couplings...
+      else {
+	std::cout <<"Evolution hamiltonian is time dependent." <<std::endl;
+	//if ramp step size is smaller than step size, then use that until ramp over (check each time)
+	//if step size smaller than ramp step size then use size that is commensurate with ramp step, but smaller than step size.
+	ajaj::uMPXInt ramp_step=1;
+	//do the first explicitly in order to create the TEBD object
+	double ramp_step_size_1=myModel.times()[ramp_step]-myModel.times()[ramp_step-1];
+	double current_step_size_1=ramp_step_size_1;
+	ajaj::uMPXInt num_1=1;
+	while (current_step_size_1>time_step_size){current_step_size_1=ramp_step_size_1/(++num_1);}
+	if (num_1>number_of_time_steps) num_1=number_of_time_steps;
 
-      if (1 /*finrun.good()*/){
-	return 0;
+	ajaj::TEBD finrun(myModel.H_MPO,F,current_step_size_1,results,1,&blockstate);
+	finrun.evolve(num_1,measurements);
+	number_of_time_steps-=num_1;
+	++ramp_step;
+
+	//now continue with time dep params
+	while (number_of_time_steps>0 && ramp_step < myModel.times().size() /*&& finrun.good()*/){
+	  double ramp_step_size=myModel.times()[ramp_step]-myModel.times()[ramp_step-1];
+	  double current_step_size=ramp_step_size;
+	  ajaj::uMPXInt num=1;
+	  while (current_step_size>time_step_size){current_step_size=ramp_step_size/(++num);}
+	  if (num>number_of_time_steps) num=number_of_time_steps;
+
+	  finrun.change_bond_operator(myModel.change_H_MPO(myModel.coupling_arrays()[ramp_step-1]),current_step_size);
+	  finrun.evolve(num,measurements);
+	  number_of_time_steps-=num;
+	  ++ramp_step;
+	}
+      
+	if (number_of_time_steps>0 /*&& finrun.good()*/){
+	  std::cout <<"End of time dependent hamiltonian stage." <<std::endl;
+	  finrun.change_bond_operator(myModel.change_H_MPO(myModel.coupling_arrays()[ramp_step-1]),time_step_size);
+	  finrun.evolve(number_of_time_steps,measurements);
+	}
+
+	if (finrun.good()){
+	  return 0;
+	}
       }
     }
   }

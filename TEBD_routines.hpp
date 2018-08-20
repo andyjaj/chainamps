@@ -28,12 +28,12 @@ namespace ajaj {
     //std::vector<MPO_matrix*> Measurement_Operator_ptrs;
   public:
     std::vector<const MPX_matrix*> OrderedOperatorPtrs;
-    TrotterDecomposition(const MPO_matrix& H,double time_step_size,uMPXInt order=1);
+    TrotterDecomposition(const MPO_matrix& H,double time_step_size,uMPXInt order,const State* blockstate_ptr=nullptr);
     uMPXInt order() const {return m_order;}
     double time_step_size() const {return m_time_step_size;}
   };
 
-  class SeparatedTrotterDecomposition{
+  /*class SeparatedTrotterDecomposition{
   private:
     static constexpr double BONDDECOMPTOL=1.0e-15;//needs setting externally
     const MPO_matrix& H_;
@@ -49,7 +49,7 @@ namespace ajaj {
     SeparatedTrotterDecomposition(const MPO_matrix& H,double time_step_size,uMPXInt order=1);
     uMPXInt order() const {return Order_;}
     double time_step_size() const {return TimeStepSize_;}
-  };
+    };*/
 
   class TimeBase {
   protected:
@@ -95,16 +95,16 @@ private:
   void apply_to_even_bonds(const MPX_matrix& BondOp,uMPXInt  bond_dimension, double minS);
   void left_canonise(uMPXInt chi=0,double minS=0);
   void left_canonise_measure(std::vector<MultiVertexMeasurement>& measurements,uMPXInt chi=0,double minS=0,bool overlap_requested=1);
-  void left_canonise_measure_special(std::vector<MultiVertexMeasurement>& measurements, uMPXInt Index=0);
+  void left_canonise_measure_special(std::vector<MultiVertexMeasurement>& measurements, uMPXInt Index=0); //Ugly solution for finite measurements after fDMRG
 
   
   double max_truncation_=0.0;
 
 public:
   TEBD(const MPO_matrix& H, FiniteMPS& F, DataOutput& results);
-  TEBD(const MPO_matrix& H, FiniteMPS& F, double time_step_size, DataOutput& results, uMPXInt order=1); //use FiniteMPS class
+  TEBD(const MPO_matrix& H, FiniteMPS& F, double time_step_size, DataOutput& results, uMPXInt order=1,const State* blockstate_ptr=nullptr); //use FiniteMPS class
 
-  void change_bond_operator(const MPO_matrix& H, double time_step_size);
+  void change_bond_operator(const MPO_matrix& H, double time_step_size,const State* blockstate_ptr=nullptr);
 
   void evolve(uMPXInt num_steps, std::vector<MultiVertexMeasurement>& measurements, uMPXInt bond_dimension=0, double minS=0.0, uMPXInt measurement_interval=1);
   void left_info();
@@ -113,7 +113,7 @@ public:
 };
 
   MPX_matrix MakeBondHamiltonian(const MPO_matrix& H); //Returns part of hamiltonian that refers to a single bond (no double counting of vertex part).
-  MPX_matrix MakeBondEvolutionOperator(const MPX_matrix& BondH, double timestep);//Forms exponential bond update operator
+  MPX_matrix MakeBondEvolutionOperator(const MPX_matrix& BondH, double timestep,const State* blockstate_ptr=nullptr);//Forms exponential bond update operator
   MPO_matrix MakeSingleSiteEvolutionOperatorFromLowTriMPO(const MPO_matrix& H_MPO, double timestep);
 
 }

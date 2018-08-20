@@ -11,7 +11,7 @@
 
 namespace ajaj{
 
-  TrotterDecomposition::TrotterDecomposition(const MPO_matrix& H,double time_step_size,uMPXInt order) : m_H_ptr(&H), m_time_step_size(time_step_size), m_order(order){
+  TrotterDecomposition::TrotterDecomposition(const MPO_matrix& H,double time_step_size,uMPXInt order=1,const State* blockstate_ptr) : m_H_ptr(&H), m_time_step_size(time_step_size), m_order(order){
 
     double tau=m_time_step_size;
     if (m_order==0){
@@ -26,7 +26,8 @@ namespace ajaj{
       //now make the trotter operators
 
       if (m_order==1){
-	BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,tau));
+	BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,tau,blockstate_ptr));
+	std::cout << "Done" <<std::endl;
 	//safeish to have pointer to vector element if the vector no longer grows
 	OrderedOperatorPtrs.emplace_back(&BondOperators.at(0));
       }
@@ -69,7 +70,7 @@ namespace ajaj{
     }
   }
 
-  SeparatedTrotterDecomposition::SeparatedTrotterDecomposition(const MPO_matrix& H,double time_step_size,uMPXInt order) : H_(H),TimeStepSize_(time_step_size),Order_(order){
+  /*  SeparatedTrotterDecomposition::SeparatedTrotterDecomposition(const MPO_matrix& H,double time_step_size,uMPXInt order) : H_(H),TimeStepSize_(time_step_size),Order_(order){
     //first generate a normal decomp
     TrotterDecomposition TD(H_,TimeStepSize_,Order_);
     //decompose bond operators and push_back
@@ -95,7 +96,7 @@ namespace ajaj{
 	UbarOperators_.emplace_back(contract(MPX_matrix(Spectrum,decomp.RowMatrix.Index(0),decomp.Values),0,decomp.RowMatrix,0,contract10));
       }
     }
-  }
+    }*/
 
   iTEBD::iTEBD(const MPO_matrix& H,const UnitCell& C, double time_step_size, DataOutput& results, const std::string& Name, uMPXInt order) : TimeBase(time_step_size,results),m_EvolutionOperators(TrotterDecomposition(H,time_step_size,order)),m_initial_unit(C),m_unit(C),Name_(Name) {
     std::ofstream DensityFileStream_;
@@ -315,16 +316,11 @@ namespace ajaj{
     //First need to update the final matrix
     std::stringstream SpecialNameStream;
     SpecialNameStream << "Evolving_" << MPSName_ << "_Left_" << NumVertices_ << ".MPS_matrix";
-    //MPS_matrix(std::move(contract(SingleVertexOp_,0,load_MPS_matrix(SpecialNameStream.str(),Basis_),0,contract10).CombineSimilarMatrixIndices())).store(SpecialNameStream.str());
     
     std::stringstream StoreNameStream;
     StoreNameStream << "Evolving_" << MPSName_ << "_Right_" << 1 << ".MPS_matrix";
     
-
     MPXDecomposition rot(MPS_matrix(std::move(contract(SingleVertexOp_,0,load_MPS_matrix(SpecialNameStream.str(),Basis_),0,contract20).CombineSimilarMatrixIndices())).right_shape().SVD());
-
-
-    //    MPXDecomposition rot(MPS_matrix(std::move(contract(SingleVertexOp_,0,load_MPS_matrix(SpecialNameStream.str(),Basis_),0,contract10).CombineSimilarMatrixIndices())).right_shape().SVD());
 
     rot.RowMatrix.store(StoreNameStream.str()); //now should be right canonical
     if (rot.Truncation>max_truncation_) max_truncation_=rot.Truncation;
@@ -592,8 +588,10 @@ namespace ajaj{
       GoodInitial_=1;
   }
   
-  TEBD::TEBD(const MPO_matrix& H, FiniteMPS& F, double time_step_size, DataOutput& results, uMPXInt order) : TimeBase(time_step_size,results),MPSName_(F.name()),Basis_(H.basis()),NumVertices_(F.size()),SingleVertexOp_(MakeSingleSiteEvolutionOperatorFromLowTriMPO(H,time_step_size)),m_EvolutionOperators(TrotterDecomposition(H,time_step_size,order)),GoodInitial_(0) {
+  TEBD::TEBD(const MPO_matrix& H, FiniteMPS& F, double time_step_size, DataOutput& results, uMPXInt order,const State* blockstate_ptr) : TimeBase(time_step_size,results),MPSName_(F.name()),Basis_(H.basis()),NumVertices_(F.size()),m_EvolutionOperators(TrotterDecomposition(H,time_step_size,order,blockstate_ptr)),GoodInitial_(0) {
 
+    SingleVertexOp_=std::move(MakeSingleSiteEvolutionOperatorFromLowTriMPO(H,time_step_size));
+   
     std::stringstream Evolvingnamestream;
     Evolvingnamestream << "Evolving_" << MPSName_;
     std::complex<double> initial_weight(F.makeLC(Evolvingnamestream.str())); //combination of initial state norm and overall phase
@@ -604,10 +602,11 @@ namespace ajaj{
       GoodInitial_=1;
   }
 
-  void TEBD::change_bond_operator(const MPO_matrix& H, double time_step_size){
+  void TEBD::change_bond_operator(const MPO_matrix& H, double time_step_size,const State* blockstate_ptr){
     m_time_step_size=time_step_size;
     SingleVertexOp_=MakeSingleSiteEvolutionOperatorFromLowTriMPO(H,time_step_size);
-    m_EvolutionOperators=TrotterDecomposition(H,time_step_size,m_EvolutionOperators.order());
+    
+    m_EvolutionOperators=TrotterDecomposition(H,time_step_size,m_EvolutionOperators.order(),blockstate_ptr);
   }
 
   void TEBD::evolve(uMPXInt num_steps, std::vector<MultiVertexMeasurement>& measurements, uMPXInt bond_dimension, double minS, uMPXInt measurement_interval){
@@ -735,13 +734,16 @@ namespace ajaj{
     return reorder(contract(LeftHalf,0,RightHalf,0,std::vector<MPXPair>(1,MPXPair(3,1))),0,reorder032415,2);
   }
 
-  MPX_matrix MakeBondEvolutionOperator(const MPX_matrix& BondH, double timestep){
+  MPX_matrix MakeBondEvolutionOperator(const MPX_matrix& BondH, double timestep,const State* blockstate_ptr){
     std::cout << "Forming bond evolution operator" << std::endl;
     std::vector<MPXIndex> indices;
     indices.emplace_back(BondH.Index(0));
     indices.emplace_back(BondH.Index(1));
     indices.emplace_back(BondH.Index(2));
     indices.emplace_back(BondH.Index(3));
+    if (blockstate_ptr!=nullptr){
+      return MPX_matrix(BondH.basis(),indices,2,Exponentiate(BondH.Eigs(*blockstate_ptr),std::complex<double>(0.0,-timestep)));
+    }
     return MPX_matrix(BondH.basis(),indices,2,Exponentiate(BondH.Eigs(),std::complex<double>(0.0,-timestep)));
   }
 

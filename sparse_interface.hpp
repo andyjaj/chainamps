@@ -305,7 +305,6 @@ namespace ajaj {
       //EigenVectors=SparseMatrix(m_dim,numevals);
     }
     SparseHED(std::vector<double>&& values,SparseMatrix&& vecs) : SparseDecompositionBase<double>(std::move(values)),m_dim(values.size()),EigenVectors(std::move(vecs)) {}
-    //~SparseHED(){};
   };
 
   class SparseED :public SparseDecompositionBase<std::complex<double> > {
