@@ -77,7 +77,7 @@ add_executable(TEBD_DRV.bin TEBD_DRV.cpp)
 target_link_libraries(TEBD_DRV.bin TIME MEAS ${COMMON_LIBS})
 
 add_executable(2VE_DRV.bin 2VE_DRV.cpp)
-target_link_libraries(2VE_DRV.bin TIME MEAS ${COMMON_LIBS})
+target_link_libraries(2VE_DRV.bin TWOVE TIME MEAS ${COMMON_LIBS})
 
 add_executable(UNITCELL_MEASURE.bin UNITCELL_MEASURE.cpp)
 target_link_libraries(UNITCELL_MEASURE.bin MEAS ${COMMON_LIBS})

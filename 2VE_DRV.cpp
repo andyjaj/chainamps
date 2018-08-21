@@ -19,7 +19,7 @@
 #include "command_line_input.hpp"
 #include "model.hpp"
 #include "make_model.hpp"
-#include "TEBD_routines.hpp"
+#include "TwoVertexEvolution.hpp"
 
 int main(int argc, char** argv){
 
@@ -152,7 +152,8 @@ int main(int argc, char** argv){
       //if we don't have time dependent couplings...
       if (!myModel.times().size()){ //need this for builtin models, with old style coupling params
 	std::cout <<"Evolution hamiltonian is static." <<std::endl;
-	ajaj::TEBD finrun(myModel.H_MPO,F,time_step_size,results,1,&blockstate);
+	//ajaj::TEBD finrun(myModel.H_MPO,F,time_step_size,results,1,&blockstate);
+	ajaj::TwoVE finrun(myModel.H_MPO,F,time_step_size,results,blockstate);
 	finrun.evolve(number_of_time_steps,measurements);
       
 	if (finrun.good()){
@@ -172,7 +173,9 @@ int main(int argc, char** argv){
 	while (current_step_size_1>time_step_size){current_step_size_1=ramp_step_size_1/(++num_1);}
 	if (num_1>number_of_time_steps) num_1=number_of_time_steps;
 
-	ajaj::TEBD finrun(myModel.H_MPO,F,current_step_size_1,results,1,&blockstate);
+	//ajaj::TEBD finrun(myModel.H_MPO,F,current_step_size_1,results,1,&blockstate);
+	ajaj::TwoVE finrun(myModel.H_MPO,F,current_step_size_1,results,blockstate);
+
 	finrun.evolve(num_1,measurements);
 	number_of_time_steps-=num_1;
 	++ramp_step;
