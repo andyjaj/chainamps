@@ -1,4 +1,4 @@
-int non_chir_bosons(double tpi_R, double Beta, double en_cutoff)
+int non_chir_bosons(double tpi_R, double Beta, double en_cutoff,bool restrict_n)
 {
   int j, k, m, n, nmax, mmax, nmin, mmin, flag, ind, mom, mom_vac[MaxN][MaxM];
   
@@ -7,8 +7,8 @@ int non_chir_bosons(double tpi_R, double Beta, double en_cutoff)
   
   /*delineate states of full bosons up to a given energy*/
   
- nmax = (int) (sqrt(en_cutoff/tpi_R +1.0/12.0)/Beta)+1;
- nmin = -nmax+1;
+  nmax = restrict_n ? 1 : (int) (sqrt(en_cutoff/tpi_R +1.0/12.0)/Beta)+1;
+  nmin = -nmax+1;
  // nmax = 1; nmin = 0;
   mmax = 1; 
   mmin = 0;

@@ -19,6 +19,20 @@ namespace rmk { //namespace for Robert's ancilliary arrays and definitions
   static const ajaj::uMPXInt MaxStates=2000; /*maximum number of states allowed in the Hilbert space of a single boson*/
   static const ajaj::uMPXInt MaxN=40; /*largest allowed value of N in constructing highest weight states |N,M>*/
   static const ajaj::uMPXInt MaxM=40; /*largest allowed value of M in constructing highest weight states |N,M>*/
+
+  static const ajaj::uMPXInt MaxPart=300; /*maximum number of partitions allowed at a given level; used in denumerating number of chiral states*/
+  static const ajaj::uMPXInt MaxChiralStates=600; /*largest allowed number of chiral states*/
+  static const ajaj::uMPXInt UL=14;  /*the level up to (but not including) which we keep chiral states*/
+  static const ajaj::uMPXInt LL=0;
+  
+  static const ajaj::uMPXInt MaxNum_a=20; /*the maximum number of chiral a's that we allow in constructing a state, i.e.  
+					    for a state, a_{-n_1} ... a_{-n_{k_L}}\bar a_{-n_1} ... \bar a_{-n_{k_R}}|N,M>,
+					    both k_L and k_R must be less than MaxNum_a; we must have MaxNum_a <= MaxLev */
+
+  static const ajaj::uMPXInt MaxLev=20; /*the largest chiral level that we can possibly consider in forming states*/
+
+  static ajaj::uMPXInt nstates_lev[MaxLev] = {1,2,4,7,12,19,30,45,67,97,139,195,272,373,508,684,915,1212,1597,2087};
+  
   double state_en[MaxStates];
 
   ajaj::MPXInt nstate, /*index keeping track of how many non-chiral states there are*/
@@ -67,7 +81,7 @@ namespace llsemi{
     /*compute chiral matrix elements*/
     rmk::me_chir(Beta);
     /*compute non-chiral states*/  
-    ajaj::uMPXInt nstates=rmk::non_chir_bosons(tpi_R,Beta,spectrum_cutoff);
+    ajaj::uMPXInt nstates=rmk::non_chir_bosons(tpi_R,Beta,spectrum_cutoff,1);
 
     //populate spectrum
     for (ajaj::uMPXInt n=0;n<nstates;++n){
