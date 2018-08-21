@@ -16,6 +16,9 @@ namespace ajaj{
   }
 
   MPX_matrix Make2VEvolutionOperator(const MPX_matrix& BondH, double timestep,const State& blockstate){
+
+    BondH.print_indices();
+    
     std::cout << "Forming evolution operator" << std::endl;
     std::vector<MPXIndex> indices;
     indices.emplace_back(BondH.Index(0));
@@ -25,15 +28,11 @@ namespace ajaj{
     return MPX_matrix(BondH.basis(),indices,2,Exponentiate(BondH.Eigs(blockstate),std::complex<double>(0.0,-timestep)));
   }
 
-  TwoVE::TwoVE(const MPO_matrix& HMPO, FiniteMPS& F, double time_step_size, DataOutput& results, const State& blockstate) : TimeBase(time_step_size,results),MPSName_(F.name()),Basis_(HMPO.basis()),EvolutionOperator_(Make2VEvolutionOperator(HMPO,time_step_size,blockstate)),GoodInitial_(0),BlockState_(blockstate) {
+  TwoVE::TwoVE(const MPO_matrix& HMPO, FiniteMPS& F, double time_step_size, DataOutput& results, const State& blockstate) : TimeBase(time_step_size,results),MPSName_(F.name()),Basis_(HMPO.basis()),EvolutionOperator_(Make2VEvolutionOperator(Make2VBondHamiltonian(HMPO),time_step_size,blockstate)),GoodInitial_(0),BlockState_(blockstate) {
    
     std::stringstream Evolvingnamestream;
     Evolvingnamestream << "Evolving_" << MPSName_;
     std::complex<double> initial_weight(F.makeLC(Evolvingnamestream.str())); //copy state and canonise just in case
-
-    EvolutionOperator_.print_indices();
-    F.matrix(1).print_indices();
-    F.matrix(2).print_indices();
     
     std::cout << "Initial state weight was " << initial_weight <<std::endl;
     if (initial_weight!=0.0)
@@ -74,6 +73,7 @@ namespace ajaj{
     std::stringstream LNameStream;
     LNameStream << "Evolving_" << MPSName_ << "_Left_1.MPS_matrix";
     MPSDecomposition decomp(reorder(contract(EvolutionOperator_,0,contract(load_MPS_matrix(LNameStream.str(),Basis_),0,R,0,contract21),0,contract2032),0,reorder0213,2).SVD());
+    
     std::stringstream Store1NameStream;
     Store1NameStream << "Evolving_" << MPSName_ << "_Right_1.MPS_matrix";
     decomp.RightMatrix.store(Store1NameStream.str());

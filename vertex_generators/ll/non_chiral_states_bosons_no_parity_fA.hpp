@@ -7,18 +7,18 @@ int non_chir_bosons(double tpi_R, double Beta, double en_cutoff)
   
   /*delineate states of full bosons up to a given energy*/
   
-  nmax = (int) (sqrt(en_cutoff/tpi_R +1.0/12.0)/Beta)+1;
-  nmin = -nmax+1;
-  //nmax = 1; nmin = 0;
+ nmax = (int) (sqrt(en_cutoff/tpi_R +1.0/12.0)/Beta)+1;
+ nmin = -nmax+1;
+ // nmax = 1; nmin = 0;
   mmax = 1; 
   mmin = 0;
   
   if ((2*mmax + 1) > MaxM) {
-    printf("Warning: MMax is not large enough.\n");
+    printf("Warning: MaxM is not large enough.\n");
     exit(1);
   }
   if ((2*nmax + 1) > MaxN) {
-    printf("Warning: NMax is not large enough.\n");
+    printf("Warning: MaxN is not large enough.\n");
     exit(1);
   }
   //printf("nmax: %d mmax: %d\n",nmax,mmax);
