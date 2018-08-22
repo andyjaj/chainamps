@@ -8,6 +8,8 @@ DMRGOBJ = DMRG_routines.o $(MEASOBJ)
 
 TEBDOBJ = TEBD_routines.o $(MEASOBJ)
 
+TWOVEOBJ = TwoVertexEvolution.o $(TEBDOBJ)
+
 MATRIXDEPS = sparse_interface.hpp dense_interface.hpp arpack_interface.hpp dense_matrix_functions.hpp common_defs.hpp
 
 MPXDEPS = MPX_matrix.hpp MPXIndex.hpp states.hpp $(MATRIXDEPS)
@@ -24,9 +26,11 @@ ALLMPXDEPS = MPX.hpp $(UNITCELLDEPS) $(FMPSDEPS) $(MPODEPS)
 
 MODELDEPS = command_line_input.hpp model.hpp make_model.hpp vertex.hpp vertex_generators/*.hpp vertex_generators/ll/*.hpp $(ALLMPXDEPS)
 
-DMRGDEPS =  DMRG_routines.hpp MPX.hpp data.hpp measurement.hpp $(MODELDEPS)
+DMRGDEPS =  DMRG_routines.hpp data.hpp measurement.hpp $(MODELDEPS)
 
-TEBDDEPS =  TEBD_routines.hpp MPX.hpp data.hpp measurement.hpp $(MODELDEPS)
+TEBDDEPS =  TEBD_routines.hpp data.hpp measurement.hpp $(MODELDEPS)
+
+TWOVEDEPS = TwoVertexEvolution.hpp TEBD_routines.hpp data.hpp measurement.hpp $(MODELDEPS)
 
 .PHONY: all
 
@@ -37,6 +41,8 @@ DMRG: iDMRG_DRV.bin fDMRG_DRV.bin
 TIME: iTEBD_DRV.bin TEBD_DRV.bin
 
 MEAS: STORE_MODEL.bin UNITCELL_MEASURE.bin FINITE_MEASURE.bin
+
+2VE: 2VE_DRV.bin 
 
 iDMRG_DRV.bin: iDMRG_DRV.o $(DMRGOBJ) $(MPXOBJ)
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
@@ -57,6 +63,9 @@ UNITCELL_MEASURE.bin: UNITCELL_MEASURE.o $(MPXOBJ) $(MEASOBJ)
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 FINITE_MEASURE.bin: FINITE_MEASURE.o $(TEBDOBJ) $(MPXOBJ)
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+
+2VE_DRV.bin: 2VE_DRV.o $(TWOVEOBJ) $(TEBDOBJ) $(MPXOBJ)
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 iDMRG_DRV.o: iDMRG_DRV.cpp $(DMRGDEPS)
@@ -80,6 +89,9 @@ FINITE_MEASURE.o: FINITE_MEASURE.cpp $(TEBDDEPS)
 STORE_MODEL.o: STORE_MODEL.cpp $(MODELDEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
+2VE_DRV.o: 2VE_DRV.cpp $(TWOVEDEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
+
 DMRG_routines.o: DMRG_routines.cpp DMRG_routines.hpp $(ALLMPXDEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
@@ -87,6 +99,9 @@ TEBD_routines.o: TEBD_routines.cpp TEBD_routines.hpp $(ALLMPXDEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 measurement.o: measurement.cpp measurement.hpp $(ALLMPXDEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+TwoVertexEvolution.o:  TwoVertexEvolution.cpp TwoVertexEvolution.hpp TEBD_routines.hpp $(ALLMPXDEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 UnitCell.o: UnitCell.cpp $(UNITCELLDEPS) 

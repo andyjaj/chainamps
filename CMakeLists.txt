@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project(ChainAMPS LANGUAGES CXX)
+project(ChainAMPS)
 
 option(TBB "Use tbb" ON)
 option(TIMING "Timings" OFF)

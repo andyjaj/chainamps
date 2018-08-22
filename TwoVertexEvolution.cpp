@@ -15,10 +15,7 @@ namespace ajaj{
     return reorder(contract(LeftHalf,0,RightHalf,0,std::vector<MPXPair>(1,MPXPair(3,1))),0,reorder032415,2);
   }
 
-  MPX_matrix Make2VEvolutionOperator(const MPX_matrix& BondH, double timestep,const State& blockstate){
-
-    BondH.print_indices();
-    
+  MPX_matrix Make2VEvolutionOperator(const MPX_matrix& BondH, double timestep,const State& blockstate){    
     std::cout << "Forming evolution operator" << std::endl;
     std::vector<MPXIndex> indices;
     indices.emplace_back(BondH.Index(0));
