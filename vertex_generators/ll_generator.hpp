@@ -12,8 +12,8 @@
 namespace rmk { //namespace for Robert's ancilliary arrays and definitions
   /*definitions for construction of full states*/
   static const ajaj::uMPXInt MaxStates=2000; /*maximum number of states allowed in the Hilbert space of a single boson*/
-  static const ajaj::uMPXInt MaxN=40; /*largest allowed value of N in constructing highest weight states |N,M>*/
-  static const ajaj::uMPXInt MaxM=40; /*largest allowed value of M in constructing highest weight states |N,M>*/
+  static const ajaj::uMPXInt MaxN=80; /*largest allowed value of N in constructing highest weight states |N,M>*/
+  static const ajaj::uMPXInt MaxM=3; /*largest allowed value of M in constructing highest weight states |N,M>*/
 
   static const ajaj::uMPXInt MaxPart=300; /*maximum number of partitions allowed at a given level; used in denumerating number of chiral states*/
   static const ajaj::uMPXInt MaxChiralStates=600; /*largest allowed number of chiral states*/
@@ -32,8 +32,8 @@ namespace rmk { //namespace for Robert's ancilliary arrays and definitions
   
   double state_en[MaxStates];
 
-  ajaj::MPXInt nstate, /*index keeping track of how many non-chiral states there are*/
-    state_chiral[3][MaxStates], /*chiral info: left chiral state, right chiral state, total number of left and right a's of state*/
+  //ajaj::MPXInt nstate; /*index keeping track of how many non-chiral states there are*/
+  ajaj::MPXInt state_chiral[3][MaxStates], /*chiral info: left chiral state, right chiral state, total number of left and right a's of state*/
     state_Z[3][MaxStates], /*Z quantum numbers: N, M, mom*/
     state_metaZ[MaxStates], /*Z quantum number incorporating all 3 Z quantum numbers*/
     state_metaZ_ind[MaxStates], /*index of Z quantum number incorporating all 3 Z quantum numbers*/
