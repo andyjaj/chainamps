@@ -92,9 +92,12 @@ int main(int argc, char** argv){
     //go through and make pointers
 
     std::vector<ajaj::MPO_matrix> measured_operators(1,myModel.vertex.make_one_site_operator(1)); //for Ising this is the fermion occupation number on a chain
-    //ajaj::DataOutput results(ajaj::OutputName(RuntimeArgs.filename(),"Evolution.dat"),"Index, Time, Truncation, Entropy, abs(Overlap), Real(Overlap), Im(Overlap), Re(Op1), Im(Op1), ...");
     std::ostringstream commentline;
-    commentline << "Index, Entropy"; //refers to order states are processed
+    //commentline << "Index, Entropy"; //refers to order states are processed
+    commentline << "Index";
+    for (ajaj::uMPXInt x=1; x<number_of_vertices;++x){
+      commentline <<", S_E@" << x <<"_"<<number_of_vertices-x;
+    }
     if (measurement_lookups.size()) commentline << measurednames.str(); 
 
     std::vector<ajaj::MultiVertexMeasurement> measurements;
@@ -114,7 +117,7 @@ int main(int argc, char** argv){
     ajaj::DataOutput results("FINITE_RESULTS.dat",commentline.str());
     
     size_t Index(0);
-    if (!RuntimeArgs.fdmrg_mode()){
+    if (!RuntimeArgs.fdmrg_mode()){ //processes explicitly given state names
       for (auto&& StateName : RuntimeArgs.state_names()){
 	std::cout << StateName <<std::endl;
 	ajaj::FiniteMPS F(myModel.basis(),StateName,number_of_vertices);
@@ -127,7 +130,7 @@ int main(int argc, char** argv){
       }
       return 0;
     }
-    else {
+    else { //fDMRG special mode, processes expected fDMRG output states
       bool gs=1;
       bool bad_name=0;
       while (!bad_name){

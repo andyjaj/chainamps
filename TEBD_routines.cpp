@@ -522,9 +522,10 @@ namespace ajaj{
       MPXDecomposition RightEnddecomp(load_MPS_matrix(RightEndstream.str(),Basis_).left_shape().SVD());
       RightEnddecomp.SquareRescale(1.0);
       std::cout << "Bond dimension: " << RightEnddecomp.Values.size() << std::endl;
-      if (NumVertices_==2){ //special case for two vertices only
+      /*if (NumVertices_==2){ //special case for two vertices only
 	real_results.push_back(entropy(RightEnddecomp.Values));
-      }
+	}*/
+      real_results.push_back(entropy(RightEnddecomp.Values));
       for (auto&& m : measurements){
 	if (m.finish()>NumVertices_){
 	  std::cout << "MultiVertexMeasurements incorrectly defined, final measurement position is > number of vertices: " << m.finish() << " " << NumVertices_ << std::endl;
@@ -549,10 +550,10 @@ namespace ajaj{
       MPXDecomposition decomp(MPS_matrix(contract(Vd,0,load_MPS_matrix(RightNamestream.str(),Basis_),0,contract10)).left_shape().SVD());
       decomp.SquareRescale(1.0);
       std::cout << "Bond dimension: " << decomp.Values.size() << std::endl;
-      if (v==NumVertices_/2){ //if we only have two chains, this is never obeyed...
+      //if (v==NumVertices_/2){ //if we only have two chains, this is never obeyed...
 	//measure truncation and entropy
-	real_results.push_back(entropy(decomp.Values));
-      }
+      if (v<NumVertices_) real_results.push_back(entropy(decomp.Values));
+	//}
       for (auto&& m : measurements){
 	m.update(v,decomp);
       }
