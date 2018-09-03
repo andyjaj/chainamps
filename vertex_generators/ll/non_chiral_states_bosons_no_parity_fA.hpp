@@ -68,7 +68,7 @@ int non_chir_bosons(double tpi_R, double Beta, double en_cutoff,bool restrict_n)
 	    state_parity[0][nstate] = 0;
 	    ++nstate;
 	    if (nstate>=MaxStates){
-	      printf("Too many non-chiral states!\n");
+	      printf("Too many non-chiral states! %ld\n",nstate);
 	      exit(1);
 	    }
 	  }

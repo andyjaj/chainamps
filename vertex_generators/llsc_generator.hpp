@@ -196,13 +196,13 @@ namespace llsemi{
 
     ajaj::SparseMatrix PhaseSq(modelvertex.Operators[4].MatrixElements*modelvertex.Operators[4].MatrixElements);
 
-    //Theta has an implicit imaginary i int its def, so PhaseSq has an implicit -1.
+    //Theta has an implicit imaginary i in its def, so PhaseSq has an implicit -1.
 
     for (ajaj::Sparseint col=0;col<PhaseSq.cols();++col){
       for (ajaj::Sparseint p=PhaseSq.get_p(col);p<PhaseSq.get_p(col+1);++p){
 	ajaj::MPXInt row=PhaseSq.get_i(p);
 	if (modelvertex.Spectrum[row]==modelvertex.Spectrum[col]){ //check momenta are equal
-	  M.entry(row+offset_to_last_block,col,(-1.0/tpi_R)*tunnelling*PhaseSq.get_x(p));
+	  M.entry(row+offset_to_last_block,col,(-1.0*R)*tunnelling*PhaseSq.get_x(p));
 	}
       }
     }
@@ -236,7 +236,7 @@ namespace llsemi{
 	//lowest block row
 	M.entry(offset_to_last_block+i,modelvertex.Spectrum.size()*(operator_col_offset+MPO_subcol)+col,x);
 	//first block col
-	M.entry(modelvertex.Spectrum.size()*(operator_row_offset+MPO_subrow)+i,col,(2.0/tpi_R)*x*tunnelling);
+	M.entry(modelvertex.Spectrum.size()*(operator_row_offset+MPO_subrow)+i,col,2.0*R*x*tunnelling);
       }
     }
 
