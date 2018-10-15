@@ -32,6 +32,7 @@ int main(int argc, char** argv){
     ajaj::uMPXInt trotter_order(RuntimeArgs.trotter_order());
     ajaj::uMPXInt measurement_interval(RuntimeArgs.measurement_interval());
     double time_step_size(RuntimeArgs.step_size());
+    bool save_all_flag(RuntimeArgs.save_all_flag());
 
     std::vector<ajaj::NamedMPO_matrix> generated_MPOs; //actual storage for MPOs
     typedef std::vector<std::vector<std::pair<size_t,ajaj::uMPXInt> > > MPOIndexVertexPairs;
@@ -150,7 +151,7 @@ int main(int argc, char** argv){
     if (!myModel.times().size()){ //need this for builtin models, with old style coupling params
       std::cout <<"Evolution hamiltonian is static." <<std::endl;
       ajaj::TEBD finrun(myModel.H_MPO,F,time_step_size,results,trotter_order);
-      finrun.evolve(number_of_time_steps,measurements,CHI/*bond dimension*/,trunc,measurement_interval);
+      finrun.evolve(number_of_time_steps,measurements,CHI/*bond dimension*/,trunc,measurement_interval,save_all_flag);
       if (finrun.good()){
 	return 0;
       }
@@ -169,7 +170,7 @@ int main(int argc, char** argv){
       if (num_1>number_of_time_steps) num_1=number_of_time_steps;
 
       ajaj::TEBD finrun(myModel.H_MPO,F,current_step_size_1,results,trotter_order);
-      finrun.evolve(num_1,measurements,CHI/*bond dimension*/,trunc/*min s val*/,measurement_interval);
+      finrun.evolve(num_1,measurements,CHI/*bond dimension*/,trunc/*min s val*/,measurement_interval,save_all_flag);
       number_of_time_steps-=num_1;
       ++ramp_step;
 
@@ -182,7 +183,7 @@ int main(int argc, char** argv){
 	if (num>number_of_time_steps) num=number_of_time_steps;
 
 	finrun.change_bond_operator(myModel.change_H_MPO(myModel.coupling_arrays()[ramp_step-1]),current_step_size);
-	finrun.evolve(num,measurements,CHI/*bond dimension*/,trunc/*min s val*/,measurement_interval);
+	finrun.evolve(num,measurements,CHI/*bond dimension*/,trunc/*min s val*/,measurement_interval,save_all_flag);
 	number_of_time_steps-=num;
 	++ramp_step;
       }
@@ -190,7 +191,7 @@ int main(int argc, char** argv){
       if (number_of_time_steps>0 && finrun.good()){
 	std::cout <<"End of time dependent hamiltonian stage." <<std::endl;
 	finrun.change_bond_operator(myModel.change_H_MPO(myModel.coupling_arrays()[ramp_step-1]),time_step_size);
-	finrun.evolve(number_of_time_steps,measurements,CHI/*bond dimension*/,trunc/*min s val*/,measurement_interval);
+	finrun.evolve(number_of_time_steps,measurements,CHI/*bond dimension*/,trunc/*min s val*/,measurement_interval,save_all_flag);
       }
 
       if (finrun.good()){

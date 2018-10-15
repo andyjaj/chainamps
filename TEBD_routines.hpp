@@ -33,24 +33,6 @@ namespace ajaj {
     double time_step_size() const {return m_time_step_size;}
   };
 
-  /*class SeparatedTrotterDecomposition{
-  private:
-    static constexpr double BONDDECOMPTOL=1.0e-15;//needs setting externally
-    const MPO_matrix& H_;
-    double TimeStepSize_;
-    uMPXInt Order_;
-    std::vector<MPX_matrix> UOperators_;
-    std::vector<MPX_matrix> UbarOperators_;
-    std::vector<uMPXInt> OperatorOrder_;
-  public:
-    const MPX_matrix& getU(uMPXInt i) const {return UOperators_.at(OperatorOrder_.at(i));}
-    const MPX_matrix& getUbar(uMPXInt i) const {return UbarOperators_.at(OperatorOrder_.at(i));}
-
-    SeparatedTrotterDecomposition(const MPO_matrix& H,double time_step_size,uMPXInt order=1);
-    uMPXInt order() const {return Order_;}
-    double time_step_size() const {return TimeStepSize_;}
-    };*/
-
   class TimeBase {
   protected:
     uMPXInt m_current_time_step;
@@ -90,13 +72,13 @@ private:
   MPO_matrix SingleVertexOp_; //for open boundary conditions
   TrotterDecomposition m_EvolutionOperators;
   bool GoodInitial_;
+  bool SaveAll_;
 
   void apply_to_odd_bonds(const MPX_matrix& BondOp,uMPXInt  bond_dimension, double minS);
   void apply_to_even_bonds(const MPX_matrix& BondOp,uMPXInt  bond_dimension, double minS);
   void left_canonise(uMPXInt chi=0,double minS=0);
   void left_canonise_measure(std::vector<MultiVertexMeasurement>& measurements,uMPXInt chi=0,double minS=0,bool overlap_requested=1);
   void left_canonise_measure_special(std::vector<MultiVertexMeasurement>& measurements, uMPXInt Index=0); //Ugly solution for finite measurements after fDMRG
-
   
   double max_truncation_=0.0;
 
@@ -106,7 +88,7 @@ public:
 
   void change_bond_operator(const MPO_matrix& H, double time_step_size,const State* blockstate_ptr=nullptr);
 
-  void evolve(uMPXInt num_steps, std::vector<MultiVertexMeasurement>& measurements, uMPXInt bond_dimension=0, double minS=0.0, uMPXInt measurement_interval=1);
+  void evolve(uMPXInt num_steps, std::vector<MultiVertexMeasurement>& measurements, uMPXInt bond_dimension=0, double minS=0.0, uMPXInt measurement_interval=1,bool save_all=0);
   void left_info();
   void right_info();
   bool good() const {return GoodInitial_;}

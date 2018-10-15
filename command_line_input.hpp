@@ -168,7 +168,7 @@ namespace ajaj {
 
   };
 
-  enum optionIndex {UNKNOWN,CHI,TRUNC,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET,FINITE_MEASUREMENT,NEV,ENTANGLEMENT,VERTEX_ENTANGLEMENT,C_SPECIFIER,TIMEFILE,FDMRG_MODE,IENERGY};
+  enum optionIndex {UNKNOWN,CHI,TRUNC,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET,FINITE_MEASUREMENT,NEV,ENTANGLEMENT,VERTEX_ENTANGLEMENT,C_SPECIFIER,TIMEFILE,FDMRG_MODE,IENERGY,SAVE_ALL};
 
   const option::Descriptor store_usage[2] =
     {
@@ -232,7 +232,7 @@ namespace ajaj {
       { 0, 0, 0, 0, 0, 0 }
     };
 
-  const option::Descriptor TEBD_usage[11] =
+  const option::Descriptor TEBD_usage[12] =
     {
       {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: TEBD_DRV.bin [OPTIONS] <model_filename> <number of vertices(chains)> \n  <number of vertices/chains> must be EVEN.\n"},
       {CHI,0,"B","bond-dimension",Arg::PositiveNumeric,"  -B <number>, \t--bond-dimension=<number>"
@@ -251,10 +251,10 @@ namespace ajaj {
        "  \tSpecify an initial state." },
       {FINITE_MEASUREMENT,0,"M","finite-measurement",Arg::FiniteMeasurementInfo,"  -M <opfile1>,<vertex1>[,<opfile2>,<vertex2>], \t--finite-measurement=<opfile1>,<vertex1>[,<opfile2>,<vertex2>]"
        "  \tSpecify a one or two point measurement."},
-      //{C_SPECIFIER,0,"c","c-number-specifier",Arg::CNumberSpecifier," -c {<idx>,<c-value>,<idx>,<c-value>,...},{...},"
-      // "  \tSpecify c-numbers for initial state."},
-      {C_SPECIFIER,0,"c","c-number-file",Arg::NonEmpty," -c <c-specifier-file>,"
+      {C_SPECIFIER,0,"c","c-number-file",Arg::NonEmpty,"  -c <c-specifier-file>,  \t--c-number-file=<c-specifier-file>"
        "  \tFile with c-numbers for initial state."},
+      {SAVE_ALL,0,"A","save-all",Arg::None,"  -A, \t--save-all"
+       "  \tSave files for all times. Also sets measurement-interval=1."},
       { 0, 0, 0, 0, 0, 0 }
     };  
 
@@ -540,9 +540,10 @@ namespace ajaj {
     unsigned int N_; //used by finite codes
     std::vector<StringIndexPairs> finite_measurements_;
     std::string c_number_filename_;
+    bool save_all_;
 
   public:
-    TEBD_Args(int argc, char* argv[]) : Base_Args(argc,argv,TEBD_usage), num_steps_(1), step_size_(0.1), trotter_order_(2), measurement_interval_(1),N_(0){
+    TEBD_Args(int argc, char* argv[]) : Base_Args(argc,argv,TEBD_usage), num_steps_(1), step_size_(0.1), trotter_order_(2), measurement_interval_(1),N_(0),save_all_(0){
       
      if (parse.nonOptionsCount()!=2 || std::string(parse.nonOption(0))==std::string("-")){
 	std::cout << "Incorrect command line arguments." << std::endl <<std::endl;
@@ -585,6 +586,7 @@ namespace ajaj {
 	      finite_measurements_.emplace_back(temp);
 	  }
 	}
+	
 	if (options[C_SPECIFIER]){
 	  c_number_filename_=std::string(options[C_SPECIFIER].arg);
 	}
@@ -593,8 +595,17 @@ namespace ajaj {
 	  valid_=0;
 	  std::cout <<"Cannot specify initial state through options -c and -i simultaneously!"<<std::endl;
 	}
-	  
-
+	
+	if (options[SAVE_ALL]) {
+	  save_all_=1; //set true
+	  if (measurement_interval_!=1){
+	    std::cout <<"Cannot specify both 'save-all' and a 'measurement-interval' not equal to 1." <<std::endl;
+	    valid_=0;
+	  }
+	  else { 
+	    measurement_interval_=1;
+	  }
+	}
       }
       print();
     }
@@ -624,6 +635,10 @@ namespace ajaj {
 
     const std::string& c_number_filename() const {
       return c_number_filename_;
+    }
+
+    bool save_all_flag() const {
+      return save_all_;
     }
 
   };

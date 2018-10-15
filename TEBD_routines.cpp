@@ -455,6 +455,11 @@ namespace ajaj{
       std::stringstream LeftStartstream;
       LeftStartstream << "Evolving_" << MPSName_ << "_Left_1" << ".MPS_matrix";
       RightEnddecomp.ColumnMatrix.store(LeftStartstream.str());
+      if (SaveAll_){
+	std::stringstream SaveAllStream;
+	SaveAllStream << "Time_Slice_" << m_current_time_step << "_" << MPSName_ << "_Left_1" << ".MPS_matrix";
+	RightEnddecomp.ColumnMatrix.store(SaveAllStream.str());
+      }
 
     }
     for (uMPXInt n=NumVertices_-1;n>0;--n){
@@ -489,6 +494,11 @@ namespace ajaj{
       std::stringstream LeftNamestream;
       LeftNamestream << "Evolving_" << MPSName_ << "_Left_" << v << ".MPS_matrix";
       decomp.ColumnMatrix.store(LeftNamestream.str());
+      if (SaveAll_){
+	std::stringstream SaveAllStream;
+	SaveAllStream << "Time_Slice_" << m_current_time_step << "_" << MPSName_ << "_Left_" << v << ".MPS_matrix";
+	decomp.ColumnMatrix.store(SaveAllStream.str());
+      }
     }
 
     std::vector<std::complex<double> > complex_results;
@@ -610,9 +620,12 @@ namespace ajaj{
     m_EvolutionOperators=TrotterDecomposition(H,time_step_size,m_EvolutionOperators.order(),blockstate_ptr);
   }
 
-  void TEBD::evolve(uMPXInt num_steps, std::vector<MultiVertexMeasurement>& measurements, uMPXInt bond_dimension, double minS, uMPXInt measurement_interval){
+  void TEBD::evolve(uMPXInt num_steps, std::vector<MultiVertexMeasurement>& measurements, uMPXInt bond_dimension, double minS, uMPXInt measurement_interval, bool save_all){
     //do the evolution
     if (GoodInitial_){
+
+      SaveAll_=save_all;
+      
       if (m_EvolutionOperators.order()==0){
 	left_canonise_measure_special(measurements, num_steps);
       }
