@@ -157,12 +157,18 @@ int main(int argc, char** argv){
       }
     }
     //if we do have time dep couplings...
+    else if(abs(myModel.times()[0])>1e-15){
+      std::cout <<"A time depenedent evolution Hamiltonian has been defined, but the first time is not 0.0" <<std::endl;
+      std::cout <<"Aborting to avoid unexpected behaviour!" <<std::endl;
+      return 0;
+    }
     else {
-      std::cout <<"Evolution hamiltonian is time dependent." <<std::endl;
+      std::cout <<"Evolution Hamiltonian is time dependent." <<std::endl;
+      
       //if ramp step size is smaller than step size, then use that until ramp over (check each time)
       //if step size smaller than ramp step size then use size that is commensurate with ramp step, but smaller than step size.
       ajaj::uMPXInt ramp_step=1;
-      //do the first explicitly in order to creat the TEBD object
+      //do the first explicitly in order to create the TEBD object
       double ramp_step_size_1=myModel.times()[ramp_step]-myModel.times()[ramp_step-1];
       double current_step_size_1=ramp_step_size_1;
       ajaj::uMPXInt num_1=1;

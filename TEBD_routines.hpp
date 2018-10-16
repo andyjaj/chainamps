@@ -18,7 +18,7 @@
 
 
 namespace ajaj {
-
+  
   class TrotterDecomposition{
   private:
     const MPO_matrix* m_H_ptr;

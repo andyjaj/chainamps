@@ -413,6 +413,9 @@ namespace ajaj{
 
 
   void TEBD::left_canonise_measure(std::vector<MultiVertexMeasurement>& measurements,uMPXInt chi,double minS,bool overlap_requested){
+
+    const std::string SAVEALLNAME("TimeSlice");
+    
     std::cout << "Begin left canonisation" << std::endl; 
 
     //it can be useful to measure as we step through the system
@@ -457,7 +460,7 @@ namespace ajaj{
       RightEnddecomp.ColumnMatrix.store(LeftStartstream.str());
       if (SaveAll_){
 	std::stringstream SaveAllStream;
-	SaveAllStream << "Time_Slice_" << m_current_time_step << "_" << MPSName_ << "_Left_1" << ".MPS_matrix";
+	SaveAllStream << SAVEALLNAME << "_" << m_current_time_step << "_" << MPSName_ << "_Left_1" << ".MPS_matrix";
 	RightEnddecomp.ColumnMatrix.store(SaveAllStream.str());
       }
 
@@ -496,7 +499,7 @@ namespace ajaj{
       decomp.ColumnMatrix.store(LeftNamestream.str());
       if (SaveAll_){
 	std::stringstream SaveAllStream;
-	SaveAllStream << "Time_Slice_" << m_current_time_step << "_" << MPSName_ << "_Left_" << v << ".MPS_matrix";
+	SaveAllStream << SAVEALLNAME <<"_" << m_current_time_step << "_" << MPSName_ << "_Left_" << v << ".MPS_matrix";
 	decomp.ColumnMatrix.store(SaveAllStream.str());
       }
     }
