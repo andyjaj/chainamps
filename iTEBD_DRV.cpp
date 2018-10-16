@@ -82,8 +82,12 @@ int main(int argc, char** argv){
       infrun.evolve(number_of_time_steps,measured_operators,CHI/*bond dimension*/,trunc,measurement_interval);
       return 0;
     }
+     else if(abs(myModel.times()[0])>1e-15){
+      std::cout <<"A time depenedent evolution Hamiltonian has been defined, but the first time is not 0.0" <<std::endl;
+      std::cout <<"Aborting to avoid unexpected behaviour!" <<std::endl;
+      return 0;
+    }
     else {
-
       std::cout <<"Evolution hamiltonian is time dependent." <<std::endl;
       //if ramp step size is smaller than step size, then use that until ramp over (check each time)
       //if step size smaller than ramp step size then use size that is commensurate with ramp step, but smaller than step size.
