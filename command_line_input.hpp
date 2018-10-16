@@ -168,7 +168,7 @@ namespace ajaj {
 
   };
 
-  enum optionIndex {UNKNOWN,CHI,TRUNC,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET,FINITE_MEASUREMENT,NEV,ENTANGLEMENT,VERTEX_ENTANGLEMENT,C_SPECIFIER,TIMEFILE,FDMRG_MODE,IENERGY,SAVE_ALL};
+  enum optionIndex {UNKNOWN,CHI,TRUNC,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET,FINITE_MEASUREMENT,NEV,ENTANGLEMENT,VERTEX_ENTANGLEMENT,C_SPECIFIER,TIMEFILE,FDMRG_MODE,IENERGY,SAVE_ALL,FINITE_DYN_MEASUREMENT};
 
   const option::Descriptor store_usage[2] =
     {
@@ -308,11 +308,9 @@ namespace ajaj {
       { 0, 0, 0, 0, 0, 0 }
     };
 
-  const option::Descriptor TEBD_DYN_usage[7] =
+  const option::Descriptor TEBD_DYN_usage[6] =
     {
-      {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: TEBD_DYN_MEASURE.bin [OPTIONS] <model_filename> <number of vertices(chains)> \n  <number of vertices/chains> must be EVEN.\n"},
-      {FINITE_MEASUREMENT,0,"M","finite-measurement",Arg::FiniteMeasurementInfo,"  -M <opfile1>,<vertex1>[,<opfile2>,<vertex2>], \t--finite-measurement=<opfile1>,<vertex1>[,<opfile2>,<vertex2>]"
-       "  \tSpecify a one or two point measurement."},
+      {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: TEBD_DYN_MEASURE.bin [OPTIONS] <model_filename> <number of vertices(chains)> <opfile1> <opfile2> <vertex2>\n  <number of vertices/chains> must be EVEN.\n"},
       {CHI,0,"B","bond-dimension",Arg::PositiveNumeric,"  -B <number>, \t--bond-dimension=<number>"
        "  \tThe maximum bond dimension, >= 0. If 0, then ignored." },
       {TRUNC,0,"e","truncation-error",Arg::PositiveDouble,"  -e <number>, \t--truncation-error=<number>"
@@ -885,18 +883,26 @@ class fMEAS_Args : public Base_Args{
     unsigned long trotter_order_;
     std::string initial_state_name_;
     unsigned int N_; //used by finite codes
+    unsigned int y2_;
+    std::string Op1_name_;
+    std::string Op2_name_;
+    
     std::vector<StringIndexPairs> finite_measurements_;
 
   public:
     TEBD_DYN_Args(int argc, char* argv[]) : Base_Args(argc,argv,TEBD_DYN_usage), trotter_order_(2),N_(0){
       
-     if (parse.nonOptionsCount()!=2 || std::string(parse.nonOption(0))==std::string("-")){
+     if (parse.nonOptionsCount()!=5 || std::string(parse.nonOption(0))==std::string("-")){
 	std::cout << "Incorrect command line arguments." << std::endl <<std::endl;
 	valid_=0;
       }
       else {
 	N_=stoul(parse.nonOption(1));
-	valid_=(valid_==1);
+	Op1_name_=std::string(parse.nonOption(2));
+	Op2_name_=std::string(parse.nonOption(3));
+	y2_=stoul(parse.nonOption(4));
+	  
+	valid_=(valid_==1);	
       }
       //
       if (is_valid()){
@@ -909,7 +915,7 @@ class fMEAS_Args : public Base_Args{
 	  trotter_order_=stoul(options[TROTTER_ORDER].arg);
 	if (options[INITIAL_STATE_NAME])
 	  initial_state_name_=std::string(options[INITIAL_STATE_NAME].arg);
-	if (options[FINITE_MEASUREMENT]){
+	/*	if (options[FINITE_MEASUREMENT]){
 	  for (option::Option* opt = options[FINITE_MEASUREMENT]; opt; opt = opt->next()){
 	    StringIndexPairs temp;
 	    std::istringstream ss(opt->arg);
@@ -924,7 +930,7 @@ class fMEAS_Args : public Base_Args{
 	    if (valid_)
 	      finite_measurements_.emplace_back(temp);
 	  }
-	}
+	  }*/
       }
       print();
     }

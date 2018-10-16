@@ -87,3 +87,6 @@ target_link_libraries(FINITE_MEASURE.bin TIME MEAS ${COMMON_LIBS})
 
 add_executable(STORE_MODEL.bin STORE_MODEL.cpp)
 target_link_libraries(STORE_MODEL.bin ${COMMON_LIBS})
+
+add_executable(TEBD_DYN_MEASURE.bin TEBD_DYN_MEASURE.cpp)
+target_link_libraries(TEBD_DYN_MEASURE.bin TIME MEAS ${COMMON_LIBS})
