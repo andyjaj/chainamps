@@ -11,7 +11,7 @@
 
 namespace ajaj{
 
-  TrotterDecomposition::TrotterDecomposition(const MPO_matrix& H,double time_step_size,uMPXInt order=1,const State* blockstate_ptr) : m_H_ptr(&H), m_time_step_size(time_step_size), m_order(order){
+  TrotterDecomposition::TrotterDecomposition(const MPO_matrix& H,double time_step_size,uMPXInt order,const State* blockstate_ptr) : m_H_ptr(&H), m_time_step_size(time_step_size), m_order(order){
 
     double tau=m_time_step_size;
     if (m_order==0){
@@ -69,34 +69,6 @@ namespace ajaj{
       }
     }
   }
-
-  /*  SeparatedTrotterDecomposition::SeparatedTrotterDecomposition(const MPO_matrix& H,double time_step_size,uMPXInt order) : H_(H),TimeStepSize_(time_step_size),Order_(order){
-    //first generate a normal decomp
-    TrotterDecomposition TD(H_,TimeStepSize_,Order_);
-    //decompose bond operators and push_back
-    const EigenStateArray& Spectrum=H.GetPhysicalSpectrum();
-    for (uMPXInt p=0;p<TD.OrderedOperatorPtrs.size();++p){
-      const MPX_matrix& bondop(*TD.OrderedOperatorPtrs[p]);
-      bool flag=0;
-      uMPXInt order=p;
-      for (uMPXInt i=0;i<p;++i){
-	if (&bondop==TD.OrderedOperatorPtrs[i]){ //check for pointer equality for bond ops
-	  flag=1;
-	  order=i;
-	  break;
-	}
-      }
-      OperatorOrder_.push_back(order);
-      if (!flag) {
-	MPXDecomposition decomp(reorder(bondop,0,reorder0213,2).SVD(0,BONDDECOMPTOL*H.GetPhysicalSpectrum().size()));
-	for (auto&& s : decomp.Values){
-	  s=sqrt(s);
-	}
-	UOperators_.emplace_back(contract(decomp.ColumnMatrix,0,MPX_matrix(Spectrum,decomp.RowMatrix.Index(0),decomp.Values),0,contract20));
-	UbarOperators_.emplace_back(contract(MPX_matrix(Spectrum,decomp.RowMatrix.Index(0),decomp.Values),0,decomp.RowMatrix,0,contract10));
-      }
-    }
-    }*/
 
   iTEBD::iTEBD(const MPO_matrix& H,const UnitCell& C, double time_step_size, DataOutput& results, const std::string& Name, uMPXInt order) : TimeBase(time_step_size,results),m_EvolutionOperators(TrotterDecomposition(H,time_step_size,order)),m_initial_unit(C),m_unit(C),Name_(Name) {
     std::ofstream DensityFileStream_;
@@ -413,8 +385,6 @@ namespace ajaj{
 
 
   void TEBD::left_canonise_measure(std::vector<MultiVertexMeasurement>& measurements,uMPXInt chi,double minS,bool overlap_requested){
-
-    const std::string SAVEALLNAME("TimeSlice");
     
     std::cout << "Begin left canonisation" << std::endl; 
 
@@ -590,7 +560,7 @@ namespace ajaj{
     std::cout << "Norm at end of left canonisation: " << abs(Vd.Trace()) << std::endl; 
   }
   
-  TEBD::TEBD(const MPO_matrix& H, FiniteMPS& F, DataOutput& results) : TimeBase(0.0,results),MPSName_(F.name()),Basis_(H.basis()),NumVertices_(F.size()),SingleVertexOp_(MPO_matrix()),m_EvolutionOperators(TrotterDecomposition(H,0.0,0)),GoodInitial_(0) {
+  TEBD::TEBD(const MPO_matrix& H, FiniteMPS& F, DataOutput& results) : TimeBase(0.0,results),MPSName_(F.name()),Basis_(H.basis()),NumVertices_(F.size()),SingleVertexOp_(MPO_matrix()),m_EvolutionOperators(TrotterDecomposition(H,0.0,0)),GoodInitial_(0),SaveAll_(0) {
     std::stringstream Evolvingnamestream;
     Evolvingnamestream << "Evolving_" << MPSName_;
     std::complex<double> initial_weight(F.makeRC(Evolvingnamestream.str())); //combination of initial state norm and overall phase
@@ -602,10 +572,10 @@ namespace ajaj{
       GoodInitial_=1;
   }
   
-  TEBD::TEBD(const MPO_matrix& H, FiniteMPS& F, double time_step_size, DataOutput& results, uMPXInt order,const State* blockstate_ptr) : TimeBase(time_step_size,results),MPSName_(F.name()),Basis_(H.basis()),NumVertices_(F.size()),m_EvolutionOperators(TrotterDecomposition(H,time_step_size,order,blockstate_ptr)),GoodInitial_(0) {
+  TEBD::TEBD(const MPO_matrix& H, FiniteMPS& F, double time_step_size, DataOutput& results, uMPXInt order,const State* blockstate_ptr, bool save_all_flag) : TimeBase(time_step_size,results),MPSName_(F.name()),Basis_(H.basis()),NumVertices_(F.size()),m_EvolutionOperators(TrotterDecomposition(H,time_step_size,order,blockstate_ptr)),GoodInitial_(0),SaveAll_(save_all_flag) {
 
     SingleVertexOp_=std::move(MakeSingleSiteEvolutionOperatorFromLowTriMPO(H,time_step_size));
-   
+    
     std::stringstream Evolvingnamestream;
     Evolvingnamestream << "Evolving_" << MPSName_;
     std::complex<double> initial_weight(F.makeLC(Evolvingnamestream.str())); //combination of initial state norm and overall phase
@@ -614,6 +584,17 @@ namespace ajaj{
 
     if (initial_weight!=0.0)
       GoodInitial_=1;
+
+     if (SaveAll_){
+	std::stringstream H_MPO_Filename;
+	H_MPO_Filename << SAVEALLNAME << "_"<< current_time_step() <<"_H.MPO_matrix";
+	H.store(H_MPO_Filename.str());
+	std::stringstream State_Filename;
+	State_Filename << SAVEALLNAME << "_"<< current_time_step() << "_" << MPSName_;
+	F.makeLC(State_Filename.str());
+
+      }
+    
   }
 
   void TEBD::change_bond_operator(const MPO_matrix& H, double time_step_size,const State* blockstate_ptr){
@@ -621,14 +602,18 @@ namespace ajaj{
     SingleVertexOp_=MakeSingleSiteEvolutionOperatorFromLowTriMPO(H,time_step_size);
     
     m_EvolutionOperators=TrotterDecomposition(H,time_step_size,m_EvolutionOperators.order(),blockstate_ptr);
+     if (SaveAll_){
+	std::stringstream H_MPO_Filename;
+	H_MPO_Filename << SAVEALLNAME << "_"<< current_time_step() <<"_H.MPO_matrix";
+	H.store(H_MPO_Filename.str());
+      }
+    
   }
 
-  void TEBD::evolve(uMPXInt num_steps, std::vector<MultiVertexMeasurement>& measurements, uMPXInt bond_dimension, double minS, uMPXInt measurement_interval, bool save_all){
+  void TEBD::evolve(uMPXInt num_steps, std::vector<MultiVertexMeasurement>& measurements, uMPXInt bond_dimension, double minS, uMPXInt measurement_interval){
     //do the evolution
     if (GoodInitial_){
-
-      SaveAll_=save_all;
-      
+     
       if (m_EvolutionOperators.order()==0){
 	left_canonise_measure_special(measurements, num_steps);
       }
@@ -744,11 +729,13 @@ namespace ajaj{
     }
   }
 
-  MPX_matrix MakeBondHamiltonian(const MPO_matrix& H) {
+  MPX_matrix MakeBondHamiltonian(const MPO_matrix& H, const std::string& SaveName) {
     std::cout << "Forming bond Hamiltonian" << std::endl;
     MPX_matrix LeftHalf(H.ExtractSubMPX(std::vector<MPXPair>(1,MPXPair(1,H.dimsvector()[1]-1))).RestrictColumnIndex());
     MPX_matrix RightHalf(H.ExtractSubMPX(std::vector<MPXPair>(1,MPXPair(3,0))));
-    return reorder(contract(LeftHalf,0,RightHalf,0,std::vector<MPXPair>(1,MPXPair(3,1))),0,reorder032415,2);
+    MPX_matrix ans(reorder(contract(LeftHalf,0,RightHalf,0,std::vector<MPXPair>(1,MPXPair(3,1))),0,reorder032415,2));
+    if (!SaveName.empty()) ans.store(SaveName);
+    return ans;
   }
 
   MPX_matrix MakeBondEvolutionOperator(const MPX_matrix& BondH, double timestep,const State* blockstate_ptr){

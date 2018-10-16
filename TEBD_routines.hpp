@@ -7,7 +7,7 @@
 
 #include <vector>
 #include <utility>
-
+#include <string>
 
 #include "common_defs.hpp"
 #include "states.hpp"
@@ -18,6 +18,8 @@
 
 
 namespace ajaj {
+
+  const std::string SAVEALLNAME("TimeSlice");
   
   class TrotterDecomposition{
   private:
@@ -46,6 +48,7 @@ namespace ajaj {
 
     double time_step_size() const {return m_time_step_size;}
     double current_time() const {return m_current_time;}
+    uMPXInt current_time_step() const {return m_current_time_step;}
   };
 
   class iTEBD : public TimeBase {
@@ -84,17 +87,18 @@ private:
 
 public:
   TEBD(const MPO_matrix& H, FiniteMPS& F, DataOutput& results);
-  TEBD(const MPO_matrix& H, FiniteMPS& F, double time_step_size, DataOutput& results, uMPXInt order=1,const State* blockstate_ptr=nullptr); //use FiniteMPS class
+  TEBD(const MPO_matrix& H, FiniteMPS& F, double time_step_size, DataOutput& results, uMPXInt order=1,const State* blockstate_ptr=nullptr,bool save_all_flag=0); //use FiniteMPS class
 
   void change_bond_operator(const MPO_matrix& H, double time_step_size,const State* blockstate_ptr=nullptr);
 
-  void evolve(uMPXInt num_steps, std::vector<MultiVertexMeasurement>& measurements, uMPXInt bond_dimension=0, double minS=0.0, uMPXInt measurement_interval=1,bool save_all=0);
+  void evolve(uMPXInt num_steps, std::vector<MultiVertexMeasurement>& measurements, uMPXInt bond_dimension=0, double minS=0.0, uMPXInt measurement_interval=1);
   void left_info();
   void right_info();
   bool good() const {return GoodInitial_;}
 };
 
-  MPX_matrix MakeBondHamiltonian(const MPO_matrix& H); //Returns part of hamiltonian that refers to a single bond (no double counting of vertex part).
+  MPX_matrix MakeBondHamiltonian(const MPO_matrix& H, const std::string& SaveName=std::string()); //Returns part of hamiltonian that refers to a single bond (no double counting of vertex part). Saves it if a filename is specified.
+  
   MPX_matrix MakeBondEvolutionOperator(const MPX_matrix& BondH, double timestep,const State* blockstate_ptr=nullptr);//Forms exponential bond update operator
   MPO_matrix MakeSingleSiteEvolutionOperatorFromLowTriMPO(const MPO_matrix& H_MPO, double timestep);
 

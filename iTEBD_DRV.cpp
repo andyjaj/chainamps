@@ -83,7 +83,7 @@ int main(int argc, char** argv){
       return 0;
     }
      else if(abs(myModel.times()[0])>1e-15){
-      std::cout <<"A time depenedent evolution Hamiltonian has been defined, but the first time is not 0.0" <<std::endl;
+      std::cout <<"A time dependent evolution Hamiltonian has been defined, but the first time is not 0.0" <<std::endl;
       std::cout <<"Aborting to avoid unexpected behaviour!" <<std::endl;
       return 0;
     }

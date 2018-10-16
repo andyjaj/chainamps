@@ -307,6 +307,22 @@ namespace ajaj {
        "  \tFile with c-numbers for initial state."},
       { 0, 0, 0, 0, 0, 0 }
     };
+
+  const option::Descriptor TEBD_DYN_usage[7] =
+    {
+      {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: TEBD_DYN_MEASURE.bin [OPTIONS] <model_filename> <number of vertices(chains)> \n  <number of vertices/chains> must be EVEN.\n"},
+      {FINITE_MEASUREMENT,0,"M","finite-measurement",Arg::FiniteMeasurementInfo,"  -M <opfile1>,<vertex1>[,<opfile2>,<vertex2>], \t--finite-measurement=<opfile1>,<vertex1>[,<opfile2>,<vertex2>]"
+       "  \tSpecify a one or two point measurement."},
+      {CHI,0,"B","bond-dimension",Arg::PositiveNumeric,"  -B <number>, \t--bond-dimension=<number>"
+       "  \tThe maximum bond dimension, >= 0. If 0, then ignored." },
+      {TRUNC,0,"e","truncation-error",Arg::PositiveDouble,"  -e <number>, \t--truncation-error=<number>"
+       "  \tThe allowed truncation error, >= 0." },
+      {TROTTER_ORDER,0,"O","trotter-order",Arg::PositiveNumeric,"  -O <number>, \t--trotter-order=<number>"
+       "  \tThe Trotter order (currently 1 or 2). Second order (2) is default." },
+      {INITIAL_STATE_NAME,0,"i","initial-state-name",Arg::NonEmpty,"  -i <initial_state_name>, \t--initial-state-name=<initial_state_name>"
+       "  \tSpecify an initial state." },
+      { 0, 0, 0, 0, 0, 0 }
+    };
   
   class Base_Args{
 
@@ -865,5 +881,69 @@ class fMEAS_Args : public Base_Args{
 
   };
 
+  class TEBD_DYN_Args : public Base_Args{
+    unsigned long trotter_order_;
+    std::string initial_state_name_;
+    unsigned int N_; //used by finite codes
+    std::vector<StringIndexPairs> finite_measurements_;
+
+  public:
+    TEBD_DYN_Args(int argc, char* argv[]) : Base_Args(argc,argv,TEBD_DYN_usage), trotter_order_(2),N_(0){
+      
+     if (parse.nonOptionsCount()!=2 || std::string(parse.nonOption(0))==std::string("-")){
+	std::cout << "Incorrect command line arguments." << std::endl <<std::endl;
+	valid_=0;
+      }
+      else {
+	N_=stoul(parse.nonOption(1));
+	valid_=(valid_==1);
+      }
+      //
+      if (is_valid()){
+	if (N_==0 || (N_ % 2)){
+	  std::cout << "Illegal number of vertices requested: " << N_ << std::endl;
+	  std::cout << "Must be a positive even value!" <<std::endl<<std::endl;
+	  valid_=0;
+	}
+	if (options[TROTTER_ORDER])
+	  trotter_order_=stoul(options[TROTTER_ORDER].arg);
+	if (options[INITIAL_STATE_NAME])
+	  initial_state_name_=std::string(options[INITIAL_STATE_NAME].arg);
+	if (options[FINITE_MEASUREMENT]){
+	  for (option::Option* opt = options[FINITE_MEASUREMENT]; opt; opt = opt->next()){
+	    StringIndexPairs temp;
+	    std::istringstream ss(opt->arg);
+	    ss >> temp;
+	    //check all locations specified in temp
+	    for (auto&& l : temp){
+	      if (l.second < 1 || l.second >N_) {
+		std::cout << "Specified measurement vertex " << l.second << " is outside bounds 1:" <<N_<<std::endl<<std::endl;
+		valid_=0;
+	      }
+	    }
+	    if (valid_)
+	      finite_measurements_.emplace_back(temp);
+	  }
+	}
+      }
+      print();
+    }
+
+    unsigned int num_vertices() const {return N_;}
+
+    unsigned long trotter_order() const {
+      return trotter_order_;
+    }
+
+    const std::string& initial_state_name() const {
+      return initial_state_name_;
+    }
+
+    const std::vector<StringIndexPairs>& finite_measurements() const {
+      return finite_measurements_;
+    }
+
+  };
+  
 }
 #endif
