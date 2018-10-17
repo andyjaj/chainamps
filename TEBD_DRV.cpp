@@ -88,10 +88,11 @@ int main(int argc, char** argv){
 	  temp_measurement_vec.emplace_back(index,op.second);
 	}
 	else {
+	  std::cout << std::endl;
 	  std::cout << "Operator " << op.first << " couldn't be found or created from predefined matrix elements." <<std::endl;
 	  std::cout << "Note that the name should be a name defined in your operators file, or by a built-in model." <<std::endl;
 	  std::cout << "It should NOT be a .SPARSEMATRIX file name!" <<std::endl;
-	  return 0;
+	  return 1;
 	} //not found
       }
       if (temp_measurement_vec.size()==fm.size()){ //if we correctly generated enough mpos for measurement...
@@ -158,11 +159,6 @@ int main(int argc, char** argv){
       }
     }
     //if we do have time dep couplings...
-    else if(abs(myModel.times()[0])>1e-15){
-      std::cout <<"A time dependent evolution Hamiltonian has been defined, but the first time is not 0.0" <<std::endl;
-      std::cout <<"Aborting to avoid unexpected behaviour!" <<std::endl;
-      return 0;
-    }
     else {
       std::cout <<"Evolution Hamiltonian is time dependent." <<std::endl;
       

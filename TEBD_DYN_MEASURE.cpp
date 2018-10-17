@@ -7,6 +7,7 @@
 #include <utility>
 #include <numeric>
 #include <limits>
+#include <vector>
 
 #include "common_defs.hpp"
 #include "sparse_interface.hpp"
@@ -36,88 +37,138 @@ int main(int argc, char** argv){
     
     std::ostringstream measurednames;
     //build all required measurement MPOs (no repeats) and index them
-    for (auto&& fm : RuntimeArgs.finite_measurements()){ //loop over all measurements
-      std::ostringstream currentname;
-      std::vector<std::pair<size_t,ajaj::uMPXInt> > temp_measurement_vec;
-      //std::vector<ajaj::meas_pair> temp_mp_vec;
-      
-      for (auto&& op : fm){//for all operators in an individual measurement
-	//first see if we already generated this
-	bool found(0);
-	size_t index;
-	for (size_t m=0;m< generated_MPOs.size();++m){//search through generated MPOs
-	  if (op.first==generated_MPOs.at(m).Name){
-	    found=1;
-	    index=m;
-	    break;//found
-	  }
+
+    std::vector<std::string> ops({RuntimeArgs.Op1_name(), RuntimeArgs.Op2_name()});
+    
+    for (auto&& op : ops){
+      bool found(0);
+      size_t index;
+      for (size_t m=0;m< generated_MPOs.size();++m){//search through generated MPOs
+	if (op==generated_MPOs.at(m).Name){
+	  found=1;
+	  index=m;
+	  break;//found
 	}
-	if (!found){ //if not already generated
-	  if (myModel.vertex.operator_exists(op.first)){ //do matrix elements already exist in vertex def?
-	    std::cout << "Operator " << op.first << " found in vertex definition." << std::endl;
-	    found=1;
-	    index=generated_MPOs.size();
-	    generated_MPOs.emplace_back(op.first,myModel.vertex.make_one_site_operator(op.first));
-	    //generated_MPOs.back().Matrix.print_matrix();
-	    //generated_MPOs.back().Matrix.print_indices(); /**< Print the dimensions of the indices. Colon indicates how many correspond to rows and how many to columns. */
-	    //generated_MPOs.back().Matrix.print_indices_values();
-	  }
-	  else {
-	    std::cout <<"Assuming name includes position info" <<std::endl;
-	    ajaj::ShiftedOperatorInfo trial(op.first);
-	    if (myModel.vertex.operator_exists(trial.Name)){
-	      std::cout << "Operator " << trial.Name << " found in vertex definition." << std::endl;
-	      std::cout << "Requested unitary transformation using basis quantum number " << trial.WhichCharge << " and factor " << trial.Factor <<std::endl;
-	      if (trial.WhichCharge<myModel.basis().getChargeRules().size()){
-		found=1;
-		index=generated_MPOs.size();
-		generated_MPOs.emplace_back(op.first,myModel.vertex.make_one_site_operator(trial));
-	      }
+      }
+
+      if (!found){ //if not already generated
+	if (myModel.vertex.operator_exists(op)){ //do matrix elements already exist in vertex def?
+	  std::cout << "Operator " << op << " found in vertex definition." << std::endl << std::endl;
+	  found=1;
+	  index=generated_MPOs.size();
+	  generated_MPOs.emplace_back(op,myModel.vertex.make_one_site_operator(op));
+	}
+	else {
+	  std::cout <<"Assuming name includes position info" <<std::endl;
+	  ajaj::ShiftedOperatorInfo trial(op);
+	  if (myModel.vertex.operator_exists(trial.Name)){
+	    std::cout << std::endl;
+	    std::cout << "Operator " << trial.Name << " found in vertex definition." << std::endl;
+	    std::cout << "Requested unitary transformation using basis quantum number " << trial.WhichCharge << " and factor " << trial.Factor <<std::endl << std::endl;
+	    if (trial.WhichCharge<myModel.basis().getChargeRules().size()){
+	      found=1;
+	      index=generated_MPOs.size();
+	      generated_MPOs.emplace_back(op,myModel.vertex.make_one_site_operator(trial));
 	    }
 	  }
 	}
-	if (found){
-	  if (temp_measurement_vec.size()>0){
-	    currentname << ":";
-	  }
-	  currentname << op.first <<"," <<op.second;
-	  temp_measurement_vec.emplace_back(index,op.second);
-	}
-	else {
-	  std::cout << "Operator " << op.first << " couldn't be found or created from predefined matrix elements." <<std::endl;
-	  std::cout << "Note that the name should be a name defined in your operators file, or by a built-in model." <<std::endl;
-	  std::cout << "It should NOT be a .SPARSEMATRIX file name!" <<std::endl;
-	  return 0;
-	} //not found
       }
-      if (temp_measurement_vec.size()==fm.size()){ //if we correctly generated enough mpos for measurement...
-	measurement_lookups.emplace_back(std::move(temp_measurement_vec));
-	measurednames << ", Re(" << currentname.str() << "), Im(" << currentname.str() << ") ";
-      }
+      //at this point if we still can't find the operator definition, we give up
+      if(!found) {
+	std::cout << "Operator " << op << " couldn't be found or created from predefined matrix elements." <<std::endl;
+	std::cout << "Note that the name should be a name defined in your operators file, or by a built-in model." <<std::endl;
+	std::cout << "It should NOT be a .SPARSEMATRIX file name!" <<std::endl;
+	return 1;
+      } //not found
     }
 
-    std::ostringstream commentline;
-    commentline << "Index, Time, Truncation, Entropy, abs(Overlap), Real(Overlap), Im(Overlap)";
-    if (measurement_lookups.size()) commentline << measurednames.str(); 
-
-    std::vector<ajaj::MultiVertexMeasurement> measurements;
+    //We have loaded the model and operators
+    //We now need to load the info from the time file.
+    //The name will be INPUTFILE_TEBD_NUMVERTICES_INITIALSTATENAME_Evolution.dat
+    std::stringstream tfnamestream;
+    tfnamestream << RuntimeArgs.filename() << "_TEBD_" << RuntimeArgs.num_vertices() << "_" << RuntimeArgs.initial_state_name() << "_Evolution.dat";
     
-    for (auto&& m : measurement_lookups){//loop over all measurements
-      std::vector<ajaj::meas_pair> mvmd;
-      for (auto&& idx_v : m){//loop through all operators in measurement
-	if (m.size()){
-	  mvmd.emplace_back(idx_v.second,&(generated_MPOs[idx_v.first].Matrix));
+    //From this we will need the indices and times
+    typedef std::pair<size_t,double> idx_dble;
+    std::vector<idx_dble> idx_times;
+    
+    idx_times.emplace_back(0,0.0);
+    
+    if (tfnamestream.str().empty()){
+      std::cout << "Time filename empty? Something is wrong." << std::endl;
+      return 1;
+    }
+    else {
+      std::ifstream time_file;
+      time_file.open(tfnamestream.str().c_str(),ios::in);
+      
+      if (time_file.is_open()){
+	std::cout << "Opened " << tfnamestream.str() << "." << std::endl;
+	size_t idx;
+	double time;
+	std::string sdump;
+	time_file >> std::ws;
+	if (time_file.peek()=='#'){getline(time_file,sdump);}//dump the comment line
+	while (time_file >> idx >> time){
+	  getline(time_file,sdump); //dump the rest of the line
+	  idx_times.emplace_back(idx,time);
 	}
-	else {
-	  std::cout <<"Unsupported measurement!" <<std::endl;
-	  return 0;
-	}
+
+	std::cout << "There are " << idx_times.size() << " (index,time) pairs." <<std::endl;
+	std::cout << "Note, index 0 at time 0.0 is created by default. " <<std::endl << std::endl;
+	
       }
+      else {
+	std::cout <<"Could not open specified time data file '" << tfnamestream.str() << "'." <<std::endl;
+	std::cout <<"File may be missing or you needed to specify an initial state name other than '" << RuntimeArgs.initial_state_name() << "'" << std::endl ;
 
-      measurements.emplace_back(ajaj::MultiVertexMeasurement(std::move(mvmd)));
-
+	return 1;
+      }
     }
 
+    //Before continuing need to check for and load H_MPO for time slice 0.
+    std::stringstream FirstHMPOnamestream;
+    FirstHMPOnamestream << ajaj::SAVEALLNAME << "_0_H.MPO_matrix";
+    ajaj::MPO_matrix H_MPO(load_MPO_matrix(FirstHMPOnamestream.str(),myModel.basis()));
+    if (!H_MPO.isConsistent()){
+      std::cout << "Problem with " << FirstHMPOnamestream.str() << std::endl;
+      return 1;
+    }
+    else {
+      std::cout << "Successfully loaded " << FirstHMPOnamestream.str() << std::endl;
+      H_MPO.print_indices();
+    }
+    
+    //We will need to load the MPS at each timeslice (i.e. t=0)
+    //Its files should be named should be SAVEALLNAME_0_INITIALSTATENAME_Left_i.MPS_matrix
+    //SAVEALLNAME is defined in TEBD_routines.hpp
+
+    std::string filetypestring(".MPS_matrix");
+    std::stringstream mpsrootnamestream;
+    mpsrootnamestream << ajaj::SAVEALLNAME << "_0_" << RuntimeArgs.initial_state_name();
+
+    ajaj::FiniteMPS F(myModel.basis(),mpsrootnamestream.str(),number_of_vertices,1/*is canonical*/,number_of_vertices);
+
+    //set up results file
+    std::ostringstream commentlinestream;
+    commentlinestream << "Index1, t1, Index2, t2, y1, y2";
+    commentlinestream << ", <" << RuntimeArgs.Op1_name() <<"(y1,t1)" << RuntimeArgs.Op2_name() <<"(y2,t2)>";
+    std::stringstream outfilenamestream;
+    outfilenamestream<<RuntimeArgs.filename()<<"_DYN_"<<number_of_vertices<<"_"<<RuntimeArgs.initial_state_name()<<"_" << RuntimeArgs.Op1_name() << "_y1_" << RuntimeArgs.Op2_name() << "_"<< RuntimeArgs.y2() <<".dat";
+    ajaj::DataOutput results(outfilenamestream.str(),commentlinestream.str());
+
+    //loop over t2
+    
+    for (const auto& t2p : idx_times){
+      std::cout << t2p.first << " " << t2p.second <<std::endl;
+
+      //anti timeordered
+
+      //time ordered
+      
+    }
+
+    
     return 0;
   }
 

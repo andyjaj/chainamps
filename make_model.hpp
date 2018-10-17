@@ -145,6 +145,13 @@ namespace ajaj{
 		times.push_back(temp_time);
 	      }
 	    }
+	    if (times.size()){
+	      if (abs(times[0])>1e-15){
+		std::cout <<std::endl<<"A time dependent evolution Hamiltonian has been defined, but the first time is not t=0" <<std::endl;
+		std::cout <<"Returning empty model!" <<std::endl<<std::endl;
+		return Model();
+	      }
+	    }
 	    //print error if no couplings, but proceed
 	    if (cpas.size()==0 || cpas[0].size()==0){
 	      std::cout << "NO INTER-VERTEX COUPLINGS DEFINED!" << std::endl;
@@ -202,6 +209,14 @@ namespace ajaj{
 	      times.push_back(temp_time);
 	    }
 	  }
+	  if (times.size()){
+	    if (abs(times[0])>1e-15){
+	      std::cout <<std::endl<<"A time dependent evolution Hamiltonian has been defined, but the first time is not t=0" <<std::endl;
+	      std::cout <<"Returning empty model to avoid unexpected behaviour!" <<std::endl<<std::endl;
+	      return Model();
+	    }
+	  }
+	  
 	  //print error if no couplings, but proceed
 	  if (cpas.size()==0 || cpas[0].size()==0){
 	    std::cout << "NO INTER-VERTEX COUPLINGS DEFINED!" << std::endl;
