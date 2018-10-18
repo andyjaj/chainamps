@@ -22,7 +22,9 @@
 namespace ajaj{
 
   enum class CanonicalType : unsigned short int {Left, Right, Mixed, Non, Error};
-
+  class FiniteMPS;
+  std::complex<double> ApplySingleVertexOperatorToMPS(const MPO_matrix&, FiniteMPS& F, uMPXInt vertex, const CanonicalType& RequestedCanonization=CanonicalType::Non);
+  
   class FiniteMPS{
   private:
     const Basis& Basis_;
@@ -30,17 +32,21 @@ namespace ajaj{
     uMPXInt NumVertices_;
     std::pair<uMPXInt,MPS_matrix> Current_;
     bool Canonical_;
-    uMPXInt MixPoint_; 
+    uMPXInt MixPoint_;
+    CanonicalType Canonization_;
+    std::complex<double> Weight_;
 
     void fetch_matrix(uMPXInt i,bool Left=1); /**<Get a specific matrix*/
     std::string filename(uMPXInt i,bool Left=1,const std::string& name=std::string()) const;
     void store_current();
-    CanonicalType CheckFilesExist();
-
+    CanonicalType CheckFilesExist(const std::string& newname=std::string()); /**<Check files exist, and optionally copy and store with a new name*/
+    
   public:
 
-    FiniteMPS(const Basis& model_basis, const std::string& name, uMPXInt num) : Basis_(model_basis),MPSName_(name),NumVertices_(num),Current_(std::pair<uMPXInt,MPS_matrix>(0,MPS_matrix(model_basis))),Canonical_(0) {} /**< Create a non canonical finite MPS, with no data */
+    FiniteMPS(const Basis& model_basis, const std::string& name, uMPXInt num) : Basis_(model_basis),MPSName_(name),NumVertices_(num),Current_(std::pair<uMPXInt,MPS_matrix>(0,MPS_matrix(model_basis))),Canonical_(0),Canonization_(CanonicalType::Non) {} /**< Create a non canonical finite MPS, with no data */
     FiniteMPS(const Basis& model_basis, const std::string& name, uMPXInt num, bool canon, uMPXInt mix_idx); /**< Finite MPS, with mixpoint=mix_idx */
+    FiniteMPS(const Basis& model_basis, const std::string& oldname, const std::string& newname, uMPXInt num, bool canon, uMPXInt mix_idx); /**< Create stored copy Finite MPS, with mixpoint=mix_idx */
+
     FiniteMPS(const Basis& model_basis, const std::string& name, uMPXInt num,const c_specifier_array& coeffs); /**< Specify a finite MPS product state, makes it left canonical*/
     
     uMPXInt position() const {return Current_.first;}
@@ -54,11 +60,16 @@ namespace ajaj{
     uMPXInt size() const {return NumVertices_;}
     const std::string& name() {return MPSName_;}
 
-    std::complex<double> makeLC(const std::string& new_name=std::string()); /**< 'Ensures' left canonical, and makes an optional copy, returns 0.0 if there is an error. */
-    std::complex<double> makeRC(const std::string& new_name=std::string()); /**< 'Ensures' right canonical, and makes an optional copy, returns 0.0 if there is an error. */
+    std::complex<double> makeLC(const std::string& new_name=std::string()); /**< 'Ensures' left canonical, and makes an optional copy, returns final phase times singular val*/
+    std::complex<double> makeRC(const std::string& new_name=std::string()); /**< 'Ensures' right canonical, and makes an optional copy, returns final phase times singular val */
     bool valid_files() {return CheckFilesExist()==CanonicalType::Error ? 0 : 1;}
+
+    std::complex<double> weight() const {return Canonical_ ? Weight_ : 0.0 ;}
+    
+    friend std::complex<double> ApplySingleVertexOperatorToMPS(const MPO_matrix&, FiniteMPS& F, uMPXInt vertex, const CanonicalType& RequestedCanonization);
   };
 
+  
 }
 
 #endif

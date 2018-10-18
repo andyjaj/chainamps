@@ -20,6 +20,7 @@
 
 namespace ajaj{
 
+  
   /** Inherited class from MPX_matrix. An MPX_matrix with two matrix indices and one physical index.*/
   class MPS_matrix : public MPX_matrix {
   private:

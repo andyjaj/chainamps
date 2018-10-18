@@ -11,13 +11,26 @@
 #include "MPXIndex.hpp" //tensor index class
 #include "MPX_matrix.hpp" //general tensor class
 #include "MPS_matrix.hpp"
+#include "MPO_matrix.hpp"
 #include "FiniteMPS.hpp"
 
 namespace ajaj{
 
-  FiniteMPS::FiniteMPS(const Basis& model_basis, const std::string& name, uMPXInt num, bool canon, uMPXInt mix_idx): Basis_(model_basis),MPSName_(name),NumVertices_(num),Current_(std::pair<uMPXInt,MPS_matrix>(0,MPS_matrix(model_basis))),Canonical_(canon),MixPoint_(mix_idx){}
+  FiniteMPS::FiniteMPS(const Basis& model_basis, const std::string& oldname, const std::string& newname, uMPXInt num, bool canon, uMPXInt mix_idx):Basis_(model_basis),MPSName_(oldname),NumVertices_(num),Current_(std::pair<uMPXInt,MPS_matrix>(0,MPS_matrix(model_basis))),Canonical_(canon),MixPoint_(mix_idx),Weight_(1.0){
+    Canonization_=CheckFilesExist(newname);
+    if (!(Canonization_==CanonicalType::Error)){
+      std::cout << "Found files for MPS " << MPSName_ << std::endl;
+    }
+    if (!newname.empty()) {//switch storage name
+      MPSName_=newname;
+      std::cout << "Switching storage to copy, " << MPSName_ <<std::endl;
+    }
+    std::cout << std::endl;
+  }
+  
+  FiniteMPS::FiniteMPS(const Basis& model_basis, const std::string& name, uMPXInt num, bool canon, uMPXInt mix_idx): FiniteMPS(model_basis,name,std::string(),num,canon,mix_idx){}
 
-  FiniteMPS::FiniteMPS(const Basis& model_basis, const std::string& name, uMPXInt num,const c_specifier_array& coeffs) : Basis_(model_basis),MPSName_(name),NumVertices_(num),Current_(std::pair<uMPXInt,MPS_matrix>(0,MPS_matrix(model_basis))),Canonical_(0),MixPoint_(num+1) {
+  FiniteMPS::FiniteMPS(const Basis& model_basis, const std::string& name, uMPXInt num,const c_specifier_array& coeffs) : Basis_(model_basis),MPSName_(name),NumVertices_(num),Current_(std::pair<uMPXInt,MPS_matrix>(0,MPS_matrix(model_basis))),Canonical_(0),MixPoint_(num+1),Canonization_(CanonicalType::Non),Weight_(1.0) {
     //if coeffs is empty, then nothing is changed
     if (coeffs.size()){
       for (auto&& c_vect : coeffs){
@@ -128,11 +141,13 @@ namespace ajaj{
 
     Canonical_=1;
     MixPoint_=NumVertices_;
+    Canonization_=CanonicalType::Left;
     if (Vd.empty()){
       return 1.0;
     }
     else {
-      return Vd.Trace();
+      Weight_*=Vd.Trace();
+      return Weight_;
     }
   }
 
@@ -168,19 +183,19 @@ namespace ajaj{
 
     Canonical_=1;
     MixPoint_=0;
+    Canonization_=CanonicalType::Right;
     if (U.empty()){
       return 1.0;
     }
     else {
-      return U.Trace();
+      Weight_*=U.Trace();
+      return Weight_;
     }
   }
   
-  CanonicalType FiniteMPS::CheckFilesExist(){ //checks files exist for left, right or mixed, doesn't establish canon
+  CanonicalType FiniteMPS::CheckFilesExist(const std::string& newname){ //checks files exist for left, right or mixed, doesn't explicitly establish canonical status of individual matrices
     //assume nothing about defined Canonical_ or MixPoint_
 
-
-    
     //check for lambda files, and establish the middle.
     bool LAMBDA(0);
     uMPXInt MP(NumVertices_+1);//initial guess is state is stored left shaped
@@ -207,6 +222,12 @@ namespace ajaj{
       if (lambdafile.is_open()){
 	LAMBDA=1;
 	MP=NumVertices_/2;
+	if (!newname.empty()){
+	  std::stringstream newLambdanamestream;
+	  newLambdanamestream << newname << "_Lambda_" << NumVertices_/2 << "_" << NumVertices_/2 << ".MPX_matrix";
+	  //load and re-store lambda
+	  load_MPX_matrix(Lambdanamestream.str(),Basis_).store(newLambdanamestream.str());
+	}
       }
     }
     
@@ -220,6 +241,9 @@ namespace ajaj{
       Lfile.open(filename(L,1));
       if (Lfile.is_open()){
 	LMAX=L;
+	if (!newname.empty()){
+	  load_MPS_matrix(filename(L,1),Basis_).store(filename(L,1,newname));
+	}		  
       }
       else {
 	break;
@@ -231,6 +255,9 @@ namespace ajaj{
       Rfile.open(filename(R,0));
       if (Rfile.is_open()){
 	RMAX=NumVertices_-R+1;
+	if (!newname.empty()){
+	  load_MPS_matrix(filename(R,0),Basis_).store(filename(R,0,newname));
+	}
       }
       else {
 	break;
@@ -266,4 +293,27 @@ namespace ajaj{
     
   }
 
+  std::complex<double> ApplySingleVertexOperatorToMPS(const MPO_matrix& O, FiniteMPS& F, uMPXInt vertex, const CanonicalType& RequestedCanonization){
+
+    if (RequestedCanonization!=CanonicalType::Left ){
+      //cludge for the moment
+      std::cout << "Can only return left canonical MPS adfter applying operator at the moment." <<std::endl;
+      exit(1);
+    }
+    
+    //apply operator at vertex
+    bool fetch_as_left=(RequestedCanonization!=CanonicalType::Right);
+    F.fetch_matrix(vertex,fetch_as_left);
+
+    F.Current_.second=std::move(contract(O,0,F.Current_.second,0,fetch_as_left ? contract20 : contract21).RemoveDummyIndices({{1,3}}));
+
+    //now vertex is no longer canonical
+
+    F.store_current();
+
+    //was input left or right or mixed? Check mix point?
+    
+    return 0.0;
+  }
+  
 }

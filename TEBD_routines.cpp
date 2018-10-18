@@ -563,12 +563,12 @@ namespace ajaj{
   TEBD::TEBD(const MPO_matrix& H, FiniteMPS& F, DataOutput& results) : TimeBase(0.0,results),MPSName_(F.name()),Basis_(H.basis()),NumVertices_(F.size()),SingleVertexOp_(MPO_matrix()),m_EvolutionOperators(TrotterDecomposition(H,0.0,0)),GoodInitial_(0),SaveAll_(0) {
     std::stringstream Evolvingnamestream;
     Evolvingnamestream << "Evolving_" << MPSName_;
-    std::complex<double> initial_weight(F.makeRC(Evolvingnamestream.str())); //combination of initial state norm and overall phase
+    initial_weight_=F.makeRC(Evolvingnamestream.str()); //combination of initial state norm and overall phase
     //it is useful to do the above for measurements, just to ensure normalisation, and that all files exist.
     
-    std::cout << "Initial state weight was " << initial_weight <<std::endl;
+    std::cout << "Initial state weight was " << initial_weight_ <<std::endl;
 
-    if (initial_weight!=0.0)
+    if (initial_weight_!=0.0)
       GoodInitial_=1;
   }
   
@@ -578,11 +578,11 @@ namespace ajaj{
     
     std::stringstream Evolvingnamestream;
     Evolvingnamestream << "Evolving_" << MPSName_;
-    std::complex<double> initial_weight(F.makeLC(Evolvingnamestream.str())); //combination of initial state norm and overall phase
+    initial_weight_=F.makeLC(Evolvingnamestream.str()); //combination of initial state norm and overall phase
 
-    std::cout << "Initial state weight was " << initial_weight <<std::endl;
+    std::cout << "Initial state weight was " << initial_weight_ <<std::endl;
 
-    if (initial_weight!=0.0)
+    if (initial_weight_!=0.0)
       GoodInitial_=1;
 
      if (SaveAll_){

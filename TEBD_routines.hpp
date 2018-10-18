@@ -76,6 +76,7 @@ private:
   TrotterDecomposition m_EvolutionOperators;
   bool GoodInitial_;
   bool SaveAll_;
+  std::complex<double> initial_weight_;
 
   void apply_to_odd_bonds(const MPX_matrix& BondOp,uMPXInt  bond_dimension, double minS);
   void apply_to_even_bonds(const MPX_matrix& BondOp,uMPXInt  bond_dimension, double minS);
@@ -95,6 +96,7 @@ public:
   void left_info();
   void right_info();
   bool good() const {return GoodInitial_;}
+  std::complex<double> initial_weight() const {return initial_weight_;}
 };
 
   MPX_matrix MakeBondHamiltonian(const MPO_matrix& H, const std::string& SaveName=std::string()); //Returns part of hamiltonian that refers to a single bond (no double counting of vertex part). Saves it if a filename is specified.

@@ -168,7 +168,7 @@ namespace ajaj {
 
   };
 
-  enum optionIndex {UNKNOWN,CHI,TRUNC,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET,FINITE_MEASUREMENT,NEV,ENTANGLEMENT,VERTEX_ENTANGLEMENT,C_SPECIFIER,TIMEFILE,FDMRG_MODE,IENERGY,SAVE_ALL,FINITE_DYN_MEASUREMENT};
+  enum optionIndex {UNKNOWN,CHI,TRUNC,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET,FINITE_MEASUREMENT,NEV,ENTANGLEMENT,VERTEX_ENTANGLEMENT,C_SPECIFIER,TIMEFILE,FDMRG_MODE,IENERGY,SAVE_ALL,REVERSE};
 
   const option::Descriptor store_usage[2] =
     {
@@ -308,7 +308,7 @@ namespace ajaj {
       { 0, 0, 0, 0, 0, 0 }
     };
 
-  const option::Descriptor TEBD_DYN_usage[6] =
+  const option::Descriptor TEBD_DYN_usage[8] =
     {
       {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: TEBD_DYN_MEASURE.bin [OPTIONS] <model_filename> <number of vertices(chains)> <opfile1> <opfile2> <vertex2>\n  <number of vertices/chains> must be EVEN.\n"},
       {CHI,0,"B","bond-dimension",Arg::PositiveNumeric,"  -B <number>, \t--bond-dimension=<number>"
@@ -319,6 +319,8 @@ namespace ajaj {
        "  \tThe Trotter order (currently 1 or 2). Second order (2) is default." },
       {INITIAL_STATE_NAME,0,"i","initial-state-name",Arg::NonEmpty,"  -i <initial_state_name>, \t--initial-state-name=<initial_state_name>"
        "  \tSpecify an initial state." },
+      {REVERSE,0,"R","include-reverse-time",Arg::None,"  -R, \t--include-reverse-time"
+       "  \tAlso calculate reverse time ordered correlators." },
       { 0, 0, 0, 0, 0, 0 }
     };
   
@@ -886,9 +888,10 @@ class fMEAS_Args : public Base_Args{
     unsigned int y2_;
     std::string Op1_name_;
     std::string Op2_name_;
+    bool include_reverse_;
     
   public:
-    TEBD_DYN_Args(int argc, char* argv[]) : Base_Args(argc,argv,TEBD_DYN_usage), trotter_order_(2),N_(0){
+    TEBD_DYN_Args(int argc, char* argv[]) : Base_Args(argc,argv,TEBD_DYN_usage), trotter_order_(2),N_(0),include_reverse_(0){
       
      if (parse.nonOptionsCount()!=5 || std::string(parse.nonOption(0))==std::string("-")){
 	std::cout << "Incorrect command line arguments." << std::endl <<std::endl;
@@ -919,6 +922,9 @@ class fMEAS_Args : public Base_Args{
 	else
 	  initial_state_name_="DefaultState";
 
+	if (options[REVERSE])
+	  include_reverse_=1;
+
       }
       print();
     }
@@ -936,6 +942,10 @@ class fMEAS_Args : public Base_Args{
 
     const std::string& initial_state_name() const {
       return initial_state_name_;
+    }
+
+    bool include_reverse() const {
+      return include_reverse_;
     }
 
   };

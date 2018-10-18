@@ -39,6 +39,8 @@ int main(int argc, char** argv){
     //build all required measurement MPOs (no repeats) and index them
 
     std::vector<std::string> ops({RuntimeArgs.Op1_name(), RuntimeArgs.Op2_name()});
+
+    std::vector<ajaj::uMPXInt> operator_storage_position;
     
     for (auto&& op : ops){
       bool found(0);
@@ -80,6 +82,9 @@ int main(int argc, char** argv){
 	std::cout << "It should NOT be a .SPARSEMATRIX file name!" <<std::endl;
 	return 1;
       } //not found
+
+      operator_storage_position.emplace_back(index);
+      
     }
 
     //We have loaded the model and operators
@@ -127,7 +132,7 @@ int main(int argc, char** argv){
     }
 
     //Before continuing need to check for and load H_MPO for time slice 0.
-    std::stringstream FirstHMPOnamestream;
+    /*std::stringstream FirstHMPOnamestream;
     FirstHMPOnamestream << ajaj::SAVEALLNAME << "_0_H.MPO_matrix";
     ajaj::MPO_matrix H_MPO(load_MPO_matrix(FirstHMPOnamestream.str(),myModel.basis()));
     if (!H_MPO.isConsistent()){
@@ -137,17 +142,8 @@ int main(int argc, char** argv){
     else {
       std::cout << "Successfully loaded " << FirstHMPOnamestream.str() << std::endl;
       H_MPO.print_indices();
-    }
+      }*/
     
-    //We will need to load the MPS at each timeslice (i.e. t=0)
-    //Its files should be named should be SAVEALLNAME_0_INITIALSTATENAME_Left_i.MPS_matrix
-    //SAVEALLNAME is defined in TEBD_routines.hpp
-
-    std::string filetypestring(".MPS_matrix");
-    std::stringstream mpsrootnamestream;
-    mpsrootnamestream << ajaj::SAVEALLNAME << "_0_" << RuntimeArgs.initial_state_name();
-
-    ajaj::FiniteMPS F(myModel.basis(),mpsrootnamestream.str(),number_of_vertices,1/*is canonical*/,number_of_vertices);
 
     //set up results file
     std::ostringstream commentlinestream;
@@ -157,14 +153,41 @@ int main(int argc, char** argv){
     outfilenamestream<<RuntimeArgs.filename()<<"_DYN_"<<number_of_vertices<<"_"<<RuntimeArgs.initial_state_name()<<"_" << RuntimeArgs.Op1_name() << "_y1_" << RuntimeArgs.Op2_name() << "_"<< RuntimeArgs.y2() <<".dat";
     ajaj::DataOutput results(outfilenamestream.str(),commentlinestream.str());
 
+    std::string WorkingName("TempMPS");
+    
     //loop over t2
     
     for (const auto& t2p : idx_times){
       std::cout << t2p.first << " " << t2p.second <<std::endl;
 
-      //anti timeordered
-
       //time ordered
+      {
+	//We will need to load the MPS at each timeslice (i.e. t=0)
+	//Its files should be named should be SAVEALLNAME_timesliceidx_INITIALSTATENAME_Left_i.MPS_matrix
+	//SAVEALLNAME is defined in TEBD_routines.hpp
+      
+	std::stringstream mpsrootnamestream;
+	mpsrootnamestream << ajaj::SAVEALLNAME << "_" << t2p.first << "_" << RuntimeArgs.initial_state_name();
+	ajaj::FiniteMPS F(myModel.basis(),mpsrootnamestream.str(),WorkingName,number_of_vertices,1/*should be canonical*/,number_of_vertices);
+	//we have loaded and checked files, and stored a working copy which is what we will use
+	
+	//apply operator
+	std::complex<double> op2weight=ApplySingleVertexOperatorToMPS(generated_MPOs[operator_storage_position[1]].Matrix,F,RuntimeArgs.y2(),ajaj::CanonicalType::Left);
+	
+
+	//recanonise (and store final phase and singular value)
+
+	//loop over timeslices, from t2p.first to the max time doing TEBD evolution steps
+	//// evaluate Op1 on evolving state at timeslice.
+	
+      }
+      //anti timeordered
+      if (RuntimeArgs.include_reverse()){
+	std::stringstream mpsrootnamestream;
+	mpsrootnamestream << ajaj::SAVEALLNAME << "_t2p.first_" << RuntimeArgs.initial_state_name();
+	ajaj::FiniteMPS F(myModel.basis(),mpsrootnamestream.str(),number_of_vertices,1/*is canonical*/,number_of_vertices);
+      }
+
       
     }
 
