@@ -169,13 +169,10 @@ int main(int argc, char** argv){
 	std::stringstream mpsrootnamestream;
 	mpsrootnamestream << ajaj::SAVEALLNAME << "_" << t2p.first << "_" << RuntimeArgs.initial_state_name();
 	ajaj::FiniteMPS F(myModel.basis(),mpsrootnamestream.str(),WorkingName,number_of_vertices,1/*should be canonical*/,number_of_vertices);
-	//we have loaded and checked files, and stored a working copy which is what we will use
-	
-	//apply operator
-	std::complex<double> op2weight=ApplySingleVertexOperatorToMPS(generated_MPOs[operator_storage_position[1]].Matrix,F,RuntimeArgs.y2(),ajaj::CanonicalType::Left);
-	
-
-	//recanonise (and store final phase and singular value)
+	//we have loaded and checked files, and stored a working copy which is what we will use	
+	//apply operator and canonize
+	std::complex<double> op2weight=ApplySingleVertexOperatorToMPS(generated_MPOs[operator_storage_position[1]].Matrix,F,RuntimeArgs.y2(),ajaj::MPSCanonicalType::Left);
+	std::cout << op2weight <<std::endl;
 
 	//loop over timeslices, from t2p.first to the max time doing TEBD evolution steps
 	//// evaluate Op1 on evolving state at timeslice.

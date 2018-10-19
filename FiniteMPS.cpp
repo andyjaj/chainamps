@@ -17,11 +17,12 @@
 namespace ajaj{
 
   FiniteMPS::FiniteMPS(const Basis& model_basis, const std::string& oldname, const std::string& newname, uMPXInt num, bool canon, uMPXInt mix_idx):Basis_(model_basis),MPSName_(oldname),NumVertices_(num),Current_(std::pair<uMPXInt,MPS_matrix>(0,MPS_matrix(model_basis))),Canonical_(canon),MixPoint_(mix_idx),Weight_(1.0){
+    
     Canonization_=CheckFilesExist(newname);
-    if (!(Canonization_==CanonicalType::Error)){
+    if (!(Canonization_==MPSCanonicalType::Error)){
       std::cout << "Found files for MPS " << MPSName_ << std::endl;
     }
-    if (!newname.empty()) {//switch storage name
+    if (!newname.empty()) {//switch storage name if we have specified a new name
       MPSName_=newname;
       std::cout << "Switching storage to copy, " << MPSName_ <<std::endl;
     }
@@ -30,7 +31,7 @@ namespace ajaj{
   
   FiniteMPS::FiniteMPS(const Basis& model_basis, const std::string& name, uMPXInt num, bool canon, uMPXInt mix_idx): FiniteMPS(model_basis,name,std::string(),num,canon,mix_idx){}
 
-  FiniteMPS::FiniteMPS(const Basis& model_basis, const std::string& name, uMPXInt num,const c_specifier_array& coeffs) : Basis_(model_basis),MPSName_(name),NumVertices_(num),Current_(std::pair<uMPXInt,MPS_matrix>(0,MPS_matrix(model_basis))),Canonical_(0),MixPoint_(num+1),Canonization_(CanonicalType::Non),Weight_(1.0) {
+  FiniteMPS::FiniteMPS(const Basis& model_basis, const std::string& name, uMPXInt num,const c_specifier_array& coeffs) : Basis_(model_basis),MPSName_(name),NumVertices_(num),Current_(std::pair<uMPXInt,MPS_matrix>(0,MPS_matrix(model_basis))),Canonical_(0),MixPoint_(num+1),Canonization_(MPSCanonicalType::Non),Weight_(1.0) {
     //if coeffs is empty, then nothing is changed
     if (coeffs.size()){
       for (auto&& c_vect : coeffs){
@@ -57,6 +58,7 @@ namespace ajaj{
 	  counter=0;//back to beginning of c number defns
 	}
 	Current_.second.store(filename(position(),1/*Left*/));
+	MatrixCanonizations_.emplace_back(MPS_matrixCanonicalType::Non);
       }
       //can't guarantee that we are canonical
     }
@@ -108,22 +110,45 @@ namespace ajaj{
 
   std::complex<double> FiniteMPS::makeLC(const std::string& name){
     std::cout << "Left canonising initial state..." <<std::endl;
-    //do a check
-    if (CheckFilesExist()==CanonicalType::Error){
+    //do a check, which will establish the (claimed by the individual matrices) MPSCanonicalType
+    /*if (CheckFilesExist()==MPSCanonicalType::Error){
       return 0.0;
-    }
+      }*/
 
     MPX_matrix Vd;
-    if (Canonical_ && MixPoint_ < NumVertices_ && MixPoint_ > 0){ //lambda should exist and be used
+    //if (Canonical_ && MixPoint_ < NumVertices_ && MixPoint_ > 0){ //lambda should exist and be used
+    if (Canonization_==MPSCanonicalType::Mixed){ //lambda should exist and be used
       std::stringstream Lambdanamestream;
       Lambdanamestream << MPSName_ << "_Lambda_" << MixPoint_ << "_" << NumVertices_-MixPoint_ << ".MPX_matrix";
       Vd=load_MPX_matrix(Lambdanamestream.str(),Basis_);
     }
 
-    const std::vector<MPXPair>& contractids=Canonical_ ? contract10 : contract11;
+    //const std::vector<MPXPair>& contractids=Canonical_ ? contract10 : contract11;
 
     for (uMPXInt p=1;p<=NumVertices_;++p){
-      fetch_matrix(p,!Canonical_ || p<=MixPoint_); //if not canonical, load left, otherwise load left if left before mix point
+      //only load if not left canonical, or if we have requested a copy.
+      if ((!name.empty() && name!=MPSName_) || MatrixCanonizations_[p-1]!=MPS_matrixCanonicalType::Left){
+	fetch_matrix(p,MatrixCanonizations_[p-1]!=MPS_matrixCanonicalType::Right);
+	//if not left canonical, then we need to canonize
+	if (MatrixCanonizations_[p-1]!=MPS_matrixCanonicalType::Left){
+	  //contract Vd on and decompose, if initial step for right canonical or non canonical, Vd will be empty
+	  MPXDecomposition decomp((Vd.empty() ? Current_.second : MPS_matrix(contract(Vd,0,matrix(),0,MatrixCanonizations_[p-1]==MPS_matrixCanonicalType::Non ? contract11 : contract10))).left_shape().SVD());
+	  //record row vectors (Vdagger part) as new Vd
+	  Vd=std::move(contract(MPX_matrix(Basis_,decomp.RowMatrix.Index(0),decomp.Values),0,decomp.RowMatrix,0,contract10));
+	  Current_.second=std::move(decomp.ColumnMatrix);
+	  store_current(); //store new left canonical matrix
+	  set_matrix_canonization(p,MPS_matrixCanonicalType::Left);
+	  //if there is a non empty Vd and the next matrix was left canonical, we need to change the flag to trick it into being loaded.
+	  if (p<NumVertices_ && !Vd.empty() && MatrixCanonizations_[p]==MPS_matrixCanonicalType::Left)
+	    set_matrix_canonization(p+1,MPS_matrixCanonicalType::Non);
+
+	}
+	//if we want to store a copy...
+	if (!name.empty() && name!=MPSName_)
+	  matrix().store(filename(position(),matrix().is_left_shape(),name));
+      }
+    }
+      /*fetch_matrix(p,!Canonical_ || p<=MixPoint_); //if not canonical, load left, otherwise load left if left before mix point
       
       if (!Canonical_ || p>MixPoint_){ //if not canonical, or on right side of mix point
 	//contract Vd on and decompose, if initial step for right canonical or non canonical, Vd will be empty
@@ -132,18 +157,20 @@ namespace ajaj{
 	Vd=std::move(contract(MPX_matrix(Basis_,decomp.RowMatrix.Index(0),decomp.Values),0,decomp.RowMatrix,0,contract10));
 	Current_.second=std::move(decomp.ColumnMatrix);
 	store_current(); //store new left canonical matrix
+	MatrixCanonizations_[p-1]=MPS_matrixCanonicalType::Left;
       }
 
       //at end of step store copy if requested
       if (!name.empty() && name!=MPSName_)
-	matrix().store(filename(position(),matrix().is_left_shape(),name));
-    }
+      matrix().store(filename(position(),matrix().is_left_shape(),name));
+      }*/
+    
 
     Canonical_=1;
     MixPoint_=NumVertices_;
-    Canonization_=CanonicalType::Left;
+    Canonization_=MPSCanonicalType::Left;
     if (Vd.empty()){
-      return 1.0;
+      return Weight_;
     }
     else {
       Weight_*=Vd.Trace();
@@ -154,18 +181,42 @@ namespace ajaj{
   std::complex<double> FiniteMPS::makeRC(const std::string& name){
     std::cout << "Right canonising initial state..." <<std::endl;
     //do a check
-    if (CheckFilesExist()==CanonicalType::Error){
+    /*if (CheckFilesExist()==MPSCanonicalType::Error){
       return 0.0;
-    }
+    }*/
 
     MPX_matrix U; //temp storage
-    if (Canonical_ && MixPoint_ < NumVertices_ && MixPoint_ > 0){ //lambda should exist and be used
+    //if (Canonical_ && MixPoint_ < NumVertices_ && MixPoint_ > 0){ //lambda should exist and be used
+    if (Canonization_==MPSCanonicalType::Mixed){ //lambda should exist and be used
       std::stringstream Lambdanamestream;
       Lambdanamestream << MPSName_ << "_Lambda_" << MixPoint_ << "_" << NumVertices_-MixPoint_ << ".MPX_matrix";
       U=load_MPX_matrix(Lambdanamestream.str(),Basis_);
     }
 
+
     for (uMPXInt p=NumVertices_;p>0;--p){
+      //only load if not right canonical, or if we have requested a copy.
+      if ((!name.empty() && name!=MPSName_) || MatrixCanonizations_[p-1]!=MPS_matrixCanonicalType::Right){
+	fetch_matrix(p,MatrixCanonizations_[p-1]!=MPS_matrixCanonicalType::Right);
+	//if not right canonical, then we need to canonize
+	if (MatrixCanonizations_[p-1]!=MPS_matrixCanonicalType::Right){
+	  //contract U on and decompose, if initial step for left canonical or non canonical, U will be empty
+	  MPXDecomposition decomp((U.empty() ? Current_.second : MPS_matrix(contract(matrix(),0,U,0,contract20))).right_shape().SVD());
+	  U=std::move(contract(decomp.ColumnMatrix,0,MPX_matrix(Basis_,decomp.ColumnMatrix.Index(1),decomp.Values),0,contract10));
+	  Current_.second=std::move(decomp.RowMatrix);
+	  store_current(); //store new right canonical matrix
+	  set_matrix_canonization(p,MPS_matrixCanonicalType::Right);
+	  //if there is a non empty Vd and the next matrix was left canonical, we need to change the flag to trick it into being loaded.
+	  if (p>1 && !U.empty() && MatrixCanonizations_[p-2]==MPS_matrixCanonicalType::Right)
+	    set_matrix_canonization(p-1,MPS_matrixCanonicalType::Non);	  
+	}
+	//if we want to store a copy...
+	if (!name.empty() && name!=MPSName_)
+	  matrix().store(filename(position(),matrix().is_left_shape(),name));
+      }
+    }
+    
+    /*for (uMPXInt p=NumVertices_;p>0;--p){
       fetch_matrix(p,!Canonical_ || p<=MixPoint_); //if not canonical, load left, otherwise load left if left before mix point
       
       if (!Canonical_ || p<=MixPoint_){ //if not canonical, or on left side of mix point
@@ -174,18 +225,19 @@ namespace ajaj{
 	U=std::move(contract(decomp.ColumnMatrix,0,MPX_matrix(Basis_,decomp.ColumnMatrix.Index(1),decomp.Values),0,contract10));
 	Current_.second=std::move(decomp.RowMatrix);
 	store_current(); //store new right canonical matrix
+	MatrixCanonizations_[p-1]=MPS_matrixCanonicalType::Right;
       }
 
       //at end of step store copy if requested
       if (!name.empty() && name!=MPSName_)
 	matrix().store(filename(position(),matrix().is_left_shape(),name));
-    }
+	}*/
 
     Canonical_=1;
     MixPoint_=0;
-    Canonization_=CanonicalType::Right;
+    Canonization_=MPSCanonicalType::Right;
     if (U.empty()){
-      return 1.0;
+      return Weight_;
     }
     else {
       Weight_*=U.Trace();
@@ -193,25 +245,11 @@ namespace ajaj{
     }
   }
   
-  CanonicalType FiniteMPS::CheckFilesExist(const std::string& newname){ //checks files exist for left, right or mixed, doesn't explicitly establish canonical status of individual matrices
+  MPSCanonicalType FiniteMPS::CheckFilesExist(const std::string& newname){ //checks files exist for left, right or mixed, doesn't explicitly establish canonical status of individual matrices
     //assume nothing about defined Canonical_ or MixPoint_
-
     //check for lambda files, and establish the middle.
     bool LAMBDA(0);
     uMPXInt MP(NumVertices_+1);//initial guess is state is stored left shaped
-
-    /*for (uMPXInt L=1;L<=NumVertices_;++L){
-      std::stringstream Lambdanamestream;
-      Lambdanamestream << MPSName_ << "_Lambda_" << L << "_" << NumVertices_-L << ".MPX_matrix";
-      std::ifstream lambdafile;
-      lambdafile.open(Lambdanamestream.str().c_str(),ios::in);
-      if (lambdafile.is_open()){
-	LAMBDA=1;
-	MP=L;
-	
-	break; //only find one
-      }
-    }*/
 
     //assume even lengths only, and output in mixed form is centred.
     {
@@ -243,7 +281,7 @@ namespace ajaj{
 	LMAX=L;
 	if (!newname.empty()){
 	  load_MPS_matrix(filename(L,1),Basis_).store(filename(L,1,newname));
-	}		  
+	}
       }
       else {
 	break;
@@ -268,52 +306,100 @@ namespace ajaj{
 
     if (LAMBDA && LMAX>=MP && RMAX >=NumVertices_-MP){
       //by assumption...
-      Canonical_=1;
+      Canonical_=1; //override previous value
       MixPoint_=MP;
-      return CanonicalType::Mixed;
+
+      MatrixCanonizations_=std::vector<MPS_matrixCanonicalType>(MP,MPS_matrixCanonicalType::Left);
+      std::vector<MPS_matrixCanonicalType> Rpart(NumVertices_-MP,MPS_matrixCanonicalType::Right);
+      MatrixCanonizations_.insert(MatrixCanonizations_.end(),Rpart.begin(),Rpart.end());
+      return MPSCanonicalType::Mixed;
     }
     else if (LMAX==NumVertices_){
       //assume nothing
-      MixPoint_=NumVertices_+1;
-      return CanonicalType::Left;
+      MixPoint_=NumVertices_; //Check this?
+      MPS_matrixCanonicalType ThisType= Canonical_ ? MPS_matrixCanonicalType::Left : MPS_matrixCanonicalType::Non;
+      MatrixCanonizations_=std::vector<MPS_matrixCanonicalType>(NumVertices_,ThisType);
+      return MPSCanonicalType::Left;
     }
     else if (RMAX==NumVertices_){ //unlikely case, as drivers don't output right canonical files alone
       //by assumption...
       Canonical_=1;
       MixPoint_=0;
-      return CanonicalType::Right;
+      MPS_matrixCanonicalType ThisType= Canonical_ ? MPS_matrixCanonicalType::Right : MPS_matrixCanonicalType::Non;
+      MatrixCanonizations_=std::vector<MPS_matrixCanonicalType>(NumVertices_,ThisType);
+      return MPSCanonicalType::Right;
     }
     else {
       //missing files
       std::cout <<"Error: Missing files for specified Finite MPS state '" << MPSName_<< "'" << std::endl;
       std::cout << "LAMBDA "<< MP << ", " << LMAX << " " << RMAX << std::endl;
 
-      return CanonicalType::Error;
+      return MPSCanonicalType::Error;
     }
     
   }
 
-  std::complex<double> ApplySingleVertexOperatorToMPS(const MPO_matrix& O, FiniteMPS& F, uMPXInt vertex, const CanonicalType& RequestedCanonization){
+  void FiniteMPS::set_matrix_canonization(uMPXInt i,const MPS_matrixCanonicalType& c){
+    MatrixCanonizations_[i-1]=c;
+    update_MPS_canonization_status();
+  }
 
-    if (RequestedCanonization!=CanonicalType::Left ){
-      //cludge for the moment
-      std::cout << "Can only return left canonical MPS adfter applying operator at the moment." <<std::endl;
+  void FiniteMPS::update_MPS_canonization_status(){
+    //go through list of matrix canonizations and fix the overall MPS status
+    
+    MPS_matrixCanonicalType CurrentStatus=MatrixCanonizations_[0];
+
+    Canonization_=MPSCanonicalType::Error;
+    
+    for (uMPXInt i=1; i<=NumVertices_;++i){
+      if (MatrixCanonizations_[i-1]==MPS_matrixCanonicalType::Non){
+	Canonization_=MPSCanonicalType::Non;
+	break;
+      }
+      else if (i>1) {
+	if ((MatrixCanonizations_[i-1]==MPS_matrixCanonicalType::Left) && (MatrixCanonizations_[i-2]==MPS_matrixCanonicalType::Right)){
+	  Canonization_=MPSCanonicalType::Non;
+	  break;
+	}
+	else if ((MatrixCanonizations_[i-1]==MPS_matrixCanonicalType::Right) && (MatrixCanonizations_[i-2]==MPS_matrixCanonicalType::Left)){
+	  Canonization_= (MixPoint_== i-1 ? MPSCanonicalType::Mixed : MPSCanonicalType::Error);
+	}
+	else if (i==NumVertices_ && Canonization_!=MPSCanonicalType::Mixed){
+	  if (MatrixCanonizations_[i-1]==MPS_matrixCanonicalType::Left){
+	    Canonization_=MPSCanonicalType::Left;
+	  }
+	  else {
+	    Canonization_=MPSCanonicalType::Right;
+	  }
+	}
+      }
+    }
+  }
+  
+  std::complex<double> ApplySingleVertexOperatorToMPS(const MPO_matrix& Op, FiniteMPS& F, uMPXInt vertex, const MPSCanonicalType& RequestedCanonization){
+
+    if (F.Canonization_==MPSCanonicalType::Mixed || RequestedCanonization==MPSCanonicalType::Error ){
+      std::cout << "Not supported yet." <<std::endl;
       exit(1);
     }
     
     //apply operator at vertex
-    bool fetch_as_left=(RequestedCanonization!=CanonicalType::Right);
-    F.fetch_matrix(vertex,fetch_as_left);
+    F.fetch_matrix(vertex,F.MatrixCanonizations_[vertex-1]!=MPS_matrixCanonicalType::Right);
 
-    F.Current_.second=std::move(contract(O,0,F.Current_.second,0,fetch_as_left ? contract20 : contract21).RemoveDummyIndices({{1,3}}));
-
+    F.Current_.second=std::move(contract(Op,0,F.Current_.second,0,F.MatrixCanonizations_[vertex-1]!=MPS_matrixCanonicalType::Right ? contract20 : contract21).RemoveDummyIndices({{1,2}}));
     //now vertex is no longer canonical
-
+    F.Current_.second.ShiftNumRowIndices(2); //make it standard format for a non canonical matrix, will always be stored as 'Left'!  
+    F.set_matrix_canonization(vertex,MPS_matrixCanonicalType::Non);
     F.store_current();
-
-    //was input left or right or mixed? Check mix point?
     
-    return 0.0;
+    if (RequestedCanonization==MPSCanonicalType::Left){
+      F.makeLC();
+    }
+    else if (RequestedCanonization==MPSCanonicalType::Right){
+      F.makeRC();
+    }
+    
+    return F.weight();
   }
   
 }

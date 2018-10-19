@@ -21,9 +21,9 @@
 
 namespace ajaj{
 
-  enum class CanonicalType : unsigned short int {Left, Right, Mixed, Non, Error};
+  enum class MPSCanonicalType : unsigned short int {Left, Right, Mixed, Non, Error};
   class FiniteMPS;
-  std::complex<double> ApplySingleVertexOperatorToMPS(const MPO_matrix&, FiniteMPS& F, uMPXInt vertex, const CanonicalType& RequestedCanonization=CanonicalType::Non);
+  std::complex<double> ApplySingleVertexOperatorToMPS(const MPO_matrix&, FiniteMPS& F, uMPXInt vertex, const MPSCanonicalType& RequestedCanonization=MPSCanonicalType::Non);
   
   class FiniteMPS{
   private:
@@ -33,40 +33,40 @@ namespace ajaj{
     std::pair<uMPXInt,MPS_matrix> Current_;
     bool Canonical_;
     uMPXInt MixPoint_;
-    CanonicalType Canonization_;
+    MPSCanonicalType Canonization_;
     std::complex<double> Weight_;
+    std::vector<MPS_matrixCanonicalType> MatrixCanonizations_;
 
+    
     void fetch_matrix(uMPXInt i,bool Left=1); /**<Get a specific matrix*/
     std::string filename(uMPXInt i,bool Left=1,const std::string& name=std::string()) const;
     void store_current();
-    CanonicalType CheckFilesExist(const std::string& newname=std::string()); /**<Check files exist, and optionally copy and store with a new name*/
+    MPSCanonicalType CheckFilesExist(const std::string& newname=std::string()); /**<Check files exist, and optionally copy and store with a new name*/
+    void set_matrix_canonization(uMPXInt i,const MPS_matrixCanonicalType& c);
+    void update_MPS_canonization_status();
     
   public:
 
-    FiniteMPS(const Basis& model_basis, const std::string& name, uMPXInt num) : Basis_(model_basis),MPSName_(name),NumVertices_(num),Current_(std::pair<uMPXInt,MPS_matrix>(0,MPS_matrix(model_basis))),Canonical_(0),Canonization_(CanonicalType::Non) {} /**< Create a non canonical finite MPS, with no data */
+    FiniteMPS(const Basis& model_basis, const std::string& name, uMPXInt num) : Basis_(model_basis),MPSName_(name),NumVertices_(num),Current_(std::pair<uMPXInt,MPS_matrix>(0,MPS_matrix(model_basis))),Canonical_(0),Canonization_(MPSCanonicalType::Non) {} /**< Create a non canonical finite MPS, with no data */
     FiniteMPS(const Basis& model_basis, const std::string& name, uMPXInt num, bool canon, uMPXInt mix_idx); /**< Finite MPS, with mixpoint=mix_idx */
     FiniteMPS(const Basis& model_basis, const std::string& oldname, const std::string& newname, uMPXInt num, bool canon, uMPXInt mix_idx); /**< Create stored copy Finite MPS, with mixpoint=mix_idx */
-
     FiniteMPS(const Basis& model_basis, const std::string& name, uMPXInt num,const c_specifier_array& coeffs); /**< Specify a finite MPS product state, makes it left canonical*/
     
-    uMPXInt position() const {return Current_.first;}
-
     const MPS_matrix& matrix() const {return Current_.second;} //const function to get const ref to current buffered matrix
     const MPS_matrix& matrix(uMPXInt p,bool Left=1) { //non const function to buffer a particular matrix
       fetch_matrix(p,Left); //buffer matrix
       return matrix(); //return const ref
     }
 
+    uMPXInt position() const {return Current_.first;}
     uMPXInt size() const {return NumVertices_;}
     const std::string& name() {return MPSName_;}
-
     std::complex<double> makeLC(const std::string& new_name=std::string()); /**< 'Ensures' left canonical, and makes an optional copy, returns final phase times singular val*/
     std::complex<double> makeRC(const std::string& new_name=std::string()); /**< 'Ensures' right canonical, and makes an optional copy, returns final phase times singular val */
-    bool valid_files() {return CheckFilesExist()==CanonicalType::Error ? 0 : 1;}
-
+    bool valid_files() {return CheckFilesExist()==MPSCanonicalType::Error ? 0 : 1;}
     std::complex<double> weight() const {return Canonical_ ? Weight_ : 0.0 ;}
     
-    friend std::complex<double> ApplySingleVertexOperatorToMPS(const MPO_matrix&, FiniteMPS& F, uMPXInt vertex, const CanonicalType& RequestedCanonization);
+    friend std::complex<double> ApplySingleVertexOperatorToMPS(const MPO_matrix&, FiniteMPS& F, uMPXInt vertex, const MPSCanonicalType& RequestedCanonization);
   };
 
   
