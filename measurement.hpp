@@ -139,7 +139,8 @@ namespace ajaj {
 
   double MultiVertexEntropy(const UnitCell& U,uMPXInt v=1);
 
-
+  bool check_for_H_MPO_file(const std::string& name, uMPXInt sliceindex);
+  
 }
 
 #endif

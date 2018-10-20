@@ -131,6 +131,18 @@ int main(int argc, char** argv){
       }
     }
 
+
+    //make a list of the timeslices at which the Hamiltonian changes (includes 0)
+    std::vector<ajaj::uMPXInt> H_MPO_change_indices; 
+    for (auto& t : idx_times){
+      if (ajaj::check_for_H_MPO_file(ajaj::SAVEALLNAME,t.first)){
+	H_MPO_change_indices.push_back(t.first);
+      }
+    }
+
+    std::cout << "There are " << H_MPO_change_indices.size() << " time slices at which the Hamiltonian changes (including t=0)." <<std::endl;
+
+    
     //Before continuing need to check for and load H_MPO for time slice 0.
     /*std::stringstream FirstHMPOnamestream;
     FirstHMPOnamestream << ajaj::SAVEALLNAME << "_0_H.MPO_matrix";
@@ -152,7 +164,8 @@ int main(int argc, char** argv){
     std::stringstream outfilenamestream;
     outfilenamestream<<RuntimeArgs.filename()<<"_DYN_"<<number_of_vertices<<"_"<<RuntimeArgs.initial_state_name()<<"_" << RuntimeArgs.Op1_name() << "_y1_" << RuntimeArgs.Op2_name() << "_"<< RuntimeArgs.y2() <<".dat";
     ajaj::DataOutput results(outfilenamestream.str(),commentlinestream.str());
-
+    ajaj::DataOutput dummyresults;
+    
     std::string WorkingName("TempMPS");
     
     //loop over t2
@@ -160,21 +173,52 @@ int main(int argc, char** argv){
     for (const auto& t2p : idx_times){
       std::cout << t2p.first << " " << t2p.second <<std::endl;
 
+     
+      //We will need to load the MPS at each timeslice (i.e. t=0)
+      //Its files should be named should be SAVEALLNAME_timesliceidx_INITIALSTATENAME_Left_i.MPS_matrix
+      //SAVEALLNAME is defined in TEBD_routines.hpp
+      
+      std::stringstream mpsrootnamestream;
+      mpsrootnamestream << ajaj::SAVEALLNAME << "_" << t2p.first << "_" << RuntimeArgs.initial_state_name();
+      ajaj::FiniteMPS F(myModel.basis(),mpsrootnamestream.str(),WorkingName,number_of_vertices,1/*should be canonical*/,number_of_vertices);
+      //we have loaded and checked files, and stored a working copy which is what we will use	
+      //apply operator and canonize
+      std::complex<double> op2weight=ApplySingleVertexOperatorToMPS(generated_MPOs[operator_storage_position[1]].Matrix,F,RuntimeArgs.y2(),ajaj::MPSCanonicalType::Left);
+      std::cout << op2weight <<std::endl;
+
       //time ordered
       {
-	//We will need to load the MPS at each timeslice (i.e. t=0)
-	//Its files should be named should be SAVEALLNAME_timesliceidx_INITIALSTATENAME_Left_i.MPS_matrix
-	//SAVEALLNAME is defined in TEBD_routines.hpp
-      
-	std::stringstream mpsrootnamestream;
-	mpsrootnamestream << ajaj::SAVEALLNAME << "_" << t2p.first << "_" << RuntimeArgs.initial_state_name();
-	ajaj::FiniteMPS F(myModel.basis(),mpsrootnamestream.str(),WorkingName,number_of_vertices,1/*should be canonical*/,number_of_vertices);
-	//we have loaded and checked files, and stored a working copy which is what we will use	
-	//apply operator and canonize
-	std::complex<double> op2weight=ApplySingleVertexOperatorToMPS(generated_MPOs[operator_storage_position[1]].Matrix,F,RuntimeArgs.y2(),ajaj::MPSCanonicalType::Left);
-	std::cout << op2weight <<std::endl;
+	double start_time=t2p.second;
+	//establish the correct start slice index for our H_MPO
 
-	//loop over timeslices, from t2p.first to the max time doing TEBD evolution steps
+	ajaj::uMPXInt H_MPO_index=t2p.first;
+
+	for (ajaj::uMPXInt h=H_MPO_change_indices.size()-1;h==0;--h){
+	  if (h<=H_MPO_index){
+	    H_MPO_index=h;
+	    break;
+	  }
+	}
+	std::stringstream SliceHMPOnamestream;
+	SliceHMPOnamestream << ajaj::SAVEALLNAME << "_" << H_MPO_index << "_H.MPO_matrix";
+		
+       	double stepsize= t2p.first<idx_times.size()-1 ? idx_times[t2p.first+1].second-idx_times[t2p.first].second : 0.0;	   
+	
+	ajaj::TEBD finrun(myModel.update_H_MPO_from_file(SliceHMPOnamestream.str()),F,stepsize,dummyresults,trotter_order,nullptr,0);
+	//inner loop over timeslices, from t2p.first to the max time doing TEBD evolution steps
+
+	for (ajaj::uMPXInt t1sliceindex=t2p.first; t1sliceindex<=idx_times.back().first; ++t1sliceindex){
+	  //do the evolution with no measuring
+	  //finrun.evolve();
+
+	  //now measure...
+	  
+	  if (t1sliceindex!=idx_times.back().first){
+	    //do updates of step size and H_MPO
+
+	    //finrun.change_bond_operator();
+	  }
+	}
 	//// evaluate Op1 on evolving state at timeslice.
 	
       }

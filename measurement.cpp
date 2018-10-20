@@ -611,4 +611,21 @@ namespace ajaj {
     //get entropy
   }
 
+  bool check_for_H_MPO_file(const std::string& name, uMPXInt sliceindex){
+    std::stringstream SliceHMPOnamestream;
+    SliceHMPOnamestream << name << "_" << sliceindex << "_H.MPO_matrix";
+    
+    //check file exists and can be opened
+    
+    std::ifstream fs;
+    
+    fs.open(SliceHMPOnamestream.str().c_str(),ios::in);
+    
+    if (fs.is_open()){
+      return 1;
+    }
+    
+    return 0;
+  }
+  
 }

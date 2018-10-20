@@ -65,6 +65,7 @@ namespace ajaj{
     std::complex<double> makeRC(const std::string& new_name=std::string()); /**< 'Ensures' right canonical, and makes an optional copy, returns final phase times singular val */
     bool valid_files() {return CheckFilesExist()==MPSCanonicalType::Error ? 0 : 1;}
     std::complex<double> weight() const {return Canonical_ ? Weight_ : 0.0 ;}
+    void reset_weight(std::complex<double> w) {if (Weight_!=0.0) Weight_=w; }
     
     friend std::complex<double> ApplySingleVertexOperatorToMPS(const MPO_matrix&, FiniteMPS& F, uMPXInt vertex, const MPSCanonicalType& RequestedCanonization);
   };
