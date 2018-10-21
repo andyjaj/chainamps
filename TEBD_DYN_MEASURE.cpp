@@ -169,7 +169,9 @@ int main(int argc, char** argv){
     std::string WorkingName("TempMPS");
     
     //loop over t2
-    
+
+    ajaj::uMPXInt current_H_index=0;
+
     for (const auto& t2p : idx_times){
       std::cout << t2p.first << " " << t2p.second <<std::endl;
 
@@ -186,40 +188,56 @@ int main(int argc, char** argv){
       std::complex<double> op2weight=ApplySingleVertexOperatorToMPS(generated_MPOs[operator_storage_position[1]].Matrix,F,RuntimeArgs.y2(),ajaj::MPSCanonicalType::Left);
       std::cout << op2weight <<std::endl;
 
+      //special, do first step, t1-t2=0.0;
+
+      //need handlers for overlap of two MPS (with a sandwiched operator).
+      
       //time ordered
       {
-	double start_time=t2p.second;
+
 	//establish the correct start slice index for our H_MPO
-
-	ajaj::uMPXInt H_MPO_index=t2p.first;
-
-	for (ajaj::uMPXInt h=H_MPO_change_indices.size()-1;h==0;--h){
-	  if (h<=H_MPO_index){
-	    H_MPO_index=h;
-	    break;
+	if (t2p.first!=current_H_index){
+	  for (ajaj::uMPXInt h=H_MPO_change_indices.size()-1;h<H_MPO_change_indices.size();--h){
+	    if (H_MPO_change_indices[h]<=t2p.first){
+	      if (H_MPO_change_indices[h]!=current_H_index){
+		current_H_index=H_MPO_change_indices[h];
+		std::cout << "Updating H_MPO to that defined at timeslice " << current_H_index <<std::endl <<std::endl;
+		std::stringstream t2SliceHMPOnamestream;
+		t2SliceHMPOnamestream << ajaj::SAVEALLNAME << "_" << current_H_index << "_H.MPO_matrix";
+		myModel.update_H_MPO_from_file(t2SliceHMPOnamestream.str());
+	      }
+	      break;
+	    }
 	  }
 	}
-	std::stringstream SliceHMPOnamestream;
-	SliceHMPOnamestream << ajaj::SAVEALLNAME << "_" << H_MPO_index << "_H.MPO_matrix";
-		
-       	double stepsize= t2p.first<idx_times.size()-1 ? idx_times[t2p.first+1].second-idx_times[t2p.first].second : 0.0;	   
-	
-	ajaj::TEBD finrun(myModel.update_H_MPO_from_file(SliceHMPOnamestream.str()),F,stepsize,dummyresults,trotter_order,nullptr,0);
-	//inner loop over timeslices, from t2p.first to the max time doing TEBD evolution steps
 
-	for (ajaj::uMPXInt t1sliceindex=t2p.first; t1sliceindex<=idx_times.back().first; ++t1sliceindex){
-	  //do the evolution with no measuring
-	  //finrun.evolve();
+	//set the initial step size, necessary to set up the TEBD object.
 
-	  //now measure...
-	  
-	  if (t1sliceindex!=idx_times.back().first){
-	    //do updates of step size and H_MPO
-
-	    //finrun.change_bond_operator();
+	if (t2p.first<idx_times.size()-1){
+	  double stepsize= idx_times[t2p.first+1].second-idx_times[t2p.first].second;
+	  ajaj::TEBD finrun(myModel.H_MPO,F,stepsize,dummyresults,trotter_order,nullptr,0);
+	  //inner loop over timeslices, from t2p.first to the max time doing TEBD evolution steps
+	  for (ajaj::uMPXInt t1sliceindex=t2p.first+1; t1sliceindex<=idx_times.back().first; ++t1sliceindex){
+	    //do the evolution for one step
+	    //finrun.evolve();
+	    
+	    //now measure...
+	    if (t1sliceindex!=idx_times.back().first){
+	      //do updates of step size and H_MPO
+	      std::cout << idx_times[t1sliceindex].second << " " << t2p.second <<std::endl<<std::endl;
+	      
+	      stepsize=idx_times[t1sliceindex].second-t2p.second;
+	      
+	      if (ajaj::check_for_H_MPO_file(ajaj::SAVEALLNAME, t1sliceindex) && (t1sliceindex != current_H_index)){ //if this is an update step, and we don't already have the right H
+		std::cout << "Updating H_MPO from timeslice " << current_H_index << " to " << t1sliceindex <<std::endl <<std::endl;
+		current_H_index=t1sliceindex;
+		std::stringstream t1SliceHMPOnamestream;
+		t1SliceHMPOnamestream << ajaj::SAVEALLNAME << "_" << current_H_index<< "_H.MPO_matrix";
+		finrun.change_bond_operator(myModel.update_H_MPO_from_file(t1SliceHMPOnamestream.str()),stepsize);
+	      }
+	    }
 	  }
 	}
-	//// evaluate Op1 on evolving state at timeslice.
 	
       }
       //anti timeordered
@@ -229,6 +247,7 @@ int main(int argc, char** argv){
 	ajaj::FiniteMPS F(myModel.basis(),mpsrootnamestream.str(),number_of_vertices,1/*is canonical*/,number_of_vertices);
       }
 
+      
       
     }
 
