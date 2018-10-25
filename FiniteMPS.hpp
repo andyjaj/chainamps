@@ -23,6 +23,7 @@ namespace ajaj{
 
   enum class MPSCanonicalType : unsigned short int {Left, Right, Mixed, Non, Error};
   class FiniteMPS;
+  class ConstFiniteMPS;
   std::complex<double> ApplySingleVertexOperatorToMPS(const MPO_matrix&, FiniteMPS& F, uMPXInt vertex, const MPSCanonicalType& RequestedCanonization=MPSCanonicalType::Non);
   
   class FiniteMPS{
@@ -68,9 +69,33 @@ namespace ajaj{
     void reset_weight(std::complex<double> w) {if (Weight_!=0.0) Weight_=w; }
     
     friend std::complex<double> ApplySingleVertexOperatorToMPS(const MPO_matrix&, FiniteMPS& F, uMPXInt vertex, const MPSCanonicalType& RequestedCanonization);
+    friend class ConstFiniteMPS;
+    
   };
 
-  
+  class ConstFiniteMPS{
+  private:
+    const Basis& Basis_;
+    const std::string MPSName_;
+    const uMPXInt NumVertices_;
+    const uMPXInt MixPoint_;
+    const MPSCanonicalType Canonization_;
+    const std::complex<double> Weight_;
+    const std::vector<MPS_matrixCanonicalType> MatrixCanonizations_;
+    
+    std::string filename(uMPXInt i,bool Left=1,const std::string& name=std::string()) const;
+
+  public:
+    ConstFiniteMPS(const FiniteMPS& F) : Basis_(F.Basis_),MPSName_(F.MPSName_),NumVertices_(F.NumVertices_),MixPoint_(F.MixPoint_),Canonization_(F.Canonization_),Weight_(F.Weight_),MatrixCanonizations_(F.MatrixCanonizations_){};
+    ConstFiniteMPS(const Basis& B, const std::string& Name, uMPXInt Num, uMPXInt MP, MPSCanonicalType C, const std::complex<double>& W, const std::vector<MPS_matrixCanonicalType>& MC) : Basis_(B), MPSName_(Name), NumVertices_(Num), MixPoint_(MP), Canonization_(C), Weight_(W), MatrixCanonizations_(MC) {};
+
+    ConstFiniteMPS(const Basis& B, const std::string& Name, uMPXInt Num) : Basis_(B), MPSName_(Name), NumVertices_(Num), MixPoint_(Num), Canonization_(MPSCanonicalType::Left), Weight_(1.0), MatrixCanonizations_(std::vector<MPS_matrixCanonicalType>(Num,MPS_matrixCanonicalType::Left)) {};
+    
+    uMPXInt size() const {return NumVertices_;}
+    std::complex<double> weight() const {return Weight_;}
+    const std::string& name() {return MPSName_;}
+    MPS_matrix matrix(uMPXInt i) const;
+  };
 }
 
 #endif

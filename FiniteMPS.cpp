@@ -401,5 +401,35 @@ namespace ajaj{
     
     return F.weight();
   }
+
+  MPS_matrix ConstFiniteMPS::matrix(uMPXInt i) const {
+    //check buffer
+    if (i <= NumVertices_ && i >= 1){ //inside range
+      if (Canonization_==MPSCanonicalType::Mixed){
+	//be careful with lambda matrix?
+	//for the moment just fail spectacularly
+	std::cout <<"Not supported yet!" <<std::endl;
+	exit(1);
+	//return MPS_matrix();
+      }
+      else
+	return load_MPS_matrix(filename(i,MatrixCanonizations_.at(i-1)==MPS_matrixCanonicalType::Right ? 0 : 1),Basis_);
+    }
+	
+    else {
+      std::cout <<"Outside range of finite MPS!"<<std::endl;
+      exit(1);
+    }
+  }
+
+  std::string ConstFiniteMPS::filename(uMPXInt i, bool Left, const std::string& name) const{
+    std::stringstream namestream;
+    if (Left)
+      namestream << (name.empty() ? MPSName_ : name) << "_Left_" << i << ".MPS_matrix";
+    else
+      namestream << (name.empty() ? MPSName_ : name) << "_Right_" << NumVertices_-i+1 << ".MPS_matrix";
+    
+    return namestream.str();
+  }
   
 }

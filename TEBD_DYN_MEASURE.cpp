@@ -159,19 +159,23 @@ int main(int argc, char** argv){
 
     //set up results file
     std::ostringstream commentlinestream;
-    commentlinestream << "Index1, t1, Index2, t2, y1, y2";
-    commentlinestream << ", <" << RuntimeArgs.Op1_name() <<"(y1,t1)" << RuntimeArgs.Op2_name() <<"(y2,t2)>";
+    commentlinestream << "Index, t1, t2";
+    
+    for (auto y1=1;y1<=number_of_vertices;++y1)
+      commentlinestream << ", <" << RuntimeArgs.Op1_name() <<"(" << y1 << ",t1)" << RuntimeArgs.Op2_name() <<"(" << RuntimeArgs.y2() << ",t2)>";
+    
     std::stringstream outfilenamestream;
     outfilenamestream<<RuntimeArgs.filename()<<"_DYN_"<<number_of_vertices<<"_"<<RuntimeArgs.initial_state_name()<<"_" << RuntimeArgs.Op1_name() << "_y1_" << RuntimeArgs.Op2_name() << "_"<< RuntimeArgs.y2() <<".dat";
     ajaj::DataOutput results(outfilenamestream.str(),commentlinestream.str());
     ajaj::DataOutput dummyresults;
-    
+
     std::string WorkingName("TempMPS");
     
     //loop over t2
 
     ajaj::uMPXInt current_H_index=0;
-
+    ajaj::uMPXInt results_index=0;
+    
     for (const auto& t2p : idx_times){
       std::cout << t2p.first << " " << t2p.second <<std::endl;
 
@@ -188,9 +192,7 @@ int main(int argc, char** argv){
       std::complex<double> op2weight=ApplySingleVertexOperatorToMPS(generated_MPOs[operator_storage_position[1]].Matrix,F,RuntimeArgs.y2(),ajaj::MPSCanonicalType::Left);
       std::cout << op2weight <<std::endl;
 
-      //special, do first step, t1-t2=0.0;
-
-      //need handlers for overlap of two MPS (with a sandwiched operator).
+      std::vector<ajaj::MultiVertexMeasurement> dummy_measurements; //TEBD object requires a measurement object, even if empty.
       
       //time ordered
       {
@@ -212,16 +214,28 @@ int main(int argc, char** argv){
 	}
 
 	//set the initial step size, necessary to set up the TEBD object.
+	results.push(++results_index,ajaj::Data(std::vector<double>{t2p.second,t2p.second}));
 
 	if (t2p.first<idx_times.size()-1){
-	  double stepsize= idx_times[t2p.first+1].second-idx_times[t2p.first].second;
+	  double stepsize= idx_times[t2p.first+1].second-t2p.second;//idx_times[t2p.first].second;
+
+	  //calculate the equal time piece first
+	  {
+	    ajaj::ConstFiniteMPS CF(myModel.basis(),WorkingName,number_of_vertices);
+	  }
+	  
+	  //evolve one step
 	  ajaj::TEBD finrun(myModel.H_MPO,F,stepsize,dummyresults,trotter_order,nullptr,0);
+	  finrun.evolve(1,dummy_measurements,CHI,trunc,1);
+
 	  //inner loop over timeslices, from t2p.first to the max time doing TEBD evolution steps
 	  for (ajaj::uMPXInt t1sliceindex=t2p.first+1; t1sliceindex<=idx_times.back().first; ++t1sliceindex){
-	    //do the evolution for one step
-	    //finrun.evolve();
-	    
 	    //now measure...
+	    ajaj::ConstFiniteMPS TEBDCF(finrun.GetEvolvingState());
+	    //std::cout << TEBDCF.name() <<std::endl;
+	    results.push(++results_index,ajaj::Data(std::vector<double>{idx_times[t1sliceindex].second,t2p.second}));
+
+	    
 	    if (t1sliceindex!=idx_times.back().first){
 	      //do updates of step size and H_MPO
 	      std::cout << idx_times[t1sliceindex].second << " " << t2p.second <<std::endl<<std::endl;
@@ -235,6 +249,9 @@ int main(int argc, char** argv){
 		t1SliceHMPOnamestream << ajaj::SAVEALLNAME << "_" << current_H_index<< "_H.MPO_matrix";
 		finrun.change_bond_operator(myModel.update_H_MPO_from_file(t1SliceHMPOnamestream.str()),stepsize);
 	      }
+
+	      //finrun.evolve();
+	      
 	    }
 	  }
 	}

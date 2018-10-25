@@ -64,11 +64,11 @@ namespace ajaj {
     const UnitCell& evolve(uMPXInt num_steps, const std::vector<MPO_matrix>& measuredMPOs, uMPXInt bond_dimension=0, double minS=0.0, uMPXInt measurement_interval=1);
     uMPXInt order() const {return m_EvolutionOperators.order();}
     void change_bond_operator(const MPO_matrix& H, double time_step_size);
-
   };
 
 class TEBD : public TimeBase {
 private:
+  FiniteMPS& F_;
   const std::string MPSName_;
   const EigenStateArray& Basis_;
   const uMPXInt NumVertices_;
@@ -83,7 +83,7 @@ private:
   void left_canonise(uMPXInt chi=0,double minS=0);
   void left_canonise_measure(std::vector<MultiVertexMeasurement>& measurements,uMPXInt chi=0,double minS=0,bool overlap_requested=1);
   void left_canonise_measure_special(std::vector<MultiVertexMeasurement>& measurements, uMPXInt Index=0); //Ugly solution for finite measurements after fDMRG
-  
+  std::string evolution_name() const;
   double max_truncation_=0.0;
 
 public:
@@ -97,13 +97,13 @@ public:
   void right_info();
   bool good() const {return GoodInitial_;}
   std::complex<double> initial_weight() const {return initial_weight_;}
+  ConstFiniteMPS GetEvolvingState() const {/*Should get this to force state into left canonical*/ return ConstFiniteMPS(Basis_,evolution_name(),NumVertices_,NumVertices_,MPSCanonicalType::Left,initial_weight_,std::vector<MPS_matrixCanonicalType>(NumVertices_,MPS_matrixCanonicalType::Left));}
 };
 
   MPX_matrix MakeBondHamiltonian(const MPO_matrix& H, const std::string& SaveName=std::string()); //Returns part of hamiltonian that refers to a single bond (no double counting of vertex part). Saves it if a filename is specified.
   
   MPX_matrix MakeBondEvolutionOperator(const MPX_matrix& BondH, double timestep,const State* blockstate_ptr=nullptr);//Forms exponential bond update operator
-  MPO_matrix MakeSingleSiteEvolutionOperatorFromLowTriMPO(const MPO_matrix& H_MPO, double timestep);
-
+  MPO_matrix MakeSingleSiteEvolutionOperatorFromLowTriMPO(const MPO_matrix& H_MPO, double timestep);  
 }
 
 #endif

@@ -560,7 +560,7 @@ namespace ajaj{
     std::cout << "Norm at end of left canonisation: " << abs(Vd.Trace()) << std::endl; 
   }
   
-  TEBD::TEBD(const MPO_matrix& H, FiniteMPS& F, DataOutput& results) : TimeBase(0.0,results),MPSName_(F.name()),Basis_(H.basis()),NumVertices_(F.size()),SingleVertexOp_(MPO_matrix()),m_EvolutionOperators(TrotterDecomposition(H,0.0,0)),GoodInitial_(0),SaveAll_(0) {
+  TEBD::TEBD(const MPO_matrix& H, FiniteMPS& F, DataOutput& results) : TimeBase(0.0,results),F_(F),MPSName_(F.name()),Basis_(H.basis()),NumVertices_(F.size()),SingleVertexOp_(MPO_matrix()),m_EvolutionOperators(TrotterDecomposition(H,0.0,0)),GoodInitial_(0),SaveAll_(0) {
     std::stringstream Evolvingnamestream;
     Evolvingnamestream << "Evolving_" << MPSName_;
     initial_weight_=F.makeRC(Evolvingnamestream.str()); //combination of initial state norm and overall phase
@@ -572,7 +572,7 @@ namespace ajaj{
       GoodInitial_=1;
   }
   
-  TEBD::TEBD(const MPO_matrix& H, FiniteMPS& F, double time_step_size, DataOutput& results, uMPXInt order,const State* blockstate_ptr, bool save_all_flag) : TimeBase(time_step_size,results),MPSName_(F.name()),Basis_(H.basis()),NumVertices_(F.size()),m_EvolutionOperators(TrotterDecomposition(H,time_step_size,order,blockstate_ptr)),GoodInitial_(0),SaveAll_(save_all_flag) {
+  TEBD::TEBD(const MPO_matrix& H, FiniteMPS& F, double time_step_size, DataOutput& results, uMPXInt order,const State* blockstate_ptr, bool save_all_flag) : TimeBase(time_step_size,results),F_(F),MPSName_(F.name()),Basis_(H.basis()),NumVertices_(F.size()),m_EvolutionOperators(TrotterDecomposition(H,time_step_size,order,blockstate_ptr)),GoodInitial_(0),SaveAll_(save_all_flag) {
 
     SingleVertexOp_=std::move(MakeSingleSiteEvolutionOperatorFromLowTriMPO(H,time_step_size));
     
@@ -709,6 +709,12 @@ namespace ajaj{
     else {
       std::cout << "Bad initial state, doing nothing. " <<std::endl;
     }
+  }
+
+  std::string TEBD::evolution_name() const {
+    std::stringstream Evolvingnamestream;
+    Evolvingnamestream << "Evolving_" << MPSName_;
+    return Evolvingnamestream.str();
   }
 
   void TEBD::left_info(){
