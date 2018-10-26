@@ -161,8 +161,10 @@ int main(int argc, char** argv){
     std::ostringstream commentlinestream;
     commentlinestream << "Index, t1, t2";
     
-    for (auto y1=1;y1<=number_of_vertices;++y1)
-      commentlinestream << ", <" << RuntimeArgs.Op1_name() <<"(" << y1 << ",t1)" << RuntimeArgs.Op2_name() <<"(" << RuntimeArgs.y2() << ",t2)>";
+    for (ajaj::uMPXInt y1=1;y1<=number_of_vertices;++y1) {
+      commentlinestream << ", Re(<" << RuntimeArgs.Op1_name() <<"(" << y1 << ",t1)" << RuntimeArgs.Op2_name() <<"(" << RuntimeArgs.y2() << ",t2)>)";
+      commentlinestream << ", Im(<" << RuntimeArgs.Op1_name() <<"(" << y1 << ",t1)" << RuntimeArgs.Op2_name() <<"(" << RuntimeArgs.y2() << ",t2)>)";
+    }
     
     std::stringstream outfilenamestream;
     outfilenamestream<<RuntimeArgs.filename()<<"_DYN_"<<number_of_vertices<<"_"<<RuntimeArgs.initial_state_name()<<"_" << RuntimeArgs.Op1_name() << "_y1_" << RuntimeArgs.Op2_name() << "_"<< RuntimeArgs.y2() <<".dat";
@@ -187,13 +189,23 @@ int main(int argc, char** argv){
       std::stringstream mpsrootnamestream;
       mpsrootnamestream << ajaj::SAVEALLNAME << "_" << t2p.first << "_" << RuntimeArgs.initial_state_name();
       ajaj::FiniteMPS F(myModel.basis(),mpsrootnamestream.str(),WorkingName,number_of_vertices,1/*should be canonical*/,number_of_vertices);
+      //equal time bit
+      //std::complex<double> equal_time_trial_result=ajaj::GeneralisedOverlap(ajaj::ConstFiniteMPS(F),std::vector<ajaj::meas_pair>());
+      {
+	ajaj::ConstFiniteMPS CF(F);
+	std::vector<std::complex<double> > equal_time_results;
+	for (ajaj::uMPXInt y1=1;y1<=number_of_vertices;++y1){
+	  equal_time_results.emplace_back(ajaj::GeneralisedOverlap(CF,std::vector<ajaj::meas_pair>{{y1,&(generated_MPOs[operator_storage_position[0]].Matrix)},{RuntimeArgs.y2(),&(generated_MPOs[operator_storage_position[0]].Matrix)}}));
+	}
+	results.push(++results_index,ajaj::Data(std::vector<double>{t2p.second,t2p.second},equal_time_results));
+      }
       //we have loaded and checked files, and stored a working copy which is what we will use	
       //apply operator and canonize
       std::complex<double> op2weight=ApplySingleVertexOperatorToMPS(generated_MPOs[operator_storage_position[1]].Matrix,F,RuntimeArgs.y2(),ajaj::MPSCanonicalType::Left);
       std::cout << op2weight <<std::endl;
 
       std::vector<ajaj::MultiVertexMeasurement> dummy_measurements; //TEBD object requires a measurement object, even if empty.
-      
+
       //time ordered
       {
 
@@ -214,14 +226,12 @@ int main(int argc, char** argv){
 	}
 
 	//set the initial step size, necessary to set up the TEBD object.
-	results.push(++results_index,ajaj::Data(std::vector<double>{t2p.second,t2p.second}));
 
 	if (t2p.first<idx_times.size()-1){
 	  double stepsize= idx_times[t2p.first+1].second-t2p.second;//idx_times[t2p.first].second;
 
-	  //calculate the equal time piece first
 	  {
-	    ajaj::ConstFiniteMPS CF(myModel.basis(),WorkingName,number_of_vertices);
+	    //ajaj::ConstFiniteMPS CF(myModel.basis(),WorkingName,number_of_vertices);
 	  }
 	  
 	  //evolve one step
@@ -232,8 +242,16 @@ int main(int argc, char** argv){
 	  for (ajaj::uMPXInt t1sliceindex=t2p.first+1; t1sliceindex<=idx_times.back().first; ++t1sliceindex){
 	    //now measure...
 	    ajaj::ConstFiniteMPS TEBDCF(finrun.GetEvolvingState());
-	    //std::cout << TEBDCF.name() <<std::endl;
-	    results.push(++results_index,ajaj::Data(std::vector<double>{idx_times[t1sliceindex].second,t2p.second}));
+	    std::stringstream mpst1namestream;
+	    mpst1namestream << ajaj::SAVEALLNAME << "_" << t1sliceindex << "_" << RuntimeArgs.initial_state_name();
+
+	    ajaj::ConstFiniteMPS Ket(myModel.basis(),mpst1namestream.str(),number_of_vertices);
+	    //std::complex<double> trial_result=ajaj::GeneralisedOverlap(TEBDCF,std::vector<ajaj::meas_pair>());
+	    std::vector<std::complex<double> > unequal_time_results;
+	    for (ajaj::uMPXInt y1=1;y1<=number_of_vertices;++y1){
+	      unequal_time_results.emplace_back(ajaj::GeneralisedOverlap(Ket,TEBDCF,std::vector<ajaj::meas_pair>{{y1,&(generated_MPOs[operator_storage_position[0]].Matrix)},{RuntimeArgs.y2(),&(generated_MPOs[operator_storage_position[0]].Matrix)}}));
+	    }
+	    results.push(++results_index,ajaj::Data(std::vector<double>{idx_times[t1sliceindex].second,t2p.second},unequal_time_results));
 
 	    
 	    if (t1sliceindex!=idx_times.back().first){
@@ -250,8 +268,8 @@ int main(int argc, char** argv){
 		finrun.change_bond_operator(myModel.update_H_MPO_from_file(t1SliceHMPOnamestream.str()),stepsize);
 	      }
 
-	      //finrun.evolve();
-	      
+	      finrun.evolve(1,dummy_measurements,CHI,trunc,1);
+
 	    }
 	  }
 	}

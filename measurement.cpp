@@ -627,5 +627,124 @@ namespace ajaj {
     
     return 0;
   }
+
+  std::complex<double> GeneralisedOverlap(const ConstFiniteMPS& Bra, const ConstFiniteMPS& Ket, const std::vector<meas_pair>& ops){
+    if (Bra.size()!=Ket.size()){
+      std::cout << "States defined for different length systems! Orthogonal but probably not intentional, aborting." <<std::endl<<std::endl;
+      exit(1);
+    }
+
+    std::vector<std::vector<const MPO_matrix*> > ordered_ops(Ket.size(),std::vector<const MPO_matrix*>());
+
+    for (auto& op_v : ops){
+      if (op_v.MPO_ptr()){
+	ordered_ops[op_v.position()-1].emplace_back(op_v.MPO_ptr());
+      }
+    }
+
+    for (auto& o :ordered_ops) { //reverse order as user will expect the rightmost arg to be applied first
+      std::reverse(o.begin(),o.end());
+    }
+
+    MPX_matrix accumulator(Ket.matrix(1).left_shape());
+    for (auto& op1 : ordered_ops.at(0)){
+      accumulator=std::move(contract(*op1,0,accumulator,0,contract20).RemoveDummyIndices({{1,2}}).ShiftNumRowIndices(2)); //puts it back into left shaped MPS_matrix form
+    }
+    accumulator=std::move(contract(Bra.matrix(1).left_shape(),1,accumulator,0,contract0011));
+    for (uMPXInt i=2;i<=Ket.size();++i){
+      accumulator=std::move(contract(accumulator,0,Ket.matrix(i).left_shape(),0,contract11));
+      if (ordered_ops.at(i-1).size()) {
+	bool first=1;
+	for (auto& opi : ordered_ops.at(i-1)){
+	  accumulator=std::move(contract(*opi,0,accumulator,0,first ? contract21 : contract20)).RemoveDummyIndices({{1,2}});
+	  first=0;
+	}
+	accumulator=std::move(contract(Bra.matrix(i).left_shape(),1,accumulator,0,contract0011));
+      }
+      else {
+	accumulator=std::move(contract(Bra.matrix(i).left_shape(),1,accumulator,0,contract0110));
+      }
+    }
+    return accumulator.Trace();
+  }
+
+    std::complex<double> GeneralisedOverlap(const ConstFiniteMPS& Ket, const std::vector<meas_pair>& ops){
+
+    std::vector<std::vector<const MPO_matrix*> > ordered_ops(Ket.size(),std::vector<const MPO_matrix*>());
+
+    for (auto& op_v : ops){
+      if (op_v.MPO_ptr()){
+	ordered_ops[op_v.position()-1].emplace_back(op_v.MPO_ptr());
+      }
+    }
+
+    for (auto& o :ordered_ops) { //reverse order as user will expect the rightmost arg to be applied first
+      std::reverse(o.begin(),o.end());
+    }
+
+    MPX_matrix accumulator(Ket.matrix(1).left_shape());
+    for (auto& op1 : ordered_ops.at(0)){
+      accumulator=std::move(contract(*op1,0,accumulator,0,contract20).RemoveDummyIndices({{1,2}}).ShiftNumRowIndices(2)); //puts it back into left shaped MPS_matrix form
+    }
+    accumulator=std::move(contract(Ket.matrix(1).left_shape(),1,accumulator,0,contract0011));
+    for (uMPXInt i=2;i<=Ket.size();++i){
+      accumulator=std::move(contract(accumulator,0,Ket.matrix(i).left_shape(),0,contract11));
+      if (ordered_ops.at(i-1).size()) {
+	bool first=1;
+	for (auto& opi : ordered_ops.at(i-1)){
+	  accumulator=std::move(contract(*opi,0,accumulator,0,first ? contract21 : contract20)).RemoveDummyIndices({{1,2}});
+	  first=0;
+	}
+	accumulator=std::move(contract(Ket.matrix(i).left_shape(),1,accumulator,0,contract0011));
+      }
+      else {
+	accumulator=std::move(contract(Ket.matrix(i).left_shape(),1,accumulator,0,contract0110));
+      }
+    }
+    return accumulator.Trace();
+  }
+
+  
+  std::complex<double> GeneralisedOverlap(const ConstFiniteMPS& Bra, const ConstFiniteMPS& Ket, const MPO_matrix& Op, uMPXInt v){
+    //zip through the states and contract
+    //if Op is defined, apply it at site v.
+
+    //check states have same length!
+
+    if (Bra.size()!=Ket.size()){
+      std::cout << "States defined for different length systems! Orthogonal but probably not intentional, aborting." <<std::endl<<std::endl;
+      exit(1);
+    }
+    
+    if (!Op.empty()){
+      if (v<1 || v>Ket.size()){
+	std::cout <<"Specified vertex for application of operator is out of bounds!"<<std::endl<<std::endl;
+	exit(1);
+      }
+    }
+
+    //treat first as special case
+    MPX_matrix accumulator(Ket.matrix(1).left_shape());
+    if (v==1 && !Op.empty()){
+      accumulator=std::move(contract(Op,0,accumulator,0,contract20).RemoveDummyIndices({{1,2}}).ShiftNumRowIndices(2)); //puts it back into left shaped MPS_matrix form
+    }
+    accumulator=std::move(contract(Bra.matrix(1).left_shape(),1,accumulator,0,contract0011));
+    for (uMPXInt i=2;i<=Ket.size();++i){
+      accumulator=std::move(contract(accumulator,0,Ket.matrix(i).left_shape(),0,contract11));
+      if (i==v){
+	accumulator=std::move(contract(Op,0,accumulator,0,contract21)).RemoveDummyIndices({{1,2}});
+	accumulator=std::move(contract(Bra.matrix(i).left_shape(),1,accumulator,0,contract0011));
+      }
+      else {
+	accumulator=std::move(contract(Bra.matrix(i).left_shape(),1,accumulator,0,contract0110));
+      }
+    }
+
+    //finish off. Final index should be a dummy, so really this is a trace of a 1x1.
+    
+    return accumulator.Trace();
+    
+  }
+
   
 }

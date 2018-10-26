@@ -417,7 +417,7 @@ namespace ajaj{
     }
 	
     else {
-      std::cout <<"Outside range of finite MPS!"<<std::endl;
+      std::cout <<"Outside range of finite MPS! " << i << " : " << NumVertices_ << std::endl;
       exit(1);
     }
   }
