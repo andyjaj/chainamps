@@ -190,7 +190,6 @@ int main(int argc, char** argv){
       mpsrootnamestream << ajaj::SAVEALLNAME << "_" << t2p.first << "_" << RuntimeArgs.initial_state_name();
       ajaj::FiniteMPS F(myModel.basis(),mpsrootnamestream.str(),WorkingName,number_of_vertices,1/*should be canonical*/,number_of_vertices);
       //equal time bit
-      //std::complex<double> equal_time_trial_result=ajaj::GeneralisedOverlap(ajaj::ConstFiniteMPS(F),std::vector<ajaj::meas_pair>());
       {
 	ajaj::ConstFiniteMPS CF(F);
 	std::vector<std::complex<double> > equal_time_results;
@@ -209,29 +208,27 @@ int main(int argc, char** argv){
       //time ordered part
       {
 	//establish the correct start slice index for our H_MPO
-	if (t2p.first!=current_H_index){
-	  for (ajaj::uMPXInt h=H_MPO_change_indices.size()-1;h<H_MPO_change_indices.size();--h){
-	    if (H_MPO_change_indices[h]<=t2p.first){
-	      if (H_MPO_change_indices[h]!=current_H_index){
-		current_H_index=H_MPO_change_indices[h];
-		std::cout << "Updating H_MPO to that defined at timeslice " << current_H_index <<std::endl <<std::endl;
-		std::stringstream t2SliceHMPOnamestream;
-		t2SliceHMPOnamestream << ajaj::SAVEALLNAME << "_" << current_H_index << "_H.MPO_matrix";
-		myModel.update_H_MPO_from_file(t2SliceHMPOnamestream.str());
-	      }
-	      break;
-	    }
-	  }
-	}
 
 	//set the initial step size, necessary to set up the TEBD object.
 
 	if (t2p.first<idx_times.size()-1){
-	  double stepsize= idx_times[t2p.first+1].second-t2p.second;//idx_times[t2p.first].second;
 
-	  {
-	    //ajaj::ConstFiniteMPS CF(myModel.basis(),WorkingName,number_of_vertices);
+	  if (t2p.first!=current_H_index){
+	    for (ajaj::uMPXInt h=H_MPO_change_indices.size()-1;h<H_MPO_change_indices.size();--h){
+	      if (H_MPO_change_indices[h]<=t2p.first){
+		if (H_MPO_change_indices[h]!=current_H_index){
+		  current_H_index=H_MPO_change_indices[h];
+		  std::cout << "Updating H_MPO to that defined at timeslice " << current_H_index <<std::endl <<std::endl;
+		  std::stringstream t2SliceHMPOnamestream;
+		  t2SliceHMPOnamestream << ajaj::SAVEALLNAME << "_" << current_H_index << "_H.MPO_matrix";
+		  myModel.update_H_MPO_from_file(t2SliceHMPOnamestream.str());
+		}
+		break;
+	      }
+	    }
 	  }
+	  
+	  double stepsize= idx_times[t2p.first+1].second-t2p.second;
 	  
 	  //evolve one step
 	  ajaj::TEBD finrun(myModel.H_MPO,F,stepsize,dummyresults,trotter_order,nullptr,0);
@@ -245,19 +242,17 @@ int main(int argc, char** argv){
 	    mpst1namestream << ajaj::SAVEALLNAME << "_" << t1sliceindex << "_" << RuntimeArgs.initial_state_name();
 
 	    ajaj::ConstFiniteMPS Ket(myModel.basis(),mpst1namestream.str(),number_of_vertices);
-	    //std::complex<double> trial_result=ajaj::GeneralisedOverlap(TEBDCF,std::vector<ajaj::meas_pair>());
 	    std::vector<std::complex<double> > unequal_time_results;
 	    for (ajaj::uMPXInt y1=1;y1<=number_of_vertices;++y1){
 	      unequal_time_results.emplace_back(op2weight*ajaj::GeneralisedOverlap(Ket,TEBDCF,std::vector<ajaj::meas_pair>{{y1,&(generated_MPOs[operator_storage_position[0]].Matrix)}}));
 	    }
 	    results.push(++results_index,ajaj::Data(std::vector<double>{idx_times[t1sliceindex].second,t2p.second},unequal_time_results));
 
-	    
 	    if (t1sliceindex!=idx_times.back().first){
 	      //do updates of step size and H_MPO
-	      std::cout << idx_times[t1sliceindex].second << " " << t2p.second <<std::endl<<std::endl;
 	      
-	      stepsize=idx_times[t1sliceindex].second-t2p.second;
+	      //stepsize=idx_times[t1sliceindex].second-t2p.second;
+	      stepsize=idx_times[t1sliceindex+1].second-idx_times[t1sliceindex].second;
 	      
 	      if (ajaj::check_for_H_MPO_file(ajaj::SAVEALLNAME, t1sliceindex) && (t1sliceindex != current_H_index)){ //if this is an update step, and we don't already have the right H
 		std::cout << "Updating H_MPO from timeslice " << current_H_index << " to " << t1sliceindex <<std::endl <<std::endl;
@@ -274,15 +269,66 @@ int main(int argc, char** argv){
 	}
 	
       }
-      //anti timeordered
-      if (RuntimeArgs.include_reverse()){
+      //anti-time ordered
+      if (RuntimeArgs.include_reverse() && t2p.first>0){
+	//we evolve backwards in steps, so we really want the slice that will take us from t1 to t2
+	
+	if (t2p.first-1!=current_H_index){
+	  for (ajaj::uMPXInt h=H_MPO_change_indices.size()-1;h<H_MPO_change_indices.size();--h){
+	    if (H_MPO_change_indices[h]<=t2p.first-1){
+	      if (H_MPO_change_indices[h]!=current_H_index){
+		current_H_index=H_MPO_change_indices[h];
+		std::cout << "Updating H_MPO to that defined at timeslice " << current_H_index <<std::endl <<std::endl;
+		std::stringstream t2SliceHMPOnamestream;
+		t2SliceHMPOnamestream << ajaj::SAVEALLNAME << "_" << current_H_index << "_H.MPO_matrix";
+		myModel.update_H_MPO_from_file(t2SliceHMPOnamestream.str());
+	      }
+		break;
+	    }
+	  }
+	}	  
+	double stepsize= idx_times[t2p.first-1].second-t2p.second;
+
+	//evolve one step
+	ajaj::TEBD finrun(myModel.H_MPO,F,stepsize,dummyresults,trotter_order,nullptr,0);
+	finrun.evolve(1,dummy_measurements,CHI,trunc,1);
+
+	//inner loop over timeslices, from t2p.first to the max time doing TEBD evolution steps
+	for (ajaj::uMPXInt t1sliceindex=t2p.first-1; t1sliceindex<idx_times.back().first; --t1sliceindex){
+	  //now measure...
+	  ajaj::ConstFiniteMPS TEBDCF(finrun.GetEvolvingState());
+	  std::stringstream mpst1namestream;
+	  mpst1namestream << ajaj::SAVEALLNAME << "_" << t1sliceindex << "_" << RuntimeArgs.initial_state_name();
+	  ajaj::ConstFiniteMPS Ket(myModel.basis(),mpst1namestream.str(),number_of_vertices);
+	  std::vector<std::complex<double> > unequal_time_results;
+	  for (ajaj::uMPXInt y1=1;y1<=number_of_vertices;++y1){
+	    unequal_time_results.emplace_back(op2weight*ajaj::GeneralisedOverlap(Ket,TEBDCF,std::vector<ajaj::meas_pair>{{y1,&(generated_MPOs[operator_storage_position[0]].Matrix)}}));
+	  }
+	  results.push(++results_index,ajaj::Data(std::vector<double>{idx_times[t1sliceindex].second,t2p.second},unequal_time_results));
+	  if (t1sliceindex!=idx_times.front().first){
+	    //do updates of step size and H_MPO
+	    
+	    stepsize=idx_times[t1sliceindex-1].second-idx_times[t1sliceindex].second;
+	    
+	    if (ajaj::check_for_H_MPO_file(ajaj::SAVEALLNAME, t1sliceindex-1) && (t1sliceindex-1 != current_H_index)){ //if this is an update step, and we don't already have the right H
+	      std::cout << "Updating H_MPO from timeslice " << current_H_index << " to " << t1sliceindex-1 <<std::endl <<std::endl;
+	      current_H_index=t1sliceindex-1;
+	      std::stringstream t1SliceHMPOnamestream;
+	      t1SliceHMPOnamestream << ajaj::SAVEALLNAME << "_" << current_H_index<< "_H.MPO_matrix";
+	      finrun.change_bond_operator(myModel.update_H_MPO_from_file(t1SliceHMPOnamestream.str()),stepsize);
+	    }
+	    
+	    finrun.evolve(1,dummy_measurements,CHI,trunc,1);
+	    
+	  }
+	}
 	
       }
       
     }
 
-    
     return 0;
+
   }
 
   return 1;
