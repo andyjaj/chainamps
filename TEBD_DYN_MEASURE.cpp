@@ -206,9 +206,8 @@ int main(int argc, char** argv){
 
       std::vector<ajaj::MultiVertexMeasurement> dummy_measurements; //TEBD object requires a measurement object, even if empty.
 
-      //time ordered
+      //time ordered part
       {
-
 	//establish the correct start slice index for our H_MPO
 	if (t2p.first!=current_H_index){
 	  for (ajaj::uMPXInt h=H_MPO_change_indices.size()-1;h<H_MPO_change_indices.size();--h){
@@ -249,7 +248,7 @@ int main(int argc, char** argv){
 	    //std::complex<double> trial_result=ajaj::GeneralisedOverlap(TEBDCF,std::vector<ajaj::meas_pair>());
 	    std::vector<std::complex<double> > unequal_time_results;
 	    for (ajaj::uMPXInt y1=1;y1<=number_of_vertices;++y1){
-	      unequal_time_results.emplace_back(ajaj::GeneralisedOverlap(Ket,TEBDCF,std::vector<ajaj::meas_pair>{{y1,&(generated_MPOs[operator_storage_position[0]].Matrix)},{RuntimeArgs.y2(),&(generated_MPOs[operator_storage_position[0]].Matrix)}}));
+	      unequal_time_results.emplace_back(op2weight*ajaj::GeneralisedOverlap(Ket,TEBDCF,std::vector<ajaj::meas_pair>{{y1,&(generated_MPOs[operator_storage_position[0]].Matrix)}}));
 	    }
 	    results.push(++results_index,ajaj::Data(std::vector<double>{idx_times[t1sliceindex].second,t2p.second},unequal_time_results));
 
@@ -277,12 +276,8 @@ int main(int argc, char** argv){
       }
       //anti timeordered
       if (RuntimeArgs.include_reverse()){
-	std::stringstream mpsrootnamestream;
-	mpsrootnamestream << ajaj::SAVEALLNAME << "_t2p.first_" << RuntimeArgs.initial_state_name();
-	ajaj::FiniteMPS F(myModel.basis(),mpsrootnamestream.str(),number_of_vertices,1/*is canonical*/,number_of_vertices);
+	
       }
-
-      
       
     }
 
