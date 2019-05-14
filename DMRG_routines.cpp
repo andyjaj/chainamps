@@ -476,7 +476,7 @@ namespace ajaj {
       //necessary to leave a well formed state to hand to excited states or TEBD
       //would be better to just store lambda, as left and right will have been stored by growth stage
       CentralDecomposition.store(getName(),left_size()+1,right_size()+1,left_size()==right_size());//store left and right
-      std::cout << "Skipping finite sweeps, only two vertices..." << std::endl;
+      std::cout << "Only two vertices. Skipping sweeps and storing lambda." << std::endl;
     }
     else {
       for (uMPXInt n=num_sweeps;n>0;--n){

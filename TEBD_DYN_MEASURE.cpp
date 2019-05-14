@@ -183,7 +183,7 @@ int main(int argc, char** argv){
 
      
       //We will need to load the MPS at each timeslice (i.e. t=0)
-      //Its files should be named should be SAVEALLNAME_timesliceidx_INITIALSTATENAME_Left_i.MPS_matrix
+      //Its files should be named SAVEALLNAME_timesliceidx_INITIALSTATENAME_Left_i.MPS_matrix
       //SAVEALLNAME is defined in TEBD_routines.hpp
       
       std::stringstream mpsrootnamestream;

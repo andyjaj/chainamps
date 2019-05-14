@@ -142,7 +142,7 @@ int main(int argc, char** argv){
 	  StateName=fnss.str();
 	}
 	ajaj::FiniteMPS F(myModel.basis(),StateName,number_of_vertices);
-	if (!F.valid_files()) {bad_name=1; continue;}
+	if (!F.valid_files()) {bad_name=1; continue;} //couldn't find files for this state
 	
 	std::cout << StateName <<std::endl;
 

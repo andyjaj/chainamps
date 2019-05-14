@@ -249,7 +249,7 @@ namespace ajaj {
        "  \tMeasurement at every <number> steps. Default is 1 (measurement at every step)."},
       {INITIAL_STATE_NAME,0,"i","initial-state-name",Arg::NonEmpty,"  -i <initial_state_name>, \t--initial-state-name=<initial_state_name>"
        "  \tSpecify an initial state." },
-      {FINITE_MEASUREMENT,0,"M","finite-measurement",Arg::FiniteMeasurementInfo,"  -M <opfile1>,<vertex1>[,<opfile2>,<vertex2>], \t--finite-measurement=<opfile1>,<vertex1>[,<opfile2>,<vertex2>]"
+      {FINITE_MEASUREMENT,0,"M","finite-measurement",Arg::FiniteMeasurementInfo,"  -M <op1>,<vertex1>[,<op2>,<vertex2>], \t--finite-measurement=<op1>,<vertex1>[,<op2>,<vertex2>]"
        "  \tSpecify a one or two point measurement."},
       {C_SPECIFIER,0,"c","c-number-file",Arg::NonEmpty,"  -c <c-specifier-file>,  \t--c-number-file=<c-specifier-file>"
        "  \tFile with c-numbers for initial state."},
@@ -285,7 +285,7 @@ namespace ajaj {
   const option::Descriptor fMEAS_usage[4] =
     {
       {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: FINITE_MEASURE.bin [OPTIONS] <model_filename> <number of vertices(chains)> <state_name1> ... \n  <number of vertices/chains> must be EVEN.\n"},
-      {FINITE_MEASUREMENT,0,"M","finite-measurement",Arg::FiniteMeasurementInfo,"  -M <opfile1>,<vertex1>[,<opfile2>,<vertex2>], \t--finite-measurement=<opfile1>,<vertex1>[,<opfile2>,<vertex2>]"
+      {FINITE_MEASUREMENT,0,"M","finite-measurement",Arg::FiniteMeasurementInfo,"  -M <op1>,<vertex1>[,<op2>,<vertex2>], \t--finite-measurement=<op1>,<vertex1>[,<op2>,<vertex2>]"
        "  \tSpecify a one or two point measurement."},
       {FDMRG_MODE,0,"D","fDMRG-mode",Arg::None,"  -D, \t--fDMRG-mode"
        "  \tSpecial mode for fDMRG output files, needs no input filenames."},

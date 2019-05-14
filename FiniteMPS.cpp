@@ -112,12 +112,14 @@ namespace ajaj{
   }																		 
 
   std::complex<double> FiniteMPS::makeLC(const std::string& name){
+
     std::cout << "Left canonising initial state..." <<std::endl;
     //do a check, which will establish the (claimed by the individual matrices) MPSCanonicalType
-    // if (CheckFilesExist()==MPSCanonicalType::Error){
-    //   return 0.0;
-    // }
-
+    if (CheckFilesExist()==MPSCanonicalType::Error){
+       return 0.0;
+    }
+    std::cout << "Current canonical type: " << canon_type_string() <<std::endl;
+    
     MPX_matrix Vd;
     //if (Canonical_ && MixPoint_ < NumVertices_ && MixPoint_ > 0){ //lambda should exist and be used
     if (Canonization_==MPSCanonicalType::Mixed){ //lambda should exist and be used
@@ -183,12 +185,13 @@ namespace ajaj{
   }
 
   std::complex<double> FiniteMPS::makeRC(const std::string& name){
-    std::cout << "Right canonising initial state..." <<std::endl;
-    //do a check
-    // if (CheckFilesExist()==MPSCanonicalType::Error){
-    //   return 0.0;
-    // }
 
+    std::cout << "Right canonising initial state..." <<std::endl;
+    if (CheckFilesExist()==MPSCanonicalType::Error){
+       return 0.0;
+    }
+    std::cout << "Current canonical type: " << canon_type_string() <<std::endl;
+    
     MPX_matrix U; //temp storage
     //if (Canonical_ && MixPoint_ < NumVertices_ && MixPoint_ > 0){ //lambda should exist and be used
     if (Canonization_==MPSCanonicalType::Mixed){ //lambda should exist and be used
@@ -196,7 +199,6 @@ namespace ajaj{
       Lambdanamestream << MPSName_ << "_Lambda_" << MixPoint_ << "_" << NumVertices_-MixPoint_ << ".MPX_matrix";
       U=load_MPX_matrix(Lambdanamestream.str(),Basis_);
     }
-
 
     for (uMPXInt p=NumVertices_;p>0;--p){
       //only load if not right canonical, or if we have requested a copy.
@@ -214,8 +216,13 @@ namespace ajaj{
 	  if (p>1 && !U.empty() && MatrixCanonizations_[p-2]==MPS_matrixCanonicalType::Right)
 	    set_matrix_canonization(p-1,MPS_matrixCanonicalType::Non);	  
 	}
+	else {
+	  std::cout << "Already right canonical." <<std::endl;
+	}
 	//if we want to store a copy...
 	if (!name.empty() && name!=MPSName_)
+	  std::cout << "Storing copy." <<std::endl;
+
 	  matrix().store(filename(position(),matrix().is_left_shape(),name));
       }
     }
@@ -246,6 +253,21 @@ namespace ajaj{
     else {
       Weight_*=U.Trace();
       return Weight_;
+    }
+  }
+
+  std::string FiniteMPS::canon_type_string() const {
+    switch(Canonization_){
+    case MPSCanonicalType::Non :
+      return(std::string("Non Canonical"));
+    case MPSCanonicalType::Mixed :
+      return(std::string("Mixed"));
+    case MPSCanonicalType::Right :
+      return(std::string("Right"));
+    case MPSCanonicalType::Left :
+      return(std::string("Left"));
+    default :
+      return(std::string("Error"));
     }
   }
   
@@ -316,14 +338,15 @@ namespace ajaj{
       MatrixCanonizations_=std::vector<MPS_matrixCanonicalType>(MP,MPS_matrixCanonicalType::Left);
       std::vector<MPS_matrixCanonicalType> Rpart(NumVertices_-MP,MPS_matrixCanonicalType::Right);
       MatrixCanonizations_.insert(MatrixCanonizations_.end(),Rpart.begin(),Rpart.end());
-      return MPSCanonicalType::Mixed;
+      update_MPS_canonization_status();
+      Canonization_=MPSCanonicalType::Mixed;
     }
     else if (LMAX==NumVertices_){
       //assume nothing
       MixPoint_=NumVertices_; //Check this?
       MPS_matrixCanonicalType ThisType= Canonical_ ? MPS_matrixCanonicalType::Left : MPS_matrixCanonicalType::Non;
       MatrixCanonizations_=std::vector<MPS_matrixCanonicalType>(NumVertices_,ThisType);
-      return MPSCanonicalType::Left;
+      Canonization_=MPSCanonicalType::Left;
     }
     else if (RMAX==NumVertices_){ //unlikely case, as drivers don't output right canonical files alone
       //by assumption...
@@ -331,15 +354,16 @@ namespace ajaj{
       MixPoint_=0;
       MPS_matrixCanonicalType ThisType= Canonical_ ? MPS_matrixCanonicalType::Right : MPS_matrixCanonicalType::Non;
       MatrixCanonizations_=std::vector<MPS_matrixCanonicalType>(NumVertices_,ThisType);
-      return MPSCanonicalType::Right;
+      Canonization_=MPSCanonicalType::Right;
     }
     else {
       //missing files
       std::cout <<"Error: Missing files for specified Finite MPS state '" << MPSName_<< "'" << std::endl;
       std::cout << "LAMBDA "<< MP << ", " << LMAX << " " << RMAX << std::endl;
-
-      return MPSCanonicalType::Error;
+      update_MPS_canonization_status();
+      Canonization_=MPSCanonicalType::Error;
     }
+    return Canonization_;
     
   }
 

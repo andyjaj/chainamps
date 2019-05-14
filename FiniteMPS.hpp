@@ -48,7 +48,7 @@ namespace ajaj{
     
   public:
 
-    FiniteMPS(const Basis& model_basis, const std::string& name, uMPXInt num) : Basis_(model_basis),MPSName_(name),NumVertices_(num),Current_(std::pair<uMPXInt,MPS_matrix>(0,MPS_matrix(model_basis))),Canonical_(0),Canonization_(MPSCanonicalType::Non) {} /**< Create a non canonical finite MPS, with no data */
+    FiniteMPS(const Basis& model_basis, const std::string& name, uMPXInt num) : Basis_(model_basis),MPSName_(name),NumVertices_(num),Current_(std::pair<uMPXInt,MPS_matrix>(0,MPS_matrix(model_basis))),Canonical_(0),Canonization_(MPSCanonicalType::Non),Weight_(1.0) {} /**< Create a non canonical finite MPS, with no data */
     FiniteMPS(const Basis& model_basis, const std::string& name, uMPXInt num, bool canon, uMPXInt mix_idx); /**< Finite MPS, with mixpoint=mix_idx */
     FiniteMPS(const Basis& model_basis, const std::string& oldname, const std::string& newname, uMPXInt num, bool canon, uMPXInt mix_idx); /**< Create stored copy Finite MPS, with mixpoint=mix_idx */
     FiniteMPS(const Basis& model_basis, const std::string& name, uMPXInt num,const c_specifier_array& coeffs); /**< Specify a finite MPS product state, makes it left canonical*/
@@ -67,6 +67,7 @@ namespace ajaj{
     bool valid_files() {return CheckFilesExist()==MPSCanonicalType::Error ? 0 : 1;}
     std::complex<double> weight() const {return Canonical_ ? Weight_ : 0.0 ;}
     void reset_weight(std::complex<double> w) {if (Weight_!=0.0) Weight_=w; }
+    std::string canon_type_string() const;
     
     friend std::complex<double> ApplySingleVertexOperatorToMPS(const MPO_matrix&, FiniteMPS& F, uMPXInt vertex, const MPSCanonicalType& RequestedCanonization);
     friend class ConstFiniteMPS;
