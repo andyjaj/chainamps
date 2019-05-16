@@ -281,7 +281,10 @@ namespace ajaj{
       }
       else {
 	//check norm
-	std::cout << "U*S at end of odd bonds, right canonise: " << contract(rot.ColumnMatrix,0,MPX_matrix(Basis_,rot.ColumnMatrix.Index(1),rot.Values),0,contract10).Trace() <<std::endl;
+	std::complex<double> phase=rot.ColumnMatrix.Trace(); //want to keep the phase, singluar value should be 1, but if <1 is indicative of a loss of norm.
+	std::cout << "Phase at end of odd bonds, right canonise: " << phase  <<std::endl;
+	F_.reset_weight(F_.weight()*phase);
+	std::cout << "Weight is " << F_.weight() << ", abs val is "<< abs(F_.weight()) << std::endl;	    
       }
       
     }
@@ -355,8 +358,12 @@ namespace ajaj{
     FirstNameStream << "Evolving_" << MPSName_ << "_Right_" << NumVertices_ << ".MPS_matrix";
     decomp.RowMatrix.store(FirstNameStream.str());
     
-    std::cout << "U*S at end of even bonds, right canonise: " << contract(decomp.ColumnMatrix,0,MPX_matrix(Basis_,decomp.ColumnMatrix.Index(1),decomp.Values),0,contract10).Trace() <<std::endl;
+    std::complex<double> phase=decomp.ColumnMatrix.Trace(); //want to keep the phase, singluar value should be 1, but if <1 is indicative of a loss of norm.
+    std::cout << "Phase at end of even bonds, right canonise: " << phase  <<std::endl;
+    F_.reset_weight(F_.weight()*phase);
+    std::cout << "Weight is " << F_.weight() << ", abs val is "<< abs(F_.weight()) << std::endl;
   }
+  
   void TEBD::left_canonise(uMPXInt chi,double minS){
     std::cout << "Begin left canonisation" << std::endl; 
     MPX_matrix Vd(Basis_);
@@ -390,7 +397,10 @@ namespace ajaj{
       decomp.ColumnMatrix.store(LeftNamestream.str());
     }
     //at end Vd should be trivial
-    std::cout << "Norm at end of left canonisation: " << abs(Vd.Trace()) << std::endl; 
+    std::complex<double> phase=Vd.Trace(); //want to keep the phase, singluar value should be 1, but if <1 is indicative of a loss of norm.
+    std::cout << "Phase at end of left canonisation: " << phase  <<std::endl;
+    F_.reset_weight(F_.weight()*phase);
+    std::cout << "Weight is " << F_.weight() << ", abs val is "<< abs(F_.weight()) << std::endl;
   }
 
 
@@ -486,7 +496,7 @@ namespace ajaj{
     std::vector<std::complex<double> > complex_results;
 
     if (overlap_requested) {
-      std::complex<double> overlap=overlap_matrix.Trace();
+      std::complex<double> overlap=F_.weight()*overlap_matrix.Trace();
       real_results.push_back(abs(overlap));
       complex_results.push_back(overlap);
     }
@@ -496,8 +506,10 @@ namespace ajaj{
     }
     m_results.push(m_current_time_step,Data(real_results,complex_results));
     //at end Vd should be trivial
-
-    std::cout << "Norm at end of left canonisation: " << abs(Vd.Trace()) << std::endl; 
+    std::complex<double> phase=Vd.Trace(); //want to keep the phase, singluar value should be 1, but if <1 is indicative of a loss of norm.
+    std::cout << "Phase at end of left canonisation (and measure): " << phase  <<std::endl;
+    F_.reset_weight(F_.weight()*phase);
+    std::cout << "Weight is " << F_.weight() << ", abs val is "<< abs(F_.weight()) << std::endl;
   }
 
   void TEBD::left_canonise_measure_special(std::vector<MultiVertexMeasurement>& measurements, uMPXInt Index){
@@ -566,7 +578,10 @@ namespace ajaj{
     m_results.push(Index,Data(real_results,complex_results));
     //at end Vd should be trivial
 
-    std::cout << "Norm at end of left canonisation: " << abs(Vd.Trace()) << std::endl; 
+    std::complex<double> phase=Vd.Trace(); //want to keep the phase, singluar value should be 1, but if <1 is indicative of a loss of norm.
+    std::cout << "Phase at end of left canonisation (and measure): " << phase  <<std::endl;
+    F_.reset_weight(F_.weight()*phase);
+    std::cout << "Weight is " << F_.weight() << ", abs val is "<< abs(F_.weight()) << std::endl;
   }
   
   TEBD::TEBD(const MPO_matrix& H, FiniteMPS& F, DataOutput& results) : TimeBase(0.0,results),F_(F),MPSName_(F.name()),Basis_(H.basis()),NumVertices_(F.size()),SingleVertexOp_(MPO_matrix()),m_EvolutionOperators(TrotterDecomposition(H,0.0,0)),GoodInitial_(0),SaveAll_(0) {
