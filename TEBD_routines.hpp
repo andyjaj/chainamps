@@ -27,7 +27,6 @@ namespace ajaj {
     double m_time_step_size;
     uMPXInt m_order;
     std::vector<MPX_matrix> BondOperators;
-    //std::vector<MPO_matrix*> Measurement_Operator_ptrs;
   public:
     std::vector<const MPX_matrix*> OrderedOperatorPtrs;
     TrotterDecomposition(const MPO_matrix& H,double time_step_size,uMPXInt order,const State* blockstate_ptr=nullptr);

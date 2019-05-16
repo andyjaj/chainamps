@@ -121,6 +121,10 @@ int main(int argc, char** argv){
       for (auto&& StateName : RuntimeArgs.state_names()){
 	std::cout << StateName <<std::endl;
 	ajaj::FiniteMPS F(myModel.basis(),StateName,number_of_vertices);
+	if (!F.valid_files()) {
+	  std::cout << "Couldn't find a valid set of files for this state." <<std::endl;
+	  return 1;
+	}
 	ajaj::TEBD finrun(myModel.H_MPO,F,results);
 	finrun.evolve(Index,measurements);
 	if (!finrun.good()){

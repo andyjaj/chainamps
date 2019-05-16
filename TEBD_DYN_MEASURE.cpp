@@ -181,7 +181,6 @@ int main(int argc, char** argv){
     for (const auto& t2p : idx_times){
       std::cout << t2p.first << " " << t2p.second <<std::endl;
 
-     
       //We will need to load the MPS at each timeslice (i.e. t=0)
       //Its files should be named SAVEALLNAME_timesliceidx_INITIALSTATENAME_Left_i.MPS_matrix
       //SAVEALLNAME is defined in TEBD_routines.hpp
@@ -194,14 +193,14 @@ int main(int argc, char** argv){
 	ajaj::ConstFiniteMPS CF(F);
 	std::vector<std::complex<double> > equal_time_results;
 	for (ajaj::uMPXInt y1=1;y1<=number_of_vertices;++y1){
-	  equal_time_results.emplace_back(ajaj::GeneralisedOverlap(CF,std::vector<ajaj::meas_pair>{{y1,&(generated_MPOs[operator_storage_position[0]].Matrix)},{RuntimeArgs.y2(),&(generated_MPOs[operator_storage_position[0]].Matrix)}}));
+	  equal_time_results.emplace_back(ajaj::GeneralisedOverlap(CF,std::vector<ajaj::meas_pair>{{y1,&(generated_MPOs[operator_storage_position[0]].Matrix)},{RuntimeArgs.y2(),&(generated_MPOs[operator_storage_position[1]].Matrix)}}));
 	}
 	results.push(++results_index,ajaj::Data(std::vector<double>{t2p.second,t2p.second},equal_time_results));
       }
       //we have loaded and checked files, and stored a working copy which is what we will use	
       //apply operator and canonize
       std::complex<double> op2weight=ApplySingleVertexOperatorToMPS(generated_MPOs[operator_storage_position[1]].Matrix,F,RuntimeArgs.y2(),ajaj::MPSCanonicalType::Left);
-      std::cout << op2weight <<std::endl;
+      std::cout << "Weight after applying op2 " << op2weight <<std::endl;
 
       std::vector<ajaj::MultiVertexMeasurement> dummy_measurements; //TEBD object requires a measurement object, even if empty.
 
@@ -229,11 +228,13 @@ int main(int argc, char** argv){
 	  }
 	  
 	  double stepsize= idx_times[t2p.first+1].second-t2p.second;
-	  
+	  std::cout << "STEP SIZE " << stepsize <<std::endl;
 	  //evolve one step
 	  ajaj::TEBD finrun(myModel.H_MPO,F,stepsize,dummyresults,trotter_order,nullptr,0);
 	  finrun.evolve(1,dummy_measurements,CHI,trunc,1);
 
+	  std::cout << "Starting inner time loop" <<std::endl;
+	  
 	  //inner loop over timeslices, from t2p.first to the max time doing TEBD evolution steps
 	  for (ajaj::uMPXInt t1sliceindex=t2p.first+1; t1sliceindex<=idx_times.back().first; ++t1sliceindex){
 	    //now measure...
@@ -241,10 +242,11 @@ int main(int argc, char** argv){
 	    std::stringstream mpst1namestream;
 	    mpst1namestream << ajaj::SAVEALLNAME << "_" << t1sliceindex << "_" << RuntimeArgs.initial_state_name();
 
-	    ajaj::ConstFiniteMPS Ket(myModel.basis(),mpst1namestream.str(),number_of_vertices);
+	    ajaj::ConstFiniteMPS BraState(myModel.basis(),mpst1namestream.str(),number_of_vertices);
 	    std::vector<std::complex<double> > unequal_time_results;
 	    for (ajaj::uMPXInt y1=1;y1<=number_of_vertices;++y1){
-	      unequal_time_results.emplace_back(op2weight*ajaj::GeneralisedOverlap(Ket,TEBDCF,std::vector<ajaj::meas_pair>{{y1,&(generated_MPOs[operator_storage_position[0]].Matrix)}}));
+	      //unequal_time_results.emplace_back(op2weight*ajaj::GeneralisedOverlap(BraState,TEBDCF,std::vector<ajaj::meas_pair>{{y1,&(generated_MPOs[operator_storage_position[0]].Matrix)}}));
+	      unequal_time_results.emplace_back(op2weight*ajaj::GeneralisedOverlap(BraState,TEBDCF,generated_MPOs[operator_storage_position[0]].Matrix,y1));
 	    }
 	    results.push(++results_index,ajaj::Data(std::vector<double>{idx_times[t1sliceindex].second,t2p.second},unequal_time_results));
 

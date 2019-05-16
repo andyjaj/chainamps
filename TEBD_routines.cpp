@@ -245,8 +245,12 @@ namespace ajaj{
     std::stringstream StartNameStream;
     StartNameStream << "Evolving_" << MPSName_ << "_Left_" << NumVertices_ << ".MPS_matrix";
     std::string RightName=StartNameStream.str();
-    MPS_matrix R(load_MPS_matrix(RightName,Basis_));
+    //MPS_matrix R(load_MPS_matrix(RightName,Basis_));
 
+    //in case we want to do the single vertex op here
+    MPS_matrix R(MPS_matrix(std::move(contract(SingleVertexOp_,0,load_MPS_matrix(RightName,Basis_),0,contract20).CombineSimilarMatrixIndices())));
+    //no svd needed here as it gets done next when the bond op is applied
+    
     for (uMPXInt v=NumVertices_;v>1;v-=2){
       std::stringstream LNameStream;
       LNameStream << "Evolving_" << MPSName_ << "_Left_" << v-1 << ".MPS_matrix";
@@ -291,9 +295,11 @@ namespace ajaj{
     
     std::stringstream StoreNameStream;
     StoreNameStream << "Evolving_" << MPSName_ << "_Right_" << 1 << ".MPS_matrix";
-    
-    MPXDecomposition rot(MPS_matrix(std::move(contract(SingleVertexOp_,0,load_MPS_matrix(SpecialNameStream.str(),Basis_),0,contract20).CombineSimilarMatrixIndices())).right_shape().SVD());
 
+    //need to rotate the rightmost matrix
+    MPXDecomposition rot(load_MPS_matrix(SpecialNameStream.str(),Basis_).right_shape().SVD());
+    //or apply end operator and rotate
+    //MPXDecomposition rot(MPS_matrix(std::move(contract(SingleVertexOp_,0,load_MPS_matrix(SpecialNameStream.str(),Basis_),0,contract20).CombineSimilarMatrixIndices())).right_shape().SVD());
     rot.RowMatrix.store(StoreNameStream.str()); //now should be right canonical
     if (rot.Truncation>max_truncation_) max_truncation_=rot.Truncation;
 
@@ -390,7 +396,6 @@ namespace ajaj{
 
     //it can be useful to measure as we step through the system
     std::vector<double> real_results(1,current_time());
-    //std::vector<MPX_matrix> measure_tensors(measurements.size(),MPX_matrix(Basis_));
 
     //we'd also like to measure the overlap with the initial state...
     MPX_matrix overlap_matrix(Basis_);
@@ -625,8 +630,8 @@ namespace ajaj{
 	  std::cout << "Time " << current_time() << std::endl;
 	  //this is the first half of the time step....
 	  apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
-	  left_canonise();
-	  apply_to_even_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
+	  //left_canonise();
+	  //apply_to_even_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
 	  if (m_current_time_step % measurement_interval==0) /*make measurement*/ {
 	    left_canonise_measure(measurements);
 	  }

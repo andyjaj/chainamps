@@ -153,6 +153,15 @@ namespace ajaj {
       if (msg) std::cout << "Option '" << std::string(option.name,option.namelen) << "' requires a positive numeric argument" <<std::endl;
       return option::ARG_ILLEGAL;
     }
+    static option::ArgStatus PositiveSemiDefDouble(const option::Option& option, bool msg)
+    {
+      size_t pos(0);
+      if (option.arg != nullptr && stod(option.arg,&pos)>=0.0){
+	  return option::ARG_OK;
+      }
+      if (msg) std::cout << "Option '" << std::string(option.name,option.namelen) << "' requires a positive or zero numeric argument" <<std::endl;
+      return option::ARG_ILLEGAL;
+    }
     static option::ArgStatus FiniteMeasurementInfo(const option::Option& option, bool msg)
     {
       if (option.arg != 0 && option.arg[0] && option.arg[0] != '-'){
@@ -182,7 +191,7 @@ namespace ajaj {
       {UNKNOWN, 0,"", "",Arg::Unknown, "USAGE: iDMRG_DRV.bin [OPTIONS] <model_filename>"},
       {CHI,0,"B","bond-dimension",Arg::PositiveNumeric,"  -B <number>, --bond-dimension=<number>"
        "  \tThe maximum bond dimension, >= 0. If 0, then ignored." },
-      {TRUNC,0,"e","truncation-error",Arg::PositiveDouble,"  -e <number>, --truncation-error=<number>"
+      {TRUNC,0,"e","truncation-error",Arg::PositiveSemiDefDouble,"  -e <number>, --truncation-error=<number>"
        "  \tThe allowed truncation error, >= 0." },
       {NUMBER_OF_STEPS,0,"N","number-of-steps",Arg::PositiveNumeric,"  -N <number>, --number-of-steps=<number>"
        "  \tThe number of infinite volume steps, >= 0" },
@@ -197,7 +206,7 @@ namespace ajaj {
 	"Options:"},
       {CHI,0,"B","bond-dimension",Arg::PositiveNumeric,"  -B <number>, --bond-dimension=<number>"
        "  \tThe maximum bond dimension, >= 0. If 0, then ignored." },
-      {TRUNC,0,"e","truncation-error",Arg::PositiveDouble,"  -e <number>, --truncation-error=<number>"
+      {TRUNC,0,"e","truncation-error",Arg::PositiveSemiDefDouble,"  -e <number>, --truncation-error=<number>"
        "  \tThe allowed truncation error >= 0." },
       {NUMBER_OF_EXCITED,0,"X","excited-states",Arg::PositiveNumeric,"  -X <number>, --excited-states=<number>"
        "  \tThe number of excited states to calculate, >= 0. If this is specified but a projective weight factor is not, then a default value of 100.0 is used." },
@@ -215,7 +224,7 @@ namespace ajaj {
       {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: iTEBD_DRV.bin [-B <number> -n <number> -s <number> -O <number>] <model_filename>"},
       {CHI,0,"B","bond-dimension",Arg::PositiveNumeric,"  -B <number>, \t--bond-dimension=<number>"
        "  \tThe maximum bond dimension, >= 0. If 0, then ignored." },
-      {TRUNC,0,"e","truncation-error",Arg::PositiveDouble,"  -e <number>, \t--truncation-error=<number>"
+      {TRUNC,0,"e","truncation-error",Arg::PositiveSemiDefDouble,"  -e <number>, \t--truncation-error=<number>"
        "  \tThe allowed truncation error, >= 0." },
       {NUMBER_OF_STEPS,0,"n","time-steps",Arg::PositiveNumeric,"  -n <number>, \t--time-steps=<number>"
        "  \tThe number of time steps. Default is 1." },
@@ -237,7 +246,7 @@ namespace ajaj {
       {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: TEBD_DRV.bin [OPTIONS] <model_filename> <number of vertices(chains)> \n  <number of vertices/chains> must be EVEN.\n"},
       {CHI,0,"B","bond-dimension",Arg::PositiveNumeric,"  -B <number>, \t--bond-dimension=<number>"
        "  \tThe maximum bond dimension, >= 0. If 0, then ignored." },
-      {TRUNC,0,"e","truncation-error",Arg::PositiveDouble,"  -e <number>, \t--truncation-error=<number>"
+      {TRUNC,0,"e","truncation-error",Arg::PositiveSemiDefDouble,"  -e <number>, \t--truncation-error=<number>"
        "  \tThe allowed truncation error, >= 0." },
       {NUMBER_OF_STEPS,0,"n","time-steps",Arg::PositiveNumeric,"  -n <number>, \t--time-steps=<number>"
        "  \tThe number of time steps. Default is 1." },

@@ -82,7 +82,6 @@ namespace ajaj {
     return ans;
   }
 
-
   void index_decompose(Sparseint idx,Sparseint numdims,const Sparseint* dimsvec,Sparseint* subidxarray){
     for (Sparseint cp=0;cp<numdims-1;++cp){
       subidxarray[cp]=idx % dimsvec[cp];

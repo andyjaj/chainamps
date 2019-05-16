@@ -115,9 +115,9 @@ namespace ajaj{
 
     std::cout << "Left canonising initial state..." <<std::endl;
     //do a check, which will establish the (claimed by the individual matrices) MPSCanonicalType
-    if (CheckFilesExist()==MPSCanonicalType::Error){
+    /*if (CheckFilesExist()==MPSCanonicalType::Error){
        return 0.0;
-    }
+       }*/
     std::cout << "Current canonical type: " << canon_type_string() <<std::endl;
     
     MPX_matrix Vd;
@@ -187,9 +187,9 @@ namespace ajaj{
   std::complex<double> FiniteMPS::makeRC(const std::string& name){
 
     std::cout << "Right canonising initial state..." <<std::endl;
-    if (CheckFilesExist()==MPSCanonicalType::Error){
+    /*if (CheckFilesExist()==MPSCanonicalType::Error){
        return 0.0;
-    }
+       }*/
     std::cout << "Current canonical type: " << canon_type_string() <<std::endl;
     
     MPX_matrix U; //temp storage
