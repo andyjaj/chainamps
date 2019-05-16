@@ -249,6 +249,7 @@ namespace ajaj{
 
     //in case we want to do the single vertex op here
     MPS_matrix R(MPS_matrix(std::move(contract(SingleVertexOp_,0,load_MPS_matrix(RightName,Basis_),0,contract20).CombineSimilarMatrixIndices())));
+    R.print_matrix();
     //no svd needed here as it gets done next when the bond op is applied
     
     for (uMPXInt v=NumVertices_;v>1;v-=2){
@@ -257,29 +258,32 @@ namespace ajaj{
       MPSDecomposition decomp(reorder(contract(BondOp,0,contract(load_MPS_matrix(LNameStream.str(),Basis_),0,R,0,contract21),0,contract2032),0,reorder0213,2).SVD(bond_dimension,minS));
       if (decomp.Truncation>max_truncation_) max_truncation_=decomp.Truncation;
       //overwrite with new right part of pair
-      {
-	std::stringstream StoreNameStream;
-	StoreNameStream << "Evolving_" << MPSName_ << "_Right_" << NumVertices_+1-v << ".MPS_matrix";
-	decomp.RightMatrix.store(StoreNameStream.str());
-      }
+      
+      std::stringstream RStoreNameStream;
+      RStoreNameStream << "Evolving_" << MPSName_ << "_Right_" << NumVertices_+1-v << ".MPS_matrix";
+      decomp.RightMatrix.store(RStoreNameStream.str());
+      
       //need to 'rotate left part'
-      {
-	std::stringstream StoreNameStream;
-	StoreNameStream << "Evolving_" << MPSName_ << "_Right_" << NumVertices_+2-v << ".MPS_matrix";
-	MPXDecomposition rot(MPS_matrix(contract(decomp.LeftMatrix,0,MPX_matrix(Basis_,decomp.LeftMatrix.Index(2),decomp.Values),0,contract20)).right_shape().SVD());
-	if (rot.Truncation>max_truncation_) max_truncation_=rot.Truncation;
-	rot.RowMatrix.store(StoreNameStream.str()); //now should be right canonical
-	if (v>2){
-	  std::stringstream NewNameStream;
-	  NewNameStream << "Evolving_" << MPSName_ << "_Left_" << v-2 << ".MPS_matrix";
-	  RightName=NewNameStream.str();
-	  R=std::move(MPS_matrix(contract(load_MPS_matrix(RightName,Basis_),0,contract(rot.ColumnMatrix,0,MPX_matrix(Basis_,rot.ColumnMatrix.Index(1),rot.Values),0,contract10),0,contract20)));
-	}
-	else {
-	  //check norm
-	  std::cout << "Norm at end of odd bonds, right canonise: " << contract(rot.ColumnMatrix,0,MPX_matrix(Basis_,rot.ColumnMatrix.Index(1),rot.Values),0,contract10).Trace() <<std::endl;
-	}
+      
+      std::stringstream LStoreNameStream;
+      LStoreNameStream << "Evolving_" << MPSName_ << "_Right_" << NumVertices_+2-v << ".MPS_matrix";
+      MPXDecomposition rot(MPS_matrix(contract(decomp.LeftMatrix,0,MPX_matrix(Basis_,decomp.LeftMatrix.Index(2),decomp.Values),0,contract20)).right_shape().SVD());
+
+      if (rot.Truncation>max_truncation_) max_truncation_=rot.Truncation;
+      
+      rot.RowMatrix.store(LStoreNameStream.str()); //now should be right canonical
+      
+      if (v>2){
+	std::stringstream NewNameStream;
+	NewNameStream << "Evolving_" << MPSName_ << "_Left_" << v-2 << ".MPS_matrix";
+	RightName=NewNameStream.str();
+	R=std::move(MPS_matrix(contract(load_MPS_matrix(RightName,Basis_),0,contract(rot.ColumnMatrix,0,MPX_matrix(Basis_,rot.ColumnMatrix.Index(1),rot.Values),0,contract10),0,contract20)));
       }
+      else {
+	//check norm
+	std::cout << "U*S at end of odd bonds, right canonise: " << contract(rot.ColumnMatrix,0,MPX_matrix(Basis_,rot.ColumnMatrix.Index(1),rot.Values),0,contract10).Trace() <<std::endl;
+      }
+      
     }
   }
 
@@ -351,7 +355,7 @@ namespace ajaj{
     FirstNameStream << "Evolving_" << MPSName_ << "_Right_" << NumVertices_ << ".MPS_matrix";
     decomp.RowMatrix.store(FirstNameStream.str());
     
-    std::cout << "Norm at end of even bonds, right canonise: " << contract(decomp.ColumnMatrix,0,MPX_matrix(Basis_,decomp.ColumnMatrix.Index(1),decomp.Values),0,contract10).Trace() <<std::endl;
+    std::cout << "U*S at end of even bonds, right canonise: " << contract(decomp.ColumnMatrix,0,MPX_matrix(Basis_,decomp.ColumnMatrix.Index(1),decomp.Values),0,contract10).Trace() <<std::endl;
   }
   void TEBD::left_canonise(uMPXInt chi,double minS){
     std::cout << "Begin left canonisation" << std::endl; 
@@ -630,8 +634,10 @@ namespace ajaj{
 	  std::cout << "Time " << current_time() << std::endl;
 	  //this is the first half of the time step....
 	  apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
-	  //left_canonise();
-	  //apply_to_even_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
+	  if (NumVertices_>2) {//if we only have two vertices, then we should skip the even bond part altogether
+	    left_canonise();
+	    apply_to_even_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
+	  }
 	  if (m_current_time_step % measurement_interval==0) /*make measurement*/ {
 	    left_canonise_measure(measurements);
 	  }
