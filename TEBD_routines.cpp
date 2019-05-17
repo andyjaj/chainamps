@@ -24,10 +24,11 @@ namespace ajaj{
     
       //now make the trotter operators
 
+      MPX_matrix OddBondH(MakeOddBondHamiltonian(*m_H_ptr));
+      MPX_matrix EvenBondH(MakeEvenBondHamiltonian(*m_H_ptr));
+      
       if (m_order==1){
-	MPX_matrix OddBondH(MakeOddBondHamiltonian(*m_H_ptr));
-	MPX_matrix EvenBondH(MakeEvenBondHamiltonian(*m_H_ptr));
-
+	
 	BondOperators.emplace_back(MakeBondEvolutionOperator(OddBondH,tau,blockstate_ptr));
 	BondOperators.emplace_back(MakeBondEvolutionOperator(EvenBondH,tau,blockstate_ptr));
 
@@ -38,8 +39,7 @@ namespace ajaj{
 
       }
       else if (m_order==2){ //second order is a special case with a nice simplification for timesteps where no measurement is made
-	MPX_matrix OddBondH(MakeOddBondHamiltonian(*m_H_ptr));
-	MPX_matrix EvenBondH(MakeEvenBondHamiltonian(*m_H_ptr));
+	
 	BondOperators.emplace_back(MakeBondEvolutionOperator(OddBondH,0.5*tau));
 	BondOperators.emplace_back(MakeBondEvolutionOperator(EvenBondH,tau));
 	//safeish to have pointer to vector element if the vector no longer grows
@@ -50,29 +50,30 @@ namespace ajaj{
 
       else if (m_order==4){
 
-	MPX_matrix BondH(MakeBondHamiltonian(*m_H_ptr));
+	//MPX_matrix BondH(MakeBondHamiltonian(*m_H_ptr));
 	
 	double f1=0.414490771794375737142354062860761495711774604016707133323;
 	double f3=-0.657963087177502948569416251443045982847098416066828533293;
 	double f1_3=-0.24347231538312721142706218858228448713532381205012139996;
 
-	BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,0.5*tau*f1)); //odd half t1 step
-	BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,tau*f1)); //odd or even full t1 step
-	BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,0.5*tau*f1_3)); //odd t1+t3 half step
-	BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,tau*f3)); //even t3 step
+	BondOperators.emplace_back(MakeBondEvolutionOperator(OddBondH,0.5*tau*f1)); //odd half t1 step
+	BondOperators.emplace_back(MakeBondEvolutionOperator(EvenBondH,tau*f1)); //even full t1 step
+	BondOperators.emplace_back(MakeBondEvolutionOperator(OddBondH,tau*f1)); //odd full t1 step
+	BondOperators.emplace_back(MakeBondEvolutionOperator(OddBondH,0.5*tau*f1_3)); //odd t1+t3 half step
+	BondOperators.emplace_back(MakeBondEvolutionOperator(EvenBondH,tau*f3)); //even t3 step
 
 	//11 pieces per full step
-	OrderedOperatorPtrs.emplace_back(&BondOperators.at(0));
-	OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
-	OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
-	OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
-	OrderedOperatorPtrs.emplace_back(&BondOperators.at(2));
-	OrderedOperatorPtrs.emplace_back(&BondOperators.at(3));
-	OrderedOperatorPtrs.emplace_back(&BondOperators.at(2));
-	OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
-	OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
-	OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
-	OrderedOperatorPtrs.emplace_back(&BondOperators.at(0));
+	OrderedOperatorPtrs.emplace_back(&BondOperators.at(0)); //Odd
+	OrderedOperatorPtrs.emplace_back(&BondOperators.at(1)); //Even
+	OrderedOperatorPtrs.emplace_back(&BondOperators.at(2)); //Odd
+	OrderedOperatorPtrs.emplace_back(&BondOperators.at(1)); //E
+	OrderedOperatorPtrs.emplace_back(&BondOperators.at(3)); //O
+	OrderedOperatorPtrs.emplace_back(&BondOperators.at(4)); //E
+	OrderedOperatorPtrs.emplace_back(&BondOperators.at(3)); //O
+	OrderedOperatorPtrs.emplace_back(&BondOperators.at(1)); //E
+	OrderedOperatorPtrs.emplace_back(&BondOperators.at(2)); //O
+	OrderedOperatorPtrs.emplace_back(&BondOperators.at(1)); //E
+	OrderedOperatorPtrs.emplace_back(&BondOperators.at(0)); //Odd
       }
       else {
 	std::cout <<"Unsupported Trotter Order!" <<std::endl;
