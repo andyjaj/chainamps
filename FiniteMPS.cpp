@@ -147,30 +147,12 @@ namespace ajaj{
 	  //if there is a non empty Vd and the next matrix was left canonical, we need to change the flag to trick it into being loaded.
 	  if (p<NumVertices_ && !Vd.empty() && MatrixCanonizations_[p]==MPS_matrixCanonicalType::Left)
 	    set_matrix_canonization(p+1,MPS_matrixCanonicalType::Non);
-
 	}
 	//if we want to store a copy...
 	if (!name.empty() && name!=MPSName_)
 	  matrix().store(filename(position(),matrix().is_left_shape(),name));
       }
     }
-      /*fetch_matrix(p,!Canonical_ || p<=MixPoint_); //if not canonical, load left, otherwise load left if left before mix point
-      
-      if (!Canonical_ || p>MixPoint_){ //if not canonical, or on right side of mix point
-	//contract Vd on and decompose, if initial step for right canonical or non canonical, Vd will be empty
-	MPXDecomposition decomp((Vd.empty() ? Current_.second : MPS_matrix(contract(Vd,0,matrix(),0,contractids))).left_shape().SVD());
-	//record row vectors (Vdagger part) as new Vd
-	Vd=std::move(contract(MPX_matrix(Basis_,decomp.RowMatrix.Index(0),decomp.Values),0,decomp.RowMatrix,0,contract10));
-	Current_.second=std::move(decomp.ColumnMatrix);
-	store_current(); //store new left canonical matrix
-	MatrixCanonizations_[p-1]=MPS_matrixCanonicalType::Left;
-      }
-
-      //at end of step store copy if requested
-      if (!name.empty() && name!=MPSName_)
-      matrix().store(filename(position(),matrix().is_left_shape(),name));
-      }*/
-    
 
     Canonical_=1;
     MixPoint_=NumVertices_;
@@ -226,23 +208,6 @@ namespace ajaj{
 	  matrix().store(filename(position(),matrix().is_left_shape(),name));
       }
     }
-    
-    /*for (uMPXInt p=NumVertices_;p>0;--p){
-      fetch_matrix(p,!Canonical_ || p<=MixPoint_); //if not canonical, load left, otherwise load left if left before mix point
-      
-      if (!Canonical_ || p<=MixPoint_){ //if not canonical, or on left side of mix point
-	//contract U on and decompose, if initial step for left canonical or non canonical, U will be empty
-	MPXDecomposition decomp((U.empty() ? Current_.second : MPS_matrix(contract(matrix(),0,U,0,contract20))).right_shape().SVD());
-	U=std::move(contract(decomp.ColumnMatrix,0,MPX_matrix(Basis_,decomp.ColumnMatrix.Index(1),decomp.Values),0,contract10));
-	Current_.second=std::move(decomp.RowMatrix);
-	store_current(); //store new right canonical matrix
-	MatrixCanonizations_[p-1]=MPS_matrixCanonicalType::Right;
-      }
-
-      //at end of step store copy if requested
-      if (!name.empty() && name!=MPSName_)
-	matrix().store(filename(position(),matrix().is_left_shape(),name));
-	}*/
 
     Canonical_=1;
     MixPoint_=0;

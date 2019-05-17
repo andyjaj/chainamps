@@ -322,7 +322,7 @@ namespace ajaj {
       {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: TEBD_DYN_MEASURE.bin [OPTIONS] <model_filename> <number of vertices(chains)> <opfile1> <opfile2> <vertex2>\n  <number of vertices/chains> must be EVEN.\n"},
       {CHI,0,"B","bond-dimension",Arg::PositiveNumeric,"  -B <number>, \t--bond-dimension=<number>"
        "  \tThe maximum bond dimension, >= 0. If 0, then ignored." },
-      {TRUNC,0,"e","truncation-error",Arg::PositiveDouble,"  -e <number>, \t--truncation-error=<number>"
+      {TRUNC,0,"e","truncation-error",Arg::PositiveSemiDefDouble,"  -e <number>, \t--truncation-error=<number>"
        "  \tThe allowed truncation error, >= 0." },
       {TROTTER_ORDER,0,"O","trotter-order",Arg::PositiveNumeric,"  -O <number>, \t--trotter-order=<number>"
        "  \tThe Trotter order (currently 1 or 2). Second order (2) is default." },

@@ -232,8 +232,6 @@ int main(int argc, char** argv){
 	  //evolve one step
 	  ajaj::TEBD finrun(myModel.H_MPO,F,stepsize,dummyresults,trotter_order,nullptr,0);
 	  finrun.evolve(1,dummy_measurements,CHI,trunc,1);
-
-	  std::cout << "Starting inner time loop" <<std::endl;
 	  
 	  //inner loop over timeslices, from t2p.first to the max time doing TEBD evolution steps
 	  for (ajaj::uMPXInt t1sliceindex=t2p.first+1; t1sliceindex<=idx_times.back().first; ++t1sliceindex){

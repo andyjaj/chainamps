@@ -245,12 +245,7 @@ namespace ajaj{
     std::stringstream StartNameStream;
     StartNameStream << "Evolving_" << MPSName_ << "_Left_" << NumVertices_ << ".MPS_matrix";
     std::string RightName=StartNameStream.str();
-    //MPS_matrix R(load_MPS_matrix(RightName,Basis_));
-
-    //in case we want to do the single vertex op here
-    MPS_matrix R(MPS_matrix(std::move(contract(SingleVertexOp_,0,load_MPS_matrix(RightName,Basis_),0,contract20).CombineSimilarMatrixIndices())));
-    R.print_matrix();
-    //no svd needed here as it gets done next when the bond op is applied
+    MPS_matrix R(load_MPS_matrix(RightName,Basis_));
     
     for (uMPXInt v=NumVertices_;v>1;v-=2){
       std::stringstream LNameStream;
@@ -270,23 +265,19 @@ namespace ajaj{
       MPXDecomposition rot(MPS_matrix(contract(decomp.LeftMatrix,0,MPX_matrix(Basis_,decomp.LeftMatrix.Index(2),decomp.Values),0,contract20)).right_shape().SVD());
 
       if (rot.Truncation>max_truncation_) max_truncation_=rot.Truncation;
-      
+
+      if (v==2){
+	std::complex<double> phase=rot.ColumnMatrix.Trace();
+	std::cout << "Phase at end of odd bonds is " << phase << std::endl;	    
+	rot.RowMatrix.Rescale(phase);
+      }
       rot.RowMatrix.store(LStoreNameStream.str()); //now should be right canonical
-      
-      if (v>2){
+      if (v>2){ //get ready for next iteration of loop
 	std::stringstream NewNameStream;
 	NewNameStream << "Evolving_" << MPSName_ << "_Left_" << v-2 << ".MPS_matrix";
 	RightName=NewNameStream.str();
 	R=std::move(MPS_matrix(contract(load_MPS_matrix(RightName,Basis_),0,contract(rot.ColumnMatrix,0,MPX_matrix(Basis_,rot.ColumnMatrix.Index(1),rot.Values),0,contract10),0,contract20)));
       }
-      else {
-	//check norm
-	std::complex<double> phase=rot.ColumnMatrix.Trace(); //want to keep the phase, singluar value should be 1, but if <1 is indicative of a loss of norm.
-	std::cout << "Phase at end of odd bonds, right canonise: " << phase  <<std::endl;
-	F_.reset_weight(F_.weight()*phase);
-	std::cout << "Weight is " << F_.weight() << ", abs val is "<< abs(F_.weight()) << std::endl;	    
-      }
-      
     }
   }
 
@@ -303,13 +294,11 @@ namespace ajaj{
     std::stringstream StoreNameStream;
     StoreNameStream << "Evolving_" << MPSName_ << "_Right_" << 1 << ".MPS_matrix";
 
-    //need to rotate the rightmost matrix
-    MPXDecomposition rot(load_MPS_matrix(SpecialNameStream.str(),Basis_).right_shape().SVD());
-    //or apply end operator and rotate
-    //MPXDecomposition rot(MPS_matrix(std::move(contract(SingleVertexOp_,0,load_MPS_matrix(SpecialNameStream.str(),Basis_),0,contract20).CombineSimilarMatrixIndices())).right_shape().SVD());
+    //apply end operator and rotate
+    //when applying single vertex op, shouldn't truncate at all.
+    MPXDecomposition rot(MPS_matrix(std::move(contract(SingleVertexOp_,0,load_MPS_matrix(SpecialNameStream.str(),Basis_),0,contract20).CombineSimilarMatrixIndices())).right_shape().SVD());
     rot.RowMatrix.store(StoreNameStream.str()); //now should be right canonical
-    if (rot.Truncation>max_truncation_) max_truncation_=rot.Truncation;
-
+    
     std::stringstream StartNameStream;
     StartNameStream << "Evolving_" << MPSName_ << "_Left_" << NumVertices_-1 << ".MPS_matrix";
     std::string RightName=StartNameStream.str();
@@ -349,19 +338,21 @@ namespace ajaj{
     else {
       std::cout <<"Only two vertices, no even bonds" <<std::endl;
     }
-    //need to canonize first vertex still
+    //need to canonize first (leftmost) vertex still
     
     MPXDecomposition decomp(R.right_shape().SVD());
-    if (decomp.Truncation>max_truncation_) max_truncation_=decomp.Truncation;
+    //if (decomp.Truncation>max_truncation_) max_truncation_=decomp.Truncation;
 
+    std::complex<double> phase=decomp.ColumnMatrix.Trace(); //want to keep the phase, singluar value should be 1, but if <1 is indicative of a loss of norm.
+    std::cout << "Phase at end of even bonds is " << phase  <<std::endl;
+
+    decomp.RowMatrix.Rescale(phase);
+    
     std::stringstream FirstNameStream;
     FirstNameStream << "Evolving_" << MPSName_ << "_Right_" << NumVertices_ << ".MPS_matrix";
-    decomp.RowMatrix.store(FirstNameStream.str());
     
-    std::complex<double> phase=decomp.ColumnMatrix.Trace(); //want to keep the phase, singluar value should be 1, but if <1 is indicative of a loss of norm.
-    std::cout << "Phase at end of even bonds, right canonise: " << phase  <<std::endl;
-    F_.reset_weight(F_.weight()*phase);
-    std::cout << "Weight is " << F_.weight() << ", abs val is "<< abs(F_.weight()) << std::endl;
+    decomp.RowMatrix.store(FirstNameStream.str());
+   
   }
   
   void TEBD::left_canonise(uMPXInt chi,double minS){
@@ -394,13 +385,15 @@ namespace ajaj{
       //store updated 'current' vertex matrix
       std::stringstream LeftNamestream;
       LeftNamestream << "Evolving_" << MPSName_ << "_Left_" << v << ".MPS_matrix";
+
+      //if final vertex, scale phase into matrix
+      if (n==1){
+	std::complex<double> phase=Vd.Trace(); //want to keep the phase, singluar value should be 1, but if <1 is indicative of a loss of norm.
+	std::cout << "Phase at end of left canonisation: " << phase  <<std::endl;
+	decomp.ColumnMatrix.Rescale(phase);
+      }
       decomp.ColumnMatrix.store(LeftNamestream.str());
     }
-    //at end Vd should be trivial
-    std::complex<double> phase=Vd.Trace(); //want to keep the phase, singluar value should be 1, but if <1 is indicative of a loss of norm.
-    std::cout << "Phase at end of left canonisation: " << phase  <<std::endl;
-    F_.reset_weight(F_.weight()*phase);
-    std::cout << "Weight is " << F_.weight() << ", abs val is "<< abs(F_.weight()) << std::endl;
   }
 
 
@@ -469,6 +462,17 @@ namespace ajaj{
 	real_results.push_back(max_truncation_);
 	real_results.push_back(entropy(decomp.Values));
       }
+
+      //record row vectors (Vdagger part) as new Vd
+      Vd=std::move(contract(MPX_matrix(Basis_,decomp.RowMatrix.Index(0),decomp.Values),0,decomp.RowMatrix,0,contract10));
+      //store updated 'current' vertex matrix
+      //if final vertex, scale phase (from Vd) into matrix
+      if (n==1){
+	std::complex<double> phase=Vd.Trace(); //want to keep the phase, singluar value should be 1, but if <1 is indicative of a loss of norm.
+	std::cout << "Phase at end of left canonisation: " << phase  <<std::endl;
+	decomp.ColumnMatrix.Rescale(phase);
+      }
+      
       for (auto&& m : measurements){
 	m.update(v,decomp);
       }
@@ -480,9 +484,7 @@ namespace ajaj{
 	MPS_matrix initial(load_MPS_matrix(Initialstream.str(),Basis_));
 	overlap_matrix=std::move(contract(initial,1,contract(overlap_matrix,0,current,0,contract11),0,contract0110));
       }
-      //record row vectors (Vdagger part) as new Vd
-      Vd=std::move(contract(MPX_matrix(Basis_,decomp.RowMatrix.Index(0),decomp.Values),0,decomp.RowMatrix,0,contract10));
-      //store updated 'current' vertex matrix
+     
       std::stringstream LeftNamestream;
       LeftNamestream << "Evolving_" << MPSName_ << "_Left_" << v << ".MPS_matrix";
       decomp.ColumnMatrix.store(LeftNamestream.str());
@@ -496,7 +498,7 @@ namespace ajaj{
     std::vector<std::complex<double> > complex_results;
 
     if (overlap_requested) {
-      std::complex<double> overlap=F_.weight()*overlap_matrix.Trace();
+      std::complex<double> overlap=overlap_matrix.Trace();
       real_results.push_back(abs(overlap));
       complex_results.push_back(overlap);
     }
@@ -505,11 +507,6 @@ namespace ajaj{
       complex_results.push_back(m.result());
     }
     m_results.push(m_current_time_step,Data(real_results,complex_results));
-    //at end Vd should be trivial
-    std::complex<double> phase=Vd.Trace(); //want to keep the phase, singluar value should be 1, but if <1 is indicative of a loss of norm.
-    std::cout << "Phase at end of left canonisation (and measure): " << phase  <<std::endl;
-    F_.reset_weight(F_.weight()*phase);
-    std::cout << "Weight is " << F_.weight() << ", abs val is "<< abs(F_.weight()) << std::endl;
   }
 
   void TEBD::left_canonise_measure_special(std::vector<MultiVertexMeasurement>& measurements, uMPXInt Index){
@@ -554,17 +551,24 @@ namespace ajaj{
       MPXDecomposition decomp(MPS_matrix(contract(Vd,0,load_MPS_matrix(RightNamestream.str(),Basis_),0,contract10)).left_shape().SVD());
       decomp.SquareRescale(1.0);
       std::cout << "Bond dimension: " << decomp.Values.size() << std::endl;
-      //if (v==NumVertices_/2){ //if we only have two chains, this is never obeyed...
-	//measure truncation and entropy
+      
       if (v<NumVertices_) real_results.push_back(entropy(decomp.Values));
-	//}
+
+      //record row vectors (Vdagger part) as new Vd
+      Vd=std::move(contract(MPX_matrix(Basis_,decomp.RowMatrix.Index(0),decomp.Values),0,decomp.RowMatrix,0,contract10));
+      //store updated 'current' vertex matrix
+      
+      //if final vertex, scale phase (from Vd) into matrix
+      if (n==1){
+	std::complex<double> phase=Vd.Trace(); //want to keep the phase, singluar value should be 1, but if <1 is indicative of a loss of norm.
+	std::cout << "Phase at end of left canonisation: " << phase  <<std::endl;
+	decomp.ColumnMatrix.Rescale(phase);
+      }
+      
       for (auto&& m : measurements){
 	m.update(v,decomp);
       }
       
-      //record row vectors (Vdagger part) as new Vd
-      Vd=std::move(contract(MPX_matrix(Basis_,decomp.RowMatrix.Index(0),decomp.Values),0,decomp.RowMatrix,0,contract10));
-      //store updated 'current' vertex matrix
       std::stringstream LeftNamestream;
       LeftNamestream << "Evolving_" << MPSName_ << "_Left_" << v << ".MPS_matrix";
       decomp.ColumnMatrix.store(LeftNamestream.str());
@@ -576,12 +580,6 @@ namespace ajaj{
       complex_results.push_back(m.result());
     }
     m_results.push(Index,Data(real_results,complex_results));
-    //at end Vd should be trivial
-
-    std::complex<double> phase=Vd.Trace(); //want to keep the phase, singluar value should be 1, but if <1 is indicative of a loss of norm.
-    std::cout << "Phase at end of left canonisation (and measure): " << phase  <<std::endl;
-    F_.reset_weight(F_.weight()*phase);
-    std::cout << "Weight is " << F_.weight() << ", abs val is "<< abs(F_.weight()) << std::endl;
   }
   
   TEBD::TEBD(const MPO_matrix& H, FiniteMPS& F, DataOutput& results) : TimeBase(0.0,results),F_(F),MPSName_(F.name()),Basis_(H.basis()),NumVertices_(F.size()),SingleVertexOp_(MPO_matrix()),m_EvolutionOperators(TrotterDecomposition(H,0.0,0)),GoodInitial_(0),SaveAll_(0) {
@@ -649,10 +647,10 @@ namespace ajaj{
 	  std::cout << "Time " << current_time() << std::endl;
 	  //this is the first half of the time step....
 	  apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
-	  if (NumVertices_>2) {//if we only have two vertices, then we should skip the even bond part altogether
-	    left_canonise();
-	    apply_to_even_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
-	  }
+	  //if (NumVertices_>2) {//if we only have two vertices, then we should skip the even bond part altogether
+	  left_canonise();
+	  apply_to_even_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
+	  //}
 	  if (m_current_time_step % measurement_interval==0) /*make measurement*/ {
 	    left_canonise_measure(measurements);
 	  }
@@ -764,6 +762,7 @@ namespace ajaj{
   MPX_matrix MakeBondHamiltonian(const MPO_matrix& H, const std::string& SaveName) {
     std::cout << "Forming bond Hamiltonian" << std::endl;
     MPX_matrix LeftHalf(H.ExtractSubMPX(std::vector<MPXPair>(1,MPXPair(1,H.dimsvector()[1]-1))).RestrictColumnIndex());
+    //MPX_matrix LeftHalf(H.ExtractSubMPX(std::vector<MPXPair>{{MPXPair(1,H.dimsvector()[1]-1)}}));
     MPX_matrix RightHalf(H.ExtractSubMPX(std::vector<MPXPair>(1,MPXPair(3,0))));
     MPX_matrix ans(reorder(contract(LeftHalf,0,RightHalf,0,std::vector<MPXPair>(1,MPXPair(3,1))),0,reorder032415,2));
     if (!SaveName.empty()) ans.store(SaveName);
