@@ -100,6 +100,9 @@ public:
 };
 
   MPX_matrix MakeBondHamiltonian(const MPO_matrix& H, const std::string& SaveName=std::string()); //Returns part of hamiltonian that refers to a single bond (no double counting of vertex part). Saves it if a filename is specified.
+  MPX_matrix MakeOddBondHamiltonian(const MPO_matrix& H, const std::string& SaveName=std::string());
+  MPX_matrix MakeEvenBondHamiltonian(const MPO_matrix& H, const std::string& SaveName=std::string());
+
   
   MPX_matrix MakeBondEvolutionOperator(const MPX_matrix& BondH, double timestep,const State* blockstate_ptr=nullptr);//Forms exponential bond update operator
   MPO_matrix MakeSingleSiteEvolutionOperatorFromLowTriMPO(const MPO_matrix& H_MPO, double timestep);  

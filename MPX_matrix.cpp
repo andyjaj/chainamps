@@ -292,7 +292,7 @@ namespace ajaj{
 	  print_matrix();
 	  print_indices();
 	  
-	  getPhysicalSpectrum().print();
+	  basis().print();
 	  return 0;
 	}
       }
@@ -308,7 +308,7 @@ namespace ajaj{
     return ans;
   }
 
-  MPX_matrix MPX_matrix::RestrictColumnIndex(){
+  MPX_matrix MPX_matrix::ZeroLastBlock(){
     return MPX_matrix(*(m_SpectrumPtr),m_Indices,m_NumRowIndices,m_Matrix.ZeroLastColumns(m_SpectrumPtr->size()));
   }
 

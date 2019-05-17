@@ -68,7 +68,7 @@ namespace ajaj{
     //1st arg is a ref to the vertex spectrum,
     //2nd arg is a ref to where all the state arrays are stored
     MPX_matrix() noexcept : m_SpectrumPtr(nullptr) {}; 
-    MPX_matrix(const Basis& spectrum) noexcept; /**< All tensors need to know about the physical spectrum. This might be a design flaw.*/
+    MPX_matrix(const Basis& spectrum) noexcept; /**< All tensors need to know about the physical spectrum. This is a design flaw.*/
     MPX_matrix(const Basis& spectrum, const std::vector<MPXIndex>& indices, const Sparseint numrowindices, const SparseMatrix& matrix); /**< Constructor, indices are listed in order from left to right. numrowindices lets the object know how many of the indices are associated with rows of the SparseMatrix. */
     MPX_matrix(const Basis& spectrum, const std::vector<MPXIndex>& indices, const Sparseint numrowindices, SparseMatrix&& matrix);
     MPX_matrix(const Basis& spectrum, const MPXIndex& index, const std::vector<std::complex<double> >& values,bool inverse=0); /**< Diagonal constructor, with possible inversion of values.*/
@@ -119,7 +119,7 @@ namespace ajaj{
     MPX_matrix& ShiftNumRowIndices(const Sparseint numrows); /**< Move some row MPXIndex indices to columns or vice-versa. */
     MPX_matrix& Rescale(std::complex<double> factor); /**<Scale all values in array by some factor. */
     complex<double> Trace() const {return m_Matrix.trace();} /**< If MPX_matrix is square, find the trace.*/
-    MPX_matrix RestrictColumnIndex(); /**< An unpleasant cludge to set the entries in the last basis.size() columns to zero.*/
+    MPX_matrix ZeroLastBlock(); /**< Given a particular index and a value of that index, zero the other data*/
     MPX_matrix& CombineSimilarMatrixIndices(bool PhysicalInMiddle=0);
 
     //move assignment operator needed?

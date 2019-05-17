@@ -21,19 +21,27 @@ namespace ajaj{
       //make bond operator
       if (m_order>4 || m_order==3){std::cout <<"Only 1st, 2nd and 4th order decompositions are supported. Aborting..." << std::endl; exit(1);}
       //make the Hamiltonian for a single bond
-      MPX_matrix BondH(MakeBondHamiltonian(*m_H_ptr));
     
       //now make the trotter operators
 
       if (m_order==1){
-	BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,tau,blockstate_ptr));
+	MPX_matrix OddBondH(MakeOddBondHamiltonian(*m_H_ptr));
+	MPX_matrix EvenBondH(MakeEvenBondHamiltonian(*m_H_ptr));
+
+	BondOperators.emplace_back(MakeBondEvolutionOperator(OddBondH,tau,blockstate_ptr));
+	BondOperators.emplace_back(MakeBondEvolutionOperator(EvenBondH,tau,blockstate_ptr));
+
 	std::cout << "Done" <<std::endl;
 	//safeish to have pointer to vector element if the vector no longer grows
 	OrderedOperatorPtrs.emplace_back(&BondOperators.at(0));
+	OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
+
       }
       else if (m_order==2){ //second order is a special case with a nice simplification for timesteps where no measurement is made
-	BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,0.5*tau));
-	BondOperators.emplace_back(MakeBondEvolutionOperator(BondH,tau));
+	MPX_matrix OddBondH(MakeOddBondHamiltonian(*m_H_ptr));
+	MPX_matrix EvenBondH(MakeEvenBondHamiltonian(*m_H_ptr));
+	BondOperators.emplace_back(MakeBondEvolutionOperator(OddBondH,0.5*tau));
+	BondOperators.emplace_back(MakeBondEvolutionOperator(EvenBondH,tau));
 	//safeish to have pointer to vector element if the vector no longer grows
 	OrderedOperatorPtrs.emplace_back(&BondOperators.at(0));
 	OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
@@ -41,6 +49,9 @@ namespace ajaj{
       }
 
       else if (m_order==4){
+
+	MPX_matrix BondH(MakeBondHamiltonian(*m_H_ptr));
+	
 	double f1=0.414490771794375737142354062860761495711774604016707133323;
 	double f3=-0.657963087177502948569416251443045982847098416066828533293;
 	double f1_3=-0.24347231538312721142706218858228448713532381205012139996;
@@ -296,7 +307,8 @@ namespace ajaj{
 
     //apply end operator and rotate
     //when applying single vertex op, shouldn't truncate at all.
-    MPXDecomposition rot(MPS_matrix(std::move(contract(SingleVertexOp_,0,load_MPS_matrix(SpecialNameStream.str(),Basis_),0,contract20).CombineSimilarMatrixIndices())).right_shape().SVD());
+    MPXDecomposition rot(load_MPS_matrix(SpecialNameStream.str(),Basis_).right_shape().SVD());
+    //MPXDecomposition rot(MPS_matrix(std::move(contract(SingleVertexOp_,0,load_MPS_matrix(SpecialNameStream.str(),Basis_),0,contract20).CombineSimilarMatrixIndices())).right_shape().SVD());
     rot.RowMatrix.store(StoreNameStream.str()); //now should be right canonical
     
     std::stringstream StartNameStream;
@@ -647,10 +659,10 @@ namespace ajaj{
 	  std::cout << "Time " << current_time() << std::endl;
 	  //this is the first half of the time step....
 	  apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
-	  //if (NumVertices_>2) {//if we only have two vertices, then we should skip the even bond part altogether
-	  left_canonise();
-	  apply_to_even_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
-	  //}
+	  if (NumVertices_>2) {//if we only have two vertices, then we should skip the even bond part altogether
+	    left_canonise();
+	    apply_to_even_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS);
+	  }
 	  if (m_current_time_step % measurement_interval==0) /*make measurement*/ {
 	    left_canonise_measure(measurements);
 	  }
@@ -761,13 +773,40 @@ namespace ajaj{
 
   MPX_matrix MakeBondHamiltonian(const MPO_matrix& H, const std::string& SaveName) {
     std::cout << "Forming bond Hamiltonian" << std::endl;
-    MPX_matrix LeftHalf(H.ExtractSubMPX(std::vector<MPXPair>(1,MPXPair(1,H.dimsvector()[1]-1))).RestrictColumnIndex());
-    //MPX_matrix LeftHalf(H.ExtractSubMPX(std::vector<MPXPair>{{MPXPair(1,H.dimsvector()[1]-1)}}));
+    MPX_matrix LeftHalf(H.ExtractSubMPX(std::vector<MPXPair>(1,MPXPair(1,H.dimsvector()[1]-1))).ZeroLastBlock());
     MPX_matrix RightHalf(H.ExtractSubMPX(std::vector<MPXPair>(1,MPXPair(3,0))));
     MPX_matrix ans(reorder(contract(LeftHalf,0,RightHalf,0,std::vector<MPXPair>(1,MPXPair(3,1))),0,reorder032415,2));
     if (!SaveName.empty()) ans.store(SaveName);
     return ans;
   }
+
+  MPX_matrix MakeOddBondHamiltonian(const MPO_matrix& H, const std::string& SaveName) {
+    std::cout << "Forming bond Hamiltonian" << std::endl;
+    MPX_matrix LeftHalf(H.ExtractSubMPX(std::vector<MPXPair>{{MPXPair(1,H.dimsvector()[1]-1)}}));
+    MPX_matrix RightHalf(H.ExtractSubMPX(std::vector<MPXPair>{{MPXPair(3,0)}}));
+    MPX_matrix ans(reorder(contract(LeftHalf,0,RightHalf,0,std::vector<MPXPair>{{MPXPair(3,1)}}),0,reorder032415,2));
+    if (!SaveName.empty()) ans.store(SaveName);
+    return ans;
+  }
+
+  MPX_matrix MakeEvenBondHamiltonian(const MPO_matrix& H, const std::string& SaveName) {
+    std::cout << "Forming bond Hamiltonian" << std::endl;
+    std::vector<MPXPair> LeftKeepers;
+    LeftKeepers.emplace_back(1,H.dimsvector()[1]-1);
+    for (uMPXInt l=1;l<H.dimsvector()[3]-1;++l){
+      LeftKeepers.emplace_back(3,l);
+    }
+    std::vector<MPXPair> RightKeepers;
+    RightKeepers.emplace_back(3,0);
+    for (uMPXInt r=1;r<H.dimsvector()[1]-1;++r){
+      RightKeepers.emplace_back(1,r);
+    }
+    MPX_matrix LeftHalf(H.ExtractSubMPX(LeftKeepers));
+    MPX_matrix RightHalf(H.ExtractSubMPX(RightKeepers));
+    MPX_matrix ans(reorder(contract(LeftHalf,0,RightHalf,0,std::vector<MPXPair>{{MPXPair(3,1)}}),0,reorder032415,2));
+    if (!SaveName.empty()) ans.store(SaveName);
+    return ans;
+  }  
 
   MPX_matrix MakeBondEvolutionOperator(const MPX_matrix& BondH, double timestep,const State* blockstate_ptr){
     std::cout << "Forming bond evolution operator" << std::endl;
