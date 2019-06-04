@@ -99,7 +99,8 @@ public:
   ConstFiniteMPS GetEvolvingState() const {/*Should get this to force state into left canonical*/ return ConstFiniteMPS(Basis_,evolution_name(),NumVertices_,NumVertices_,MPSCanonicalType::Left,initial_weight_,std::vector<MPS_matrixCanonicalType>(NumVertices_,MPS_matrixCanonicalType::Left));}
 };
 
-  MPX_matrix MakeBondHamiltonian(const MPO_matrix& H, const std::string& SaveName=std::string()); //Returns part of hamiltonian that refers to a single bond (no double counting of vertex part). Saves it if a filename is specified.
+  //MPX_matrix MakeBondHamiltonian(const MPO_matrix& H, const std::string& SaveName=std::string()); //Returns part of hamiltonian that refers to a single bond (no double counting of vertex part). Saves it if a filename is specified.
+  
   MPX_matrix MakeOddBondHamiltonian(const MPO_matrix& H, const std::string& SaveName=std::string());
   MPX_matrix MakeEvenBondHamiltonian(const MPO_matrix& H, const std::string& SaveName=std::string());
 

@@ -96,7 +96,7 @@ namespace ajaj{
     void print_sparse_info() const {m_Matrix.print_sparse_info();}
     bool fprint_binary(std::ofstream& outfile) const; /**< Print the MPX_matrix to file in binary format. */
     bool store(const std::string& filename) const; /**< Print the MPX_matrix to file in binary format. */
-    MPX_matrix ExtractSubMPX(const std::vector<MPXPair>& Indexvals) const; /**< Extract a Sub MPX_matrix by giving some indices fixed values according to the pairs in Indexvals . */
+    //MPX_matrix ExtractSubMPX(const std::vector<MPXPair>& Indexvals) const; /**< Extract a Sub MPX_matrix by giving some indices fixed values according to the pairs in Indexvals . */
     std::vector<BlockStateIndices> GetAllBlockColumns() const; /**< Return a vector of BlockStateIndices corresponding to all the groups of columns with the same quantum numbers.*/
     BlockStateIndices GetBlockColumns(const State& specficstate) const; /**< Return BlockStateIndices for the quantum numbers specified by specificstate. */
     BlockStateIndices GetBlockRows(const State& specficstate) const; /**< Return BlockStateIndices for the quantum numbers specified by specificstate. */

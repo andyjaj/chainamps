@@ -8,6 +8,7 @@
 #include <vector> //for std::vector
 #include <complex>
 #include <cs.h> //for SuiteSparse_long
+//#include "sparse_interface.hpp"
 
 /**
  * @namespace ajaj

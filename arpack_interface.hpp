@@ -20,7 +20,7 @@ namespace arpack {
   typedef long long arpack_int; 
 #else
   /** Else use normal int type */
-  typedef int arpack_int;
+  typedef int64_t arpack_int;
 #endif
 
   /** external arpack function */

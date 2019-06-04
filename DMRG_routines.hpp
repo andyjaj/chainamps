@@ -217,9 +217,13 @@ namespace ajaj {
   };
 
   /** Form a left end, open boundary conditions, Hamiltonian MPO_matrix. The leftmost matrix index will be a dummy. */
-  inline MPO_matrix LeftOpenBCHamiltonian(const MPO_matrix& H){return H.ExtractSubMPX(std::vector<MPXPair>(1,MPXPair(1,H.dimsvector()[1]-1)));}
+  //inline MPO_matrix LeftOpenBCHamiltonian(const MPO_matrix& H){return H.ExtractSubMPX(std::vector<MPXPair>(1,MPXPair(1,H.dimsvector()[1]-1)));}
+  inline MPO_matrix LeftOpenBCHamiltonian(const MPO_matrix& H){return H.ExtractMPOBlock(std::pair<MPXInt,MPXInt> ({H.dimsvector()[1]-1,H.dimsvector()[1]-1}),std::pair<MPXInt,MPXInt>({0,H.dimsvector()[3]-1}));}
+  
   /** Form a right end, open boundary conditions, Hamiltonian MPO_matrix. The rightmost matrix index will be a dummy. */
-  inline MPO_matrix RightOpenBCHamiltonian(const MPO_matrix& H){return H.ExtractSubMPX(std::vector<MPXPair>(1,MPXPair(3,0)));}
+  //inline MPO_matrix RightOpenBCHamiltonian(const MPO_matrix& H){return H.ExtractSubMPX(std::vector<MPXPair>(1,MPXPair(3,0)));}
+  inline MPO_matrix RightOpenBCHamiltonian(const MPO_matrix& H){return H.ExtractMPOBlock(std::pair<MPXInt,MPXInt>({0,H.dimsvector()[1]-1}),std::pair<MPXInt,MPXInt>({0,0}));}
+  
   /** Do an SVD, with optional truncation, on an MPX_matrix object (with two physical indices and two matrix indices), forming two new MPS_matrix objects.*/
   inline MPSDecomposition TwoVertexSVD(const MPX_matrix& M, size_t bond_dimension=0, double truncation=0.0){return MPSDecomposition(M.SVD(bond_dimension,truncation));}
   /** Special initial left block with dummy indices, used for first DMRG step.*/

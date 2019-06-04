@@ -300,13 +300,13 @@ namespace ajaj{
     return 1;
   }
 
-  MPX_matrix MPX_matrix::ExtractSubMPX(const std::vector<MPXPair >& IndexVal) const {
+  /*MPX_matrix MPX_matrix::ExtractSubMPX(const std::vector<MPXPair >& IndexVal) const {
     MPX_matrix ans(*(m_SpectrumPtr),m_Indices,m_NumRowIndices,m_Matrix.ExtractSubMatrix(m_NumRowIndices,dimsvector(),IndexVal,0)); 
     for (std::vector<MPXPair>::const_iterator cit=IndexVal.begin();cit!=IndexVal.end();++cit){
       ans.m_Indices.at(cit->first)=MPXIndex(m_Indices.at(cit->first),cit->second);
     }
     return ans;
-  }
+    }*/
 
   MPX_matrix MPX_matrix::ZeroLastBlock(){
     return MPX_matrix(*(m_SpectrumPtr),m_Indices,m_NumRowIndices,m_Matrix.ZeroLastColumns(m_SpectrumPtr->size()));

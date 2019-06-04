@@ -227,12 +227,16 @@ namespace ll{
 	//lowest block row
 	M.entry(offset_to_last_block+i,modelvertex.Spectrum.size()*(psi_col_offset+MPO_subcol)+col,x);
 	//first block col
-	M.entry(modelvertex.Spectrum.size()*(psi_row_offset+MPO_subrow)+i,col,R*x*tunnelling);
+	if (tunnelling!=0.0){
+	  M.entry(modelvertex.Spectrum.size()*(psi_row_offset+MPO_subrow)+i,col,R*x*tunnelling);
+	}
 	//now psi dagger so swap i and col
 	//lowest block row
 	M.entry(offset_to_last_block+col,modelvertex.Spectrum.size()*(psidagger_col_offset+MPO_subcolpsidagger)+i,conj(x));
 	//first block col
-	M.entry(modelvertex.Spectrum.size()*(psidagger_row_offset+MPO_subrowpsidagger)+col,i,R*conj(x)*tunnelling);
+	if (tunnelling!=0.0){
+	  M.entry(modelvertex.Spectrum.size()*(psidagger_row_offset+MPO_subrowpsidagger)+col,i,R*conj(x)*tunnelling);
+	}
       }
     }
 

@@ -10,8 +10,10 @@ namespace ajaj{
 
   MPX_matrix Make2VBondHamiltonian(const MPO_matrix& H) {
     std::cout << "Forming bond Hamiltonian" << std::endl;
-    MPX_matrix LeftHalf(H.ExtractSubMPX(std::vector<MPXPair>(1,MPXPair(1,H.dimsvector()[1]-1))));
-    MPX_matrix RightHalf(H.ExtractSubMPX(std::vector<MPXPair>(1,MPXPair(3,0))));
+    MPX_matrix LeftHalf(H.ExtractMPOBlock(std::pair<MPXInt,MPXInt>({H.dimsvector()[1]-1,H.dimsvector()[1]-1}),std::pair<MPXInt,MPXInt>({0,H.dimsvector()[3]-1})));
+    MPX_matrix RightHalf(H.ExtractMPOBlock(std::pair<MPXInt,MPXInt>({0,H.dimsvector()[1]-1}),std::pair<MPXInt,MPXInt>({0,0})));
+    //MPX_matrix LeftHalf(H.ExtractSubMPX(std::vector<MPXPair>(1,MPXPair(1,H.dimsvector()[1]-1))));
+    //MPX_matrix RightHalf(H.ExtractSubMPX(std::vector<MPXPair>(1,MPXPair(3,0))));
     return reorder(contract(LeftHalf,0,RightHalf,0,std::vector<MPXPair>(1,MPXPair(3,1))),0,reorder032415,2);
   }
 

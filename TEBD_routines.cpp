@@ -772,28 +772,39 @@ namespace ajaj{
     }
   }
 
-  MPX_matrix MakeBondHamiltonian(const MPO_matrix& H, const std::string& SaveName) {
+  /* MPX_matrix MakeBondHamiltonian(const MPO_matrix& H, const std::string& SaveName) {
     std::cout << "Forming bond Hamiltonian" << std::endl;
     MPX_matrix LeftHalf(H.ExtractSubMPX(std::vector<MPXPair>(1,MPXPair(1,H.dimsvector()[1]-1))).ZeroLastBlock());
     MPX_matrix RightHalf(H.ExtractSubMPX(std::vector<MPXPair>(1,MPXPair(3,0))));
     MPX_matrix ans(reorder(contract(LeftHalf,0,RightHalf,0,std::vector<MPXPair>(1,MPXPair(3,1))),0,reorder032415,2));
     if (!SaveName.empty()) ans.store(SaveName);
     return ans;
-  }
-
+  }*/
+  
   MPX_matrix MakeOddBondHamiltonian(const MPO_matrix& H, const std::string& SaveName) {
-    std::cout << "Forming bond Hamiltonian" << std::endl;
-    MPX_matrix LeftHalf(H.ExtractSubMPX(std::vector<MPXPair>{{MPXPair(1,H.dimsvector()[1]-1)}}));
-    MPX_matrix RightHalf(H.ExtractSubMPX(std::vector<MPXPair>{{MPXPair(3,0)}}));
+    std::cout << "Forming odd bond Hamiltonian" << std::endl;
+    //MPX_matrix LeftHalf(H.ExtractSubMPX(std::vector<MPXPair>{{MPXPair(1,H.dimsvector()[1]-1)}}));
+    //MPX_matrix RightHalf(H.ExtractSubMPX(std::vector<MPXPair>{{MPXPair(3,0)}}));
+
+    MPX_matrix LeftHalf(H.ExtractMPOBlock(std::pair<MPXInt,MPXInt>({H.dimsvector().at(1)-1,H.dimsvector().at(1)-1}),std::pair<MPXInt,MPXInt>({0,H.dimsvector().at(3)-1})));
+    MPX_matrix RightHalf(H.ExtractMPOBlock(std::pair<MPXInt,MPXInt>({0,H.dimsvector().at(1)-1}),std::pair<MPXInt,MPXInt>({0,0})));
+    
     MPX_matrix ans(reorder(contract(LeftHalf,0,RightHalf,0,std::vector<MPXPair>{{MPXPair(3,1)}}),0,reorder032415,2));
     if (!SaveName.empty()) ans.store(SaveName);
     return ans;
   }
 
   MPX_matrix MakeEvenBondHamiltonian(const MPO_matrix& H, const std::string& SaveName) {
-    std::cout << "Forming bond Hamiltonian" << std::endl;
-    std::vector<MPXPair> LeftKeepers;
+    std::cout << "Forming even bond Hamiltonian" << std::endl;
+    //Need to check here if there is no coupling part in the MPO (i.e. vertices are uncoupled).
+    if (H.dimsvector()[1]-1==1 || H.dimsvector()[3]-1==1){
+      std::cout << "Even bond is empty" << std::endl;
+      exit(1);
+    }
+    
+    /*std::vector<MPXPair> LeftKeepers;
     LeftKeepers.emplace_back(1,H.dimsvector()[1]-1);
+    std::cout <<  LeftKeepers.size() << std::endl;
     for (uMPXInt l=1;l<H.dimsvector()[3]-1;++l){
       LeftKeepers.emplace_back(3,l);
     }
@@ -803,7 +814,11 @@ namespace ajaj{
       RightKeepers.emplace_back(1,r);
     }
     MPX_matrix LeftHalf(H.ExtractSubMPX(LeftKeepers));
-    MPX_matrix RightHalf(H.ExtractSubMPX(RightKeepers));
+    MPX_matrix RightHalf(H.ExtractSubMPX(RightKeepers));*/
+
+    MPX_matrix LeftHalf(H.ExtractMPOBlock(std::pair<MPXInt,MPXInt>({H.dimsvector()[1]-1,H.dimsvector()[1]-1}),std::pair<MPXInt,MPXInt>({1,H.dimsvector()[3]-2})));
+    MPX_matrix RightHalf(H.ExtractMPOBlock(std::pair<MPXInt,MPXInt>({1,H.dimsvector()[1]-2}),std::pair<MPXInt,MPXInt>({0,0})));
+    
     MPX_matrix ans(reorder(contract(LeftHalf,0,RightHalf,0,std::vector<MPXPair>{{MPXPair(3,1)}}),0,reorder032415,2));
     if (!SaveName.empty()) ans.store(SaveName);
     return ans;

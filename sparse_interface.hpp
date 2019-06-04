@@ -18,7 +18,6 @@
 
 namespace ajaj { 
   typedef SuiteSparse_long Sparseint;
-  //typedef MPXInt Sparseint;
   typedef cs_cl SparseType;
   //////////////////////////////////////////////////////////////////////////
   template <typename T>
@@ -164,7 +163,7 @@ namespace ajaj {
     bool fprint_binary(std::ofstream& outfile) const;
 
     void loopy(void (*funcptr)(Sparseint i, Sparseint p, std::complex<double> x));
-    SparseMatrix ExtractSubMatrix(const Sparseint old_num_row_idxs,const std::vector<Sparseint>& old_idx_dims,const std::vector<std::pair<Sparseint,Sparseint> >& IndexVal,const bool conjugate) const;
+    //SparseMatrix ExtractSubMatrix(const Sparseint old_num_row_idxs,const std::vector<Sparseint>& old_idx_dims,const std::vector<std::pair<Sparseint,Sparseint> >& IndexVal,const bool conjugate) const;
     SparseMatrix ExtractSubMatrix(const std::pair<Sparseint,Sparseint>& RowRange, const std::pair<Sparseint,Sparseint>& ColRange) const;
     SparseMatrix ExtractColumns(const std::vector<Sparseint>& cols) const;
     SparseMatrix ExtractColumnsAndPad(const std::vector<Sparseint>& cols,Sparseint extrarows,Sparseint extracols) const;
