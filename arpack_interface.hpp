@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <complex> //std::complex<double>
 #include <iostream>
-#include <cs.h> //cs_cl* type
+#include "common_defs.hpp"
 
 namespace arpack {
 
@@ -147,9 +147,7 @@ namespace arpack {
 	  }
 	  firstpass=0;
 	}
-	/*for(auto& i : indexed_e_vals){
-	  std::cout << i.first <<": " << i.second <<std::endl; 
-	  }*/
+
 	std::cout << "Reordering..." <<std::endl;
 	//swap the data, and then update the indices in the list.
 	for (auto j=count+1;j<m_workspace.nev;++j){

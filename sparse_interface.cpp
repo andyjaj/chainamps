@@ -8,7 +8,6 @@
 #include <numeric>
 #include <fstream>
 #include <cassert>
-#include <cs.h>
 
 #include "sparse_interface.hpp"
 #include "dense_interface.hpp"
@@ -17,10 +16,17 @@
 #if defined(USETBB)
 #include <tbb/tbb.h>
 #define TBBNZ 1000  //used as part of the threading cutoff
+
+#if defined(USETBB) && !defined(NDEBUG)
+#include <mutex>
+std::mutex ajaj::MutexPrint::_mutexPrint{};
+#endif
+
+
 #endif
 
 namespace ajaj {
-
+    
   void order_rows(cs_cl* A);
   SparseMatrix&& SparseMatrix::order_rows(){ajaj::order_rows(m_array); return std::move(*this);}
 
@@ -643,7 +649,7 @@ namespace ajaj {
 
   SparseMatrix& SparseMatrix::operator*=(const SparseMatrix& rhs)//
   {
-    SparseMatrix other(sparse_multiply_ajaj(*this,rhs));
+    SparseMatrix other(sparse_multiply(*this,rhs));
     swap(*this,other);
     return *this;
     /*swap(*this,SparseMatrix(cs_cl_multiply(rhs.copy_transpose().m_array,this->copy_transpose().m_array),1).transpose());
@@ -672,7 +678,7 @@ namespace ajaj {
 
   SparseMatrix operator*(const SparseMatrix& lhs, const SparseMatrix& rhs)//why make the copy if it is only about to be destroyed?
   {
-    return sparse_multiply_ajaj(lhs,rhs);
+    return sparse_multiply(lhs,rhs);
   }
 
   SparseMatrix operator+(const SparseMatrix& lhs, const SparseMatrix& rhs)
@@ -1811,6 +1817,11 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 
   void feed_to_answer(cs_cl* U, cs_cl* P,const Sparseint Pcol){//destroys unsorted U as it goes along, Pcol is the insertion column
     Sparseint Unz=U->p[U->n];
+
+#if defined (USETBB) && !defined (NDEBUG)
+    ajaj::MutexPrint{} << "feed_to_answer(*U,*P,Pcol): Pcol = " << Pcol << "\n" << "U rows,cols " << U->m <<"," << U->n << ", Unzmax " << U->nzmax << ", Unz " << U->nz << ", U nonzeros " << ((U->nz ==-1) ? U->p[U->n] : U->p[U->nzmax-1]) << "\n"<< "P rows,cols " << P->m <<"," << P->n << ", Pnzmax " << P->nzmax << ", Pnz " << P->nz << ", P nonzeros " << ((P->nz ==-1) ? P->p[P->n] : P->p[P->nzmax-1]) << "\n";
+#endif
+
     std::copy(U->i,U->i+Unz,P->i+P->p[Pcol]);
     std::copy(U->x,U->x+Unz,P->x+P->p[Pcol]);
     cs_cl_spfree(U);
@@ -1843,7 +1854,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
       std::complex<double>* Cx = C->x;
       Cp[j-start] = nz;                  /* column j of C starts here */
 
-      if (Bp[j]!=Bp[j+1]){ //not an empty col
+      if (Bp[j]!=Bp[j+1]){ //if not an empty col
 	for (Sparseint lp=Ap[Bi[Bp[j]]];lp<Ap[Bi[Bp[j]]+1];++lp){
 	  Sparseint i=Ai[lp];
 	  w[i]=j;
@@ -1959,6 +1970,10 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
       cs_cl* local_answer(multiply_by_blocked_cols(lhs_,rhs_,start_col,end_col,ans_->p));//steals ans_->p to make new answer
       //feed_to_answer(local_answer,ans_,start_col);//moves to full answer and destroys local answer
       if (NoSort_){
+
+#if !defined(NDEBUG)
+	ajaj::MutexPrint{} << "reduce_sparse NoSort_ call to feed_to_answer(local,ans,startcol): \n" << "startcol = " << start_col << "\n"<< "local rows,cols " << local_answer->m <<"," << local_answer->n << ", local nzmax " << local_answer->nzmax << ", local nz " << local_answer->nz << ", local nonzeros " << ((local_answer->nz ==-1) ? local_answer->p[local_answer->n] : local_answer->p[local_answer->nzmax-1]) << "\n"<< "ans rows,cols " << ans_->m <<"," << ans_->n << ", ans nzmax " << ans_->nzmax << ", ans nz " << ans_->nz << ", ans nonzeros " << ((ans_->nz ==-1) ? ans_->p[ans_->n] : ans_->p[ans_->nzmax-1]) << "\n";
+#endif
 	feed_to_answer(local_answer,ans_,start_col);//moves to full answer and destroys local answer
       }
       else {
@@ -2028,7 +2043,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     }
   }
 
-  SparseMatrix sparse_multiply_ajaj(const SparseMatrix& lhs, const SparseMatrix& rhs, bool NoSort){
+  SparseMatrix sparse_multiply(const SparseMatrix& lhs, const SparseMatrix& rhs, bool NoSort){
     //first figure out the number of nonzeros in output
     //this is cleaner in terms of reallocations, but might be slower.
     //it should be easy to thread though as we are just accumulating (parallel reducing) nz
@@ -2055,9 +2070,9 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     else {
 #if defined(USETBB)
       {
-#ifndef NDEBUG
-	tbb::task_scheduler_init init(1);
-#endif
+
+
+	
 	bool swap_and_transpose=NoSort ? 0 : (lhs.nz()+rhs.nz()<col_ptrs[rhs.cols()]);
 	if (swap_and_transpose){
 	  cs_free(col_ptrs); //need the swapped transpose version...

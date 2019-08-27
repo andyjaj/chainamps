@@ -96,6 +96,24 @@ namespace ajaj {
   static char LARGESTMAGNITUDE[]={'L','M','\n'};
   static char SMALLESTREAL[]={'S','R','\n'}; //lowest real part for energies
 
+  //
+#if defined(USETBB) && !defined(NDEBUG)
+#include <mutex>
+#include <sstream>
+  class MutexPrint: public std::ostringstream
+  {
+  public:
+    MutexPrint() = default;
+    
+    ~MutexPrint(){
+      std::lock_guard<std::mutex> guard(_mutexPrint);
+      std::cout << this->str() << std::flush;
+    }
+  private:
+    static std::mutex _mutexPrint;
+  };
+#endif
+  //
 }
 
 #endif

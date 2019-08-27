@@ -7,18 +7,17 @@
 #include <limits>
 #include <utility>
 #include <iostream>
-#include <cs.h>
+
 #include "common_defs.hpp"
 #include "dense_interface.hpp"
-//#include "arpack_interface.hpp"
 
 #define FILEPREC 16 //used when outputting as text
 #define SPARSETOL std::numeric_limits<double>::epsilon()
 #define SPARSE_THRESHOLD 1000
 
 namespace ajaj { 
-  typedef SuiteSparse_long Sparseint;
-  typedef cs_cl SparseType;
+  typedef SuiteSparse_long Sparseint; //from cs.h
+  typedef cs_cl SparseType; //from cs.h
   //////////////////////////////////////////////////////////////////////////
   template <typename T>
   class SparseDecompositionBase;
@@ -62,7 +61,7 @@ namespace ajaj {
   SparseMatrix operator+(const SparseMatrix& lhs, const SparseMatrix& rhs);
   SparseMatrix operator-(const SparseMatrix& lhs, const SparseMatrix& rhs);
 
-  SparseMatrix sparse_multiply_ajaj(const SparseMatrix& lhs, const SparseMatrix& rhs, bool NoSort=0);
+  SparseMatrix sparse_multiply(const SparseMatrix& lhs, const SparseMatrix& rhs, bool NoSort=0);
   SparseMatrix dense_dense_multiply(const SparseMatrix& lhs, const SparseMatrix& rhs);
 
   //////////////////////////////////////////////////////////////////////////
@@ -85,7 +84,7 @@ namespace ajaj {
     SparseMatrix(const SparseMatrix& other); //copy constructor, must DEEP copy
     SparseMatrix(Sparseint param_rows,Sparseint param_cols,Sparseint param_nzmax, bool compressed);
   public:
-    //When first formed matrix is allocated as transpose! When finalised it is transposed again, which orders the rows.
+    //When first formed matrix is allocated as its transpose! When finalised it is transposed to the correct form, which orders the rows.
     SparseMatrix(Sparseint param_rows,Sparseint param_cols,Sparseint param_nzmax); // will allocate space for the transpose!
     SparseMatrix(Sparseint param_rows,Sparseint param_cols); // will allocate space for the transpose!
     SparseMatrix(SparseMatrix&& other) noexcept : SparseMatrix() {swap(*this,other);} 
@@ -200,12 +199,12 @@ namespace ajaj {
     friend SparseMatrix operator+(const SparseMatrix& lhs, const SparseMatrix& rhs);
     friend SparseMatrix operator-(const SparseMatrix& lhs, const SparseMatrix& rhs);
     friend SparseMatrix copy(const SparseMatrix& other);
-    friend SparseMatrix sparse_multiply_ajaj(const SparseMatrix& lhs, const SparseMatrix& rhs, bool NoSort);
+    friend SparseMatrix sparse_multiply(const SparseMatrix& lhs, const SparseMatrix& rhs, bool NoSort);
     friend SparseMatrix dense_dense_multiply(const SparseMatrix& lhs, const SparseMatrix& rhs); //Assumes the arrays are actually dense, and row ordered
   };
 
   inline SparseMatrix NoTransMultiply(const SparseMatrix& A,const SparseMatrix& B){
-    return sparse_multiply_ajaj(A,B,1); //1 flag means don't sort rows
+    return sparse_multiply(A,B,1); //1 flag means don't sort rows
   }
 
   inline Sparseint SparseMatrix::rows() const {return(m_finalised ? m_array->m : m_array->n) ;}
