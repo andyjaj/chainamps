@@ -99,6 +99,7 @@ namespace ajaj {
     const QNVector& getChargeRules() const {return StateArray::data()->getChargeRules();}
     void fprint_binary(std::ofstream& outfile) const;
   };
+  
   typedef EigenStateArray Basis;
   bool load_Basis_binary(std::ifstream& infile,QNVector& charge_rules, Basis& basis);
 

@@ -53,6 +53,18 @@ namespace ajaj {
   }
 #endif
 
+  BlocksStructure::BlocksStructure(const std::string&  Name, const EigenStateArray& Spectrum, uMPXInt num_vertices, uMPXInt numLeft, uMPXInt numMiddle) : Name_(Name), SpectrumPtr_(&Spectrum),LeftBlock(Spectrum),RightBlock(Spectrum),num_vertices_(num_vertices),numLeft_(numLeft),numMiddle_(numMiddle) {
+    if (num_vertices % 2 !=0){
+      std::cout << "Currently only even length systems are supported!" <<std::endl;
+      exit(1);
+    }
+    if (num_vertices!=0){
+      //needs new initialiser that sets things up correctly if sizes aren't zero
+      load_left_block();
+      load_right_block();
+    }
+  }
+  
   bool BlocksStructure::save_left_block(uMPXInt l){
     std::stringstream leftname;
     leftname << Name_ << "_Left_" << l << ".BLOCK";

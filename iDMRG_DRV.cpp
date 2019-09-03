@@ -33,7 +33,7 @@ int main(int argc, char** argv){
     ajaj::uMPXInt steps(RuntimeArgs.number_of_steps());
 
     infvol.run(steps > 2 ? 2 : steps ,convergence_test,CHI,trunc);
-    //done for at least "steps" number of steps
+    //iDMRG requires at least two previous growth steps. If less than two then we just do an infinite volume step and skip the orthogonalisation bits later.
     
     const ajaj::MPO_matrix H1(myModel.vertex.make_one_site_operator("Vertex_Hamiltonian")); //form the on-vertex part of a Hamiltonian
     const ajaj::MPO_matrix ColX(myModel.H_MPO.ExtractMPOBlock(std::pair<ajaj::MPXInt,ajaj::MPXInt>(1,myModel.H_MPO.Index(1).size()-2),std::pair<ajaj::MPXInt,ajaj::MPXInt>(0,0)));

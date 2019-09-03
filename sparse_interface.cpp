@@ -19,7 +19,7 @@
 
 #if defined(USETBB) && !defined(NDEBUG)
 #include <mutex>
-std::mutex ajaj::MutexPrint::_mutexPrint{};
+std::mutex ajaj::MutexPrint::_mutexPrint{}; //from common_defs.hpp
 #endif
 
 

@@ -26,7 +26,6 @@ namespace ajaj {
   class BlocksStructure;
   class SuperBlock;
   class ProjectorBlocks;
-  //class DMRGBase;
   class iDMRG;
   class FiniteDMRG;
   class FiniteExcitedStates;
@@ -51,7 +50,7 @@ namespace ajaj {
   class BlocksStructure {
   private:
     std::string Name_; //name for file storage
-    const EigenStateArray* SpectrumPtr_; //shouldn't change. Using a ptr to a const means we can use the default equals provided by the compiler
+    const Basis* SpectrumPtr_; //shouldn't change. Using a ptr to a const means we can use the default equals provided by the compiler
     MPX_matrix LeftBlock; //local storage
     MPX_matrix RightBlock;
     uMPXInt num_vertices_;
@@ -75,9 +74,8 @@ namespace ajaj {
     }
 
   public:
-    BlocksStructure(const std::string&  Name, const EigenStateArray& Spectrum, uMPXInt num_vertices, uMPXInt numLeft, uMPXInt numMiddle) : Name_(Name), SpectrumPtr_(&Spectrum),LeftBlock(Spectrum),RightBlock(Spectrum),num_vertices_(num_vertices),numLeft_(numLeft),numMiddle_(numMiddle) {}
-    BlocksStructure(const std::string&  Name, const EigenStateArray& Spectrum) : BlocksStructure(Name,Spectrum,0,0,0) {}
-
+    BlocksStructure(const std::string&  Name, const EigenStateArray& Spectrum, uMPXInt num_vertices=0, uMPXInt numLeft=0, uMPXInt numMiddle=0);
+    
     uMPXInt size() const {return num_vertices_;}
     uMPXInt left_size() const {return numLeft_;}
     uMPXInt middle_size() const {return numMiddle_;}
@@ -116,11 +114,17 @@ namespace ajaj {
   public:
     MPSDecomposition CentralDecomposition;
 
-    SuperBlock(const std::string& Name, const MPO_matrix& H, const State& TargetState) : BlocksStructure(Name,H.GetPhysicalSpectrum(),0,0,0),H_ptr_(&H),TargetState_(TargetState),CentralDecomposition(H.getPhysicalSpectrum()) {
+    SuperBlock(const std::string& Name, const MPO_matrix& H, const State& TargetState, uMPXInt num_vertices=0, uMPXInt numLeft=0, uMPXInt numMiddle=0) : BlocksStructure(Name,H.GetPhysicalSpectrum(),num_vertices,numLeft,numMiddle),H_ptr_(&H),TargetState_(TargetState),CentralDecomposition(H.getPhysicalSpectrum()) {
       std::stringstream dnamestream;
       dnamestream << getName();// << "_Density_Matrix.dat";
       DensityFileName_=dnamestream.str();
+
+      if (num_vertices!=0){
+	//need to fetch previous lambda and central decomposition
+      }
+      
     }
+    
     const MPO_matrix& getH() const {return *H_ptr_;}
     const MPSDecomposition& getCentralDecomposition() const {return CentralDecomposition;}
     const std::vector<double>& getPreviousLambda() const {return previous_lambda_;}
@@ -173,8 +177,11 @@ namespace ajaj {
   private:
     DataOutput& output_ref_;
   public:
-    iDMRG(const std::string& Name, const MPO_matrix& H, const State& TargetState, DataOutput& resultsref) : SuperBlock(Name,H,TargetState),output_ref_(resultsref) {};
+    //iDMRG(const std::string& Name, const MPO_matrix& H, const State& TargetState, DataOutput& resultsref) : SuperBlock(Name,H,TargetState),output_ref_(resultsref) {};
+    iDMRG(const std::string& Name, const MPO_matrix& H, const State& TargetState, DataOutput& resultsref, uMPXInt num_vertices=0, uMPXInt numLeft=0, uMPXInt numMiddle=0) : SuperBlock(Name,H,TargetState,num_vertices,numLeft,numMiddle),output_ref_(resultsref) {};
+
     void run(uMPXInt number_of_steps=0, double convergence_criterion=0.0,  uMPXInt chi=0, double truncation=0.0); /**< Perform infinite algorithm growth steps*/
+
     double fidelity() const {return fidelity_;}
   };
 

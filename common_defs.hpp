@@ -24,7 +24,6 @@ namespace ajaj {
   /** Type used for pairing indices. Lots of functions take a pair of MPX indices as arguments.*/
   typedef std::pair<MPXInt,MPXInt> MPXPair;
   typedef std::vector<MPXPair> MPXPairVector;
-  //typedef std::pair<uMPXInt, MPXPairVector> VertexIndexPairs;
   
   typedef std::pair<uMPXInt,std::complex<double> > c_specifier;
   typedef std::vector<c_specifier> c_specifier_vector;
