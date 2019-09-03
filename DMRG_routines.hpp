@@ -113,17 +113,7 @@ namespace ajaj {
     
   public:
     MPSDecomposition CentralDecomposition;
-
-    SuperBlock(const std::string& Name, const MPO_matrix& H, const State& TargetState, uMPXInt num_vertices=0, uMPXInt numLeft=0, uMPXInt numMiddle=0) : BlocksStructure(Name,H.GetPhysicalSpectrum(),num_vertices,numLeft,numMiddle),H_ptr_(&H),TargetState_(TargetState),CentralDecomposition(H.getPhysicalSpectrum()) {
-      std::stringstream dnamestream;
-      dnamestream << getName();// << "_Density_Matrix.dat";
-      DensityFileName_=dnamestream.str();
-
-      if (num_vertices!=0){
-	//need to fetch previous lambda and central decomposition
-      }
-      
-    }
+    SuperBlock(const std::string& Name, const MPO_matrix& H, const State& TargetState, uMPXInt num_vertices=0, uMPXInt numLeft=0, uMPXInt numMiddle=0);
     
     const MPO_matrix& getH() const {return *H_ptr_;}
     const MPSDecomposition& getCentralDecomposition() const {return CentralDecomposition;}

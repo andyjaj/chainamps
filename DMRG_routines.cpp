@@ -185,6 +185,29 @@ namespace ajaj {
     save_right_block();
   }
 
+  SuperBlock::SuperBlock(const std::string& Name, const MPO_matrix& H, const State& TargetState, uMPXInt num_vertices, uMPXInt numLeft, uMPXInt numMiddle) : BlocksStructure(Name,H.GetPhysicalSpectrum(),num_vertices,numLeft,numMiddle),H_ptr_(&H),TargetState_(TargetState),CentralDecomposition(H.getPhysicalSpectrum()) {
+      std::stringstream dnamestream;
+      dnamestream << getName();// << "_Density_Matrix.dat";
+      DensityFileName_=dnamestream.str();
+
+      if (num_vertices!=0){
+	//need to fetch central decomposition (blocks are fetched separately by blocksstructure)
+	std::stringstream Lambdanamestream;
+	Lambdanamestream << Name << "_Lambda_" << num_vertices/2 << "_" << num_vertices/2 << ".MPX_matrix";
+	//CentralDecomposition.Values(load_MPX_matrix(Lambdanamestream.str(),Basis_).get_diag());
+	
+	std::stringstream Lnamestream;
+	Lnamestream << Name << "_Left_" << num_vertices/2 << ".MPS_matrix";
+	//CentralDecomposition.LeftMatrix(std::move(load_MPS_matrix(Lnamestream.str(),basis())));
+
+	std::stringstream Rnamestream;
+	Rnamestream << Name << "_Right_" << num_vertices/2 << ".MPS_matrix";
+	//CentralDecomposition.RightMatrix(std::move(load_MPS_matrix(Rnamestream.str(),basis())));
+	
+      }
+      
+    }
+  
   Data SuperBlock::initialise(uMPXInt chi, double truncation){
     //Assumes any previous contents of the blocks are junk.
     if(!H_ptr_->isConsistent()){std::cout << "Hamiltonian MPO is malformed. Aborting." << std::endl; H_ptr_->print_indices_values(); exit(1);}
@@ -204,7 +227,7 @@ namespace ajaj {
     //solve
     CentralDecomposition=TwoVertexSVD(TwoVertexInitialWavefunction(LeftH,RightH,TargetState_,two_vertex_energy),bonddim,truncation);
     CentralDecomposition.SquareRescale(1.0);
-    CentralDecomposition.store(getName(),left_size()+1,right_size()+1,0);
+    CentralDecomposition.store(getName(),left_size()+1,right_size()+1,1);
 
     //CentralDecomposition.OutputPhysicalIndexDensities(DensityFileStream_);
     //at this stage we can use the generated left and right Hamiltonians to save the left and right blocks
@@ -242,7 +265,7 @@ namespace ajaj {
     Data energy;
     CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),nullptr,size(),energy,&(pred_.Guess)),chi,truncation);
     CentralDecomposition.SquareRescale(1.0);
-    CentralDecomposition.store(getName(),left_size()+1,right_size()+1,0);
+    CentralDecomposition.store(getName(),left_size()+1,right_size()+1,1);
     //CentralDecomposition.OutputPhysicalIndexDensities(DensityFileStream_);
     pred_=MakePrediction(CentralDecomposition,previous_lambda_);
     fidelity_=CheckConvergence(pred_,previous_lambda_);
