@@ -25,15 +25,31 @@ int main(int argc, char** argv){
     const ajaj::Model myModel(ajaj::MakeModelFromArgs(RuntimeArgs));
 
     ajaj::State TargetState(myModel.make_target(RuntimeArgs.target()));
-    ajaj::DataOutput results(ajaj::OutputName(RuntimeArgs.filename(),"Energies.dat"),"Index, Energy, Energy/vertex, Entropy, Truncation, Fidelity");
-    ajaj::iDMRG infvol(std::string("GroundState"),myModel.H_MPO,TargetState,results);
-
     ajaj::uMPXInt CHI(RuntimeArgs.chi());
     double trunc(RuntimeArgs.trunc());
     ajaj::uMPXInt steps(RuntimeArgs.number_of_steps());
 
-    infvol.run(steps > 2 ? 2 : steps ,convergence_test,CHI,trunc);
+    std::string PreName("");
+    
+    if (RuntimeArgs.resume()){
+      std::cout << "Resuming a previous iDMRG run at step " << RuntimeArgs.resume() <<std::endl;
+      std::stringstream ns;
+      ns << "Resumed_Step_" <<  RuntimeArgs.resume()<< "_";
+      PreName=ns.str();
+    }
+
+    ajaj::DataOutput results(ajaj::OutputName(PreName+RuntimeArgs.filename(),"Energies.dat"),"Index, Energy, Energy/vertex, Entropy, Truncation, Fidelity");
+
+    
+    ajaj::iDMRG infvol(std::string("GroundState"),myModel.H_MPO,TargetState,results,2*RuntimeArgs.resume());
+
     //iDMRG requires at least two previous growth steps. If less than two then we just do an infinite volume step and skip the orthogonalisation bits later.
+    ajaj::uMPXInt warmup_steps=steps+RuntimeArgs.resume() <= 2 ? steps : (RuntimeArgs.resume() <2 ? 2-RuntimeArgs.resume() : 0);
+
+    std::cout << "Need to do " << warmup_steps << " warmup steps." <<std::endl; 
+    
+    infvol.run(warmup_steps,convergence_test,CHI,trunc);
+    //infvol.run(steps+RuntimeArgs.resume() > 2 ? 2 : steps ,convergence_test,CHI,trunc);
     
     const ajaj::MPO_matrix H1(myModel.vertex.make_one_site_operator("Vertex_Hamiltonian")); //form the on-vertex part of a Hamiltonian
     const ajaj::MPO_matrix ColX(myModel.H_MPO.ExtractMPOBlock(std::pair<ajaj::MPXInt,ajaj::MPXInt>(1,myModel.H_MPO.Index(1).size()-2),std::pair<ajaj::MPXInt,ajaj::MPXInt>(0,0)));
@@ -41,11 +57,12 @@ int main(int argc, char** argv){
 
     std::vector<double> iDMRGEnergies;
 
-    ajaj::DataOutput infvolresults(ajaj::OutputName(RuntimeArgs.filename(),"iDMRGEnergies.dat"),"Index, Energy/vertex, Entropy");
+    ajaj::DataOutput infvolresults(PreName+ajaj::OutputName(RuntimeArgs.filename(),"iDMRGEnergies.dat"),"Index, Energy/vertex, Entropy");
 
     ajaj::uMPXInt VarCHI(CHI);
-
-    for (ajaj::uMPXInt r=0;r< (steps>2 ? steps-2 : 0) ;++r){
+    
+    //for (ajaj::uMPXInt r=0;r< (steps>2 ? steps-2 : 0) ;++r){
+    for (ajaj::uMPXInt r=0;r< steps-warmup_steps ;++r){
       infvol.run(1,-0.0,VarCHI,trunc);
 
 #ifdef TIMING

@@ -634,6 +634,7 @@ namespace ajaj {
   }
 
   std::vector<std::complex<double> > SparseMatrix::diagonal() const {
+    if (!m_finalised){std::cout << "Not finalised! Probably you didn't mean to do this yet!" << std::endl; exit(1);}
     std::vector<std::complex<double> > ans;
     for (Sparseint i=0;i<cols();++i){
       ans.push_back(element(i,i));

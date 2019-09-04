@@ -113,6 +113,9 @@ namespace ajaj{
     SparseED RightEigs(const State& blockstate, Sparseint numevals, char which[3],SparseMatrix* initial=NULL) const;/**< Right eigen decomposition, for a specific block defined by blockstate. */
     SparseED RightEigs(Sparseint numevals, char which[3],SparseMatrix* initial=NULL) const;/**< Right eigen decomposition. */
     MPXDecomposition SVD(size_t bond_dimension=0,double min_s_val=0.0) const; /**< Singular value decomposition with possible truncation. Row indices become rows of U, col indices become cols of Vdagger. */
+    
+    std::vector<std::complex<double> > GetDiagonal() {if (!isEmpty()) return m_Matrix.diagonal(); else return std::vector<std::complex<double> >();}
+    
     MPX_matrix& Transpose();
     MPX_matrix& RemoveDummyIndices(std::vector<MPXInt> indices_for_removal); /**< Strip off dummy indices. Useful for simplifying open b.c. ends */
     MPX_matrix& MoveDummyIndices(const std::vector<MPXInt>& newindexorder); /**< Move dummy indices only. */
@@ -121,7 +124,7 @@ namespace ajaj{
     complex<double> Trace() const {return m_Matrix.trace();} /**< If MPX_matrix is square, find the trace.*/
     MPX_matrix ZeroLastBlock(); /**< Given a particular index and a value of that index, zero the other data*/
     MPX_matrix& CombineSimilarMatrixIndices(bool PhysicalInMiddle=0);
-
+    
     //move assignment operator needed?
     MPX_matrix& operator=(MPX_matrix other){
       swap(*this,other);

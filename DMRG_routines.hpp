@@ -63,8 +63,8 @@ namespace ajaj {
     bool save_left_block();
     bool save_right_block();
     bool save_blocks();
-    void load_left_block();
-    void load_right_block();
+    bool load_left_block();
+    bool load_right_block();
     std::string ResetName(const std::string& NewName, uMPXInt a){
       std::stringstream namestream;
       namestream << NewName << "_" << a;
@@ -168,7 +168,7 @@ namespace ajaj {
     DataOutput& output_ref_;
   public:
     //iDMRG(const std::string& Name, const MPO_matrix& H, const State& TargetState, DataOutput& resultsref) : SuperBlock(Name,H,TargetState),output_ref_(resultsref) {};
-    iDMRG(const std::string& Name, const MPO_matrix& H, const State& TargetState, DataOutput& resultsref, uMPXInt num_vertices=0, uMPXInt numLeft=0, uMPXInt numMiddle=0) : SuperBlock(Name,H,TargetState,num_vertices,numLeft,numMiddle),output_ref_(resultsref) {};
+    iDMRG(const std::string& Name, const MPO_matrix& H, const State& TargetState, DataOutput& resultsref, uMPXInt num_vertices=0) : SuperBlock(Name,H,TargetState,num_vertices,num_vertices ? num_vertices/2-1 : 0, num_vertices ? 2 : 0),output_ref_(resultsref) {};
 
     void run(uMPXInt number_of_steps=0, double convergence_criterion=0.0,  uMPXInt chi=0, double truncation=0.0); /**< Perform infinite algorithm growth steps*/
 

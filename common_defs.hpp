@@ -113,6 +113,16 @@ namespace ajaj {
   };
 #endif
   //
+
+inline std::vector<double> vector_of_reals(const std::vector<std::complex<double> >& complexvec){
+    std::vector<double> ans;
+    ans.reserve(complexvec.size());
+    for (auto& c: complexvec){
+      ans.emplace_back(c.real());
+    }
+    return ans;
+  }
+  
 }
 
 #endif

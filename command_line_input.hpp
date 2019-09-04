@@ -177,7 +177,7 @@ namespace ajaj {
 
   };
 
-  enum optionIndex {UNKNOWN,CHI,TRUNC,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET,FINITE_MEASUREMENT,NEV,ENTANGLEMENT,VERTEX_ENTANGLEMENT,C_SPECIFIER,TIMEFILE,FDMRG_MODE,IENERGY,SAVE_ALL,REVERSE};
+  enum optionIndex {UNKNOWN,CHI,TRUNC,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET,FINITE_MEASUREMENT,NEV,ENTANGLEMENT,VERTEX_ENTANGLEMENT,C_SPECIFIER,TIMEFILE,FDMRG_MODE,IENERGY,SAVE_ALL,REVERSE,RESUME};
 
   const option::Descriptor store_usage[2] =
     {
@@ -186,7 +186,7 @@ namespace ajaj {
       { 0, 0, 0, 0, 0, 0 }
     };
 
-  const option::Descriptor iDMRG_usage[6] =
+  const option::Descriptor iDMRG_usage[7] =
     {
       {UNKNOWN, 0,"", "",Arg::Unknown, "USAGE: iDMRG_DRV.bin [OPTIONS] <model_filename>"},
       {CHI,0,"B","bond-dimension",Arg::PositiveNumeric,"  -B <number>, --bond-dimension=<number>"
@@ -197,6 +197,8 @@ namespace ajaj {
        "  \tThe number of infinite volume steps, >= 0" },
       {TARGET,0,"T","target-charges",Arg::CommaSepShorts,"  -T <number>,<number>,<number>, --target-charges=<n>,<n>,<n>"
        "  \t Charges to target for the unit cell."},
+      {RESUME,0,"R", "resume-step",Arg::PositiveNumeric,"  -R <step>, --resume-step=<step>"
+       "  \t Resume a previous iDMRG run at step <step>"},
       { 0, 0, 0, 0, 0, 0 }
     };
 
@@ -407,10 +409,11 @@ namespace ajaj {
   class iDMRG_Args : public Base_Args{
   private:
     unsigned long num_steps_;
+    unsigned long resume_;
     std::vector<short int> target_;
 
   public:
-    iDMRG_Args(int argc, char* argv[]) : Base_Args(argc,argv,iDMRG_usage), num_steps_(0){
+    iDMRG_Args(int argc, char* argv[]) : Base_Args(argc,argv,iDMRG_usage), num_steps_(0),resume_(0){
       
       //REQUIRE ONE NON OPTIONAL ARGUMENT, TREAT AS A FILENAME
       if (parse.nonOptionsCount()!=1 || std::string(parse.nonOption(0))==std::string("-")){
@@ -427,6 +430,9 @@ namespace ajaj {
 	  std::istringstream tss(options[TARGET].arg);
 	  tss >> target_;
 	}
+	if (options[RESUME])
+	  resume_=stoul(options[RESUME].arg);
+	
       }
       print();
     }
@@ -436,6 +442,10 @@ namespace ajaj {
 
     const std::vector<short int>& target() const {
       return target_;
+    }
+
+    unsigned long resume() const {
+      return resume_;
     }
 
   };

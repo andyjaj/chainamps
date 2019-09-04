@@ -60,8 +60,11 @@ namespace ajaj {
     }
     if (num_vertices!=0){
       //needs new initialiser that sets things up correctly if sizes aren't zero
-      load_left_block();
-      load_right_block();
+      if(load_left_block() || load_right_block()){
+	std::cout << "Invalid block files!" << std::endl;
+	exit(1);
+      }
+      ;
     }
   }
   
@@ -88,15 +91,18 @@ namespace ajaj {
   bool BlocksStructure::save_blocks(){
     return (save_left_block() && save_right_block());
   }
-  void BlocksStructure::load_left_block(){
+  bool BlocksStructure::load_left_block(){
     std::stringstream leftname;
     leftname << Name_ << "_Left_" << left_size() << ".BLOCK";
     LeftBlock=std::move(load_MPX_matrix(leftname.str(),*SpectrumPtr_));
+    return LeftBlock.isEmpty();
   }
-  void BlocksStructure::load_right_block(){
+  bool BlocksStructure::load_right_block(){
     std::stringstream rightname;
     rightname << Name_ << "_Right_" << right_size() << ".BLOCK";
     RightBlock=std::move(load_MPX_matrix(rightname.str(),*SpectrumPtr_));
+    return RightBlock.isEmpty();
+
   }
   void BlocksStructure::ends(MPX_matrix&& leftend, MPX_matrix&& rightend) {
     std::stringstream leftname;
@@ -190,23 +196,68 @@ namespace ajaj {
       dnamestream << getName();// << "_Density_Matrix.dat";
       DensityFileName_=dnamestream.str();
 
-      if (num_vertices!=0){
-	//need to fetch central decomposition (blocks are fetched separately by blocksstructure)
+      if (num_vertices!=0){//we are resuming a run
+
+	//collect the parts from file storage and do a trivial SVD on the lambda matrix to extract the singular values cleanly.
+	//what we will lose here, relative to a run that hasn't been stopped and resumed from file, is any knowledge of previous truncations.
 	std::stringstream Lambdanamestream;
 	Lambdanamestream << Name << "_Lambda_" << num_vertices/2 << "_" << num_vertices/2 << ".MPX_matrix";
-	//CentralDecomposition.Values(load_MPX_matrix(Lambdanamestream.str(),Basis_).get_diag());
+	
+	CentralDecomposition.Values=std::move(vector_of_reals(load_MPX_matrix(Lambdanamestream.str(),basis()).GetDiagonal()));
+
+	if (CentralDecomposition.Values.size()==0){
+	  std::cout << "Invalid file " << Lambdanamestream.str() << std::endl;
+	  exit(1);
+	}
 	
 	std::stringstream Lnamestream;
 	Lnamestream << Name << "_Left_" << num_vertices/2 << ".MPS_matrix";
-	//CentralDecomposition.LeftMatrix(std::move(load_MPS_matrix(Lnamestream.str(),basis())));
-
 	std::stringstream Rnamestream;
 	Rnamestream << Name << "_Right_" << num_vertices/2 << ".MPS_matrix";
-	//CentralDecomposition.RightMatrix(std::move(load_MPS_matrix(Rnamestream.str(),basis())));
 	
-      }
-      
-    }
+	CentralDecomposition.LeftMatrix=std::move(load_MPS_matrix(Lnamestream.str(),basis()).left_shape());
+	CentralDecomposition.RightMatrix=std::move(load_MPS_matrix(Rnamestream.str(),basis()).right_shape());
+
+	if (CentralDecomposition.LeftMatrix.isEmpty()){
+	  std::cout << "Invalid file " << Lnamestream.str() << std::endl;
+	  exit(1);
+	}
+	if (CentralDecomposition.RightMatrix.isEmpty()){
+	  std::cout << "Invalid file " << Rnamestream.str() << std::endl;
+	  exit(1);
+	}
+	
+	//we still require the previous lambda
+       
+	if (num_vertices==2){ //resuming from the very first step, need to generate trivial previous lambda
+	  previous_lambda_=std::vector<double>(1,1.0);
+	}
+	else {
+	  std::stringstream PrevLambdanamestream;
+	  PrevLambdanamestream << Name << "_Lambda_" << num_vertices/2 -1 << "_" << num_vertices/2 -1 << ".MPX_matrix";
+	  
+	  previous_lambda_=std::move(vector_of_reals(load_MPX_matrix(PrevLambdanamestream.str(),basis()).GetDiagonal()));
+	  
+	  if (previous_lambda_.size()==0){
+	    std::cout << "Invalid file " << PrevLambdanamestream.str() << std::endl;
+	    exit(1);
+	  }
+	}
+
+	std::cout << "Info on loaded data:" <<std::endl;
+	std::cout << "Lambda size " << CentralDecomposition.Values.size() <<std::endl;
+	std::cout << "Previous Lambda size " << previous_lambda_.size() <<std::endl;
+	std::cout << "Left MPS" <<std::endl;
+	CentralDecomposition.LeftMatrix.print_indices();
+	std::cout << "Right MPS" <<std::endl;
+	CentralDecomposition.RightMatrix.print_indices();
+	
+	//build prediction vector and calculate fidelity
+	pred_=MakePrediction(CentralDecomposition,previous_lambda_);//allows checking overlap of current state with the previous one.
+	fidelity_=CheckConvergence(pred_,previous_lambda_);
+	
+      }   
+  }
   
   Data SuperBlock::initialise(uMPXInt chi, double truncation){
     //Assumes any previous contents of the blocks are junk.
@@ -843,7 +894,7 @@ namespace ajaj {
 
   Prediction MakePrediction(const MPSDecomposition& Decomp, const std::vector<double>& PreviousLambda){
     std::cout <<"Making prediction vector" <<std::endl;
-    const EigenStateArray& spectrum(Decomp.LeftMatrix.GetPhysicalSpectrum());
+    const Basis& spectrum(Decomp.LeftMatrix.GetPhysicalSpectrum());
     Prediction ans;
     MPX_matrix svals(spectrum,Decomp.LeftMatrix.Index(2),Decomp.Values);
     MPX_matrix LambdaLB(reorder(contract(Decomp.LeftMatrix,0,svals,0,contract20),0,reorder102,1));
