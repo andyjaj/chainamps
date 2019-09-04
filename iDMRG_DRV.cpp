@@ -38,7 +38,7 @@ int main(int argc, char** argv){
       PreName=ns.str();
     }
 
-    ajaj::DataOutput results(ajaj::OutputName(PreName+RuntimeArgs.filename(),"Energies.dat"),"Index, Energy, Energy/vertex, Entropy, Truncation, Fidelity");
+    ajaj::DataOutput results(ajaj::OutputName(PreName+RuntimeArgs.filename(),"Energies.dat"),"Index, Energy, Energy/vertex, Entropy, Truncation, Fidelity",RuntimeArgs.resume());
 
     
     ajaj::iDMRG infvol(std::string("GroundState"),myModel.H_MPO,TargetState,results,2*RuntimeArgs.resume());
@@ -57,7 +57,7 @@ int main(int argc, char** argv){
 
     std::vector<double> iDMRGEnergies;
 
-    ajaj::DataOutput infvolresults(PreName+ajaj::OutputName(RuntimeArgs.filename(),"iDMRGEnergies.dat"),"Index, Energy/vertex, Entropy");
+    ajaj::DataOutput infvolresults(PreName+ajaj::OutputName(RuntimeArgs.filename(),"iDMRGEnergies.dat"),"Index, Energy/vertex, Entropy",RuntimeArgs.resume()>2 ? RuntimeArgs.resume()-2 : 0);
 
     ajaj::uMPXInt VarCHI(CHI);
     

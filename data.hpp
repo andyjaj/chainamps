@@ -60,7 +60,7 @@ namespace ajaj {
 
     DataOutput(){};
     
-    DataOutput(const std::string& f,const std::string& cs=std::string()) : Step(0),filename(f),comment(cs) {
+    DataOutput(const std::string& f,const std::string& cs=std::string(),uMPXInt init_step=0) : Step(init_step),filename(f),comment(cs) {
       outfile.open(filename.c_str(),ios::out | ios::trunc);outfile << setprecision(16);
       if (!cs.empty()){
 	outfile << "# "<< comment << std::endl;

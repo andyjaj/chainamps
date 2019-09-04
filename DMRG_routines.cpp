@@ -300,15 +300,12 @@ namespace ajaj {
     if (size()<2){ //haven't initialised yet?
       return initialise(chi,truncation); //store dummies, and first left and right blocks
     }
-    else if (size()==2){ //special case, pre stored blocks, but still need to add middle blocks
+    else if (size()==2){ //special case, pre stored blocks, but still need to insert dummy middle sites for solving
       insert_2();
     }
     else { /*size()>4, make new left and right blocks, insert dummy vertices ready for solving*/
       insert_2(MakeLeftBlock(getLeftBlock(),getH(),CentralDecomposition.LeftMatrix),MakeRightBlock(getRightBlock(),getH(),CentralDecomposition.RightMatrix));
     }
-    //Prediction Next(MakePrediction(CentralDecomposition,previous_lambda_));
-    //std::cout << "Checking overlap" << std::endl; //actually we are checking the convergence of the previous iteration...
-    //fidelity_=CheckConvergence(Next,previous_lambda_);
     //we don't need the central decomp anymore, so we could steal/swap from it
     previous_lambda_=CentralDecomposition.Values;
     //update numbers
