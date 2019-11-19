@@ -86,6 +86,7 @@ namespace ajaj {
   static const std::vector<MPXInt> reorder135 {{1,3,5}};
   static const std::vector<MPXInt> reorder0213 {{0,2,1,3}};
   static const std::vector<MPXInt> reorder0132 {{0,1,3,2}};
+  static const std::vector<MPXInt> reorder1032 {{1,0,3,2}};
   static const std::vector<MPXInt> reorder03214 {{0,3,2,1,4}};
   static const std::vector<MPXInt> reorder12403 {{1,2,4,0,3}};
   static const std::vector<MPXInt> reorder032415 {{0,3,2,4,1,5}};

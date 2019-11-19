@@ -71,6 +71,10 @@ int main(int argc, char** argv){
 
       ajaj::UnitCell Ortho(Orthogonalise(infvol.getCentralDecomposition(),infvol.getPreviousLambda()));
       if(Ortho.size()) Ortho.store("Ortho",r); //don't store if the unitcell couldn't be formed
+      else {
+	std::cout << "Couldn't form unit cell, aborting." <<std::endl;
+	exit(1);
+      }
       iDMRGEnergies.push_back(real(ajaj::iTwoVertexEnergy(ColX,RowX,H1,Ortho)));
 
       std::cout << "iDMRG energy per vertex " << iDMRGEnergies.back() << std::endl;

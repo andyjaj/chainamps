@@ -45,7 +45,6 @@ namespace ajaj {
   SparseMatrix NoTransMultiply(const SparseMatrix& A,const SparseMatrix& B);
   SparseMatrix addmult(const SparseMatrix& A,const SparseMatrix& B,const std::complex<double> alpha,const std::complex<double> beta); //will finalise matrices if necessary
   void swap(SparseMatrix& first, SparseMatrix& second) noexcept;
-  //SparseMatrix reshape(const SparseMatrix& old,Sparseint newrows,Sparseint newcols);
   SparseMatrix reshape(const SparseMatrix& old,Sparseint newrows);
   SparseMatrix reshape(const SparseMatrix& old,Sparseint old_num_row_idxs,Sparseint new_num_row_idxs,const std::vector<Sparseint>& old_idx_dims,const std::vector<Sparseint>& new_idx_order, const bool conjugate);
   SparseMatrix cheap_reshape(const SparseMatrix& old,Sparseint old_num_row_idxs,Sparseint new_num_row_idxs,const std::vector<Sparseint>& old_idx_dims,const std::vector<Sparseint>& new_idx_order, const bool conjugate);
@@ -88,7 +87,6 @@ namespace ajaj {
     SparseMatrix(Sparseint param_rows,Sparseint param_cols,Sparseint param_nzmax); // will allocate space for the transpose!
     SparseMatrix(Sparseint param_rows,Sparseint param_cols); // will allocate space for the transpose!
     SparseMatrix(SparseMatrix&& other) noexcept : SparseMatrix() {swap(*this,other);} 
-    //SparseMatrix(SparseMatrix&& other) noexcept : m_array(other.m_array), m_finalised(other.m_finalised) {other.m_array=nullptr;other.m_finalised=0;std::cout << "Sparse MOVE constructor" << std::endl;} 
     SparseMatrix(const std::vector<complex<double> >& diag,bool inverse=0);  //create diagonal matrix
     SparseMatrix(const std::vector<double>& diag,bool inverse=0);  //create diagonal matrix
     SparseMatrix() noexcept;//useful when creating an instance that needs to be replaced later
@@ -303,6 +301,7 @@ namespace ajaj {
       //EigenVectors=SparseMatrix(m_dim,numevals);
     }
     SparseHED(std::vector<double>&& values,SparseMatrix&& vecs) : SparseDecompositionBase<double>(std::move(values)),m_dim(values.size()),EigenVectors(std::move(vecs)) {}
+    Sparseint EigenVectorSize() const {return m_dim;}
   };
 
   class SparseED :public SparseDecompositionBase<std::complex<double> > {
@@ -314,6 +313,14 @@ namespace ajaj {
       //EigenVectors=SparseMatrix(m_dim,numevals);
     }
     SparseED(SparseED&& other) noexcept : SparseDecompositionBase<std::complex<double> >(std::move(other.Values)), m_dim(other.m_dim), EigenVectors(std::move(other.EigenVectors)){}
+
+    //make a standard Eigen decomp from a Hermitian one.
+    SparseED(SparseHED&& HED) noexcept : SparseDecompositionBase<std::complex<double> >(HED.Values.size()),m_dim(HED.EigenVectorSize()),EigenVectors(std::move(HED.EigenVectors)){
+      for (auto d : HED.Values){Values.emplace_back(d,0.0);}
+    }//construct from a SparseHED object
+
+    Sparseint EigenVectorSize() const {return m_dim;}
+
     //~SparseED(){};
   };
 

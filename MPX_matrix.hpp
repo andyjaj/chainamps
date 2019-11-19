@@ -87,6 +87,7 @@ namespace ajaj{
     const Basis& GetPhysicalSpectrum() const {return *m_SpectrumPtr;} /**< Return ref to the Physical spectrum, needs renaming to match convention */
     const Basis& getPhysicalSpectrum() const {return *m_SpectrumPtr;} /**< Return ref to the Physical spectrum */
     const Basis& basis() const {return *m_SpectrumPtr;}
+    SparseMatrix matrix() {return copy(m_Matrix);}
     bool isConsistent() const; /**< Check dimensions of SparseMatrix match the dimensions of the indices.*/
     bool isHermitian() const;
     std::vector<Sparseint> dimsvector() const; /**< Return a vector containing all the dimensions of the MPXIndex indices, from left to right. */

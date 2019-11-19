@@ -663,6 +663,7 @@ namespace ajaj {
     if(!rhs.m_finalised){std::cout << "rhs not finalised!" << std::endl;exit(1);}
     //have to use a temporary object because of all the pointers in m_array
     SparseMatrix temp(cs_cl_add(m_array,rhs.m_array,1.0,1.0),1);
+    temp.order_rows(); //really important, cs_cl_add compresses the answer, but doesn't order rows!
     swap(*this,temp);
     return *this;
   }
@@ -673,6 +674,7 @@ namespace ajaj {
     if(!rhs.m_finalised){std::cout << "rhs not finalised!" << std::endl;exit(1);}
     //have to use a temporary object because of all the pointers in m_array
     SparseMatrix temp(cs_cl_add(m_array,rhs.m_array,1.0,-1.0),1);
+    temp.order_rows();//really important, cs_cl_add compresses the answer, but doesn't order rows!
     swap(*this,temp);
     return *this;
   }
@@ -684,12 +686,12 @@ namespace ajaj {
 
   SparseMatrix operator+(const SparseMatrix& lhs, const SparseMatrix& rhs)
   {
-    return SparseMatrix(cs_cl_add(lhs.m_array,rhs.m_array,1.0,1.0),1);
+    return SparseMatrix(cs_cl_add(lhs.m_array,rhs.m_array,1.0,1.0),1).order_rows();//really important, cs_cl_add compresses the answer, but doesn't order rows!
   }
 
   SparseMatrix operator-(const SparseMatrix& lhs, const SparseMatrix& rhs)
   {
-    return SparseMatrix(cs_cl_add(lhs.m_array,rhs.m_array,1.0,-1.0),1);
+    return SparseMatrix(cs_cl_add(lhs.m_array,rhs.m_array,1.0,-1.0),1).order_rows();//really important, cs_cl_add compresses the answer, but doesn't order rows!
   }
 
   double SparseMatrix::norm() const {
@@ -1276,7 +1278,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 #ifndef NDEBUG
       std::cout <<"Weight is " << block_weight <<std::endl;
       if (std::isnan(block_weight)){//if not a number, then problem!
-	std::cout << "Nan error" << std::endl;
+	std::cout << "NaN error" << std::endl;
 	this->print();
       }
 #endif
@@ -1579,8 +1581,8 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     SparseMatrix* Guessptr;
     SparseMatrix Guess;
     if (initial) {Guess=SpTB.ReverseTranslateRows(*initial); Guessptr=&Guess;}
-    else {Guessptr=NULL;}
-    SparseED SpBlockans(SpTB.Block.ED(numevals,which,Guessptr));
+    else {Guessptr=NULL;}    
+    SparseED SpBlockans(SpTB.Block.ED(numevals,which,Guessptr));    
     ans.Values=SpBlockans.Values; //copy eigenvalues over
     double tol=SPARSETOL/double(SpBlockans.EigenVectors.rows());
     for (Sparseint c=0;c<numevals;++c){
@@ -1603,6 +1605,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 
   //getting the left eigenvectors is a bit trickier
   //requires a transpose of the translation block, use of arpack then transpose back
+  //stores left eigen vectors as columns!
   SparseED SparseMatrix::LeftED(const std::vector<Sparseint>& RowB,const std::vector<Sparseint>& ColB, Sparseint numevals, char which[3],SparseMatrix* initial) const{
     if (!this->is_finalised()){std::cout << "Not finalised!" << std::endl; exit(1);}
     if (this->rows()!=this->cols()){std::cout << "Matrix not square for LeftED!" << std::endl; exit(1);}
@@ -1617,7 +1620,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     if (initial) {Guess=SpTB.ReverseTranslateRows(*initial); Guessptr=&Guess;}
     else {Guessptr=NULL;}
     //below does a transpose, messing up the translation block's sparsematrix
-    SparseED SpBlockans(SpTB.Block.transpose().ED(numevals,which,Guessptr));
+    SparseED SpBlockans(SpTB.Block.transpose().ED(numevals,which,Guessptr));    
     ans.Values=SpBlockans.Values; //copy eigenvalues over
     double tol=SPARSETOL/double(SpBlockans.EigenVectors.rows());
     for (Sparseint c=0;c<numevals;++c){
@@ -1659,6 +1662,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 
 	std::complex<double>* dm=new std::complex<double>[this->rows()*this->rows()];
 	this->to_dense(dm);
+		
 	densefuncs::diagonalise_with_lapack_nh(this->rows(), dm, dEvecs, dEvals);
 	delete[] dm;
 
@@ -1668,10 +1672,12 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 	for (Sparseint i=0; i<this->rows();++i){
 	  if (abs(dEvals[i])>weight) {largest=i;weight=abs(dEvals[i]);}
 	}
+	
 	if (largest!=0){
-	  std::swap_ranges(dEvals,dEvals+1,&dEvals[largest]);
-	  std::swap_ranges(dEvecs,dEvecs+this->rows(),&(dEvecs[largest]));
+	  std::swap_ranges(dEvals,dEvals+1,dEvals+largest);
+	  std::swap_ranges(dEvecs+0,dEvecs+(this->rows()),dEvecs+(largest*this->rows()));
 	}
+	
 	//copy into
 	std::copy(dEvals,dEvals+requested_numevals,Evals);
 	std::copy(dEvecs,dEvecs+this->rows()*requested_numevals,Evecs);

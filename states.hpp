@@ -97,6 +97,7 @@ namespace ajaj {
     void print() const; /**< Print all the EigenStates */
     const std::vector<double>& Energies() const {return m_energies;}
     const QNVector& getChargeRules() const {return StateArray::data()->getChargeRules();}
+    State Identity() const {return StateArray::data()->Identity();}
     void fprint_binary(std::ofstream& outfile) const;
   };
   
