@@ -3,8 +3,8 @@
  * Currently only two site DMRG is implemented.
  *
  */
-#ifndef DMRG_H
-#define DMRG_H
+#ifndef DMRGROUTINES_H
+#define DMRGROUTINES_H
 
 #include <vector>
 #include <utility>
@@ -33,6 +33,22 @@ namespace ajaj {
 
   typedef std::pair<MPX_matrix,double> TensorWeightPair;
 
+  // class DMRGInitType {
+  // private:
+  //   std::string StorageName_;
+  //   std::string InitStateName_;
+  //   c_specifier_array cspec_;
+    
+  // public:
+    
+  //   DMRGInitType() StorageName_(std::string("GroundState")) {}
+  //   DMRGInitType(const std::string& initfilename) : InitStateName_(initfilename) {}
+  //   DMRGInitType(const c_specifier_array& cspec) : cspec_(cspec) {}
+  //   const std::string& name() {return StorageName_;}
+  //   const std::string& initname() {return InitStateName_;}
+  //   const c_specifier_array& cspec() {return cspec_;}
+  // };
+  
   void dmrg_print_time_info();
 
   /** Structure for state prediction vector. Used to speed up eigensolver.*/
@@ -43,7 +59,6 @@ namespace ajaj {
     SparseMatrix Auxiliary; /**< e.g. LambdaR, used when checking the overlap of the prediction vector (fidelity) with a calculated wavefunction.*/
     Prediction(){}
     Prediction(SparseMatrix&& G) : Guess(std::move(G)) {} //no aux
-
   };
 
   /** A container of sorts, that stores blocks and provides interface to retrieve them.*/
@@ -74,7 +89,8 @@ namespace ajaj {
     }
 
   public:
-    BlocksStructure(const std::string&  Name, const EigenStateArray& Spectrum, uMPXInt num_vertices=0, uMPXInt numLeft=0, uMPXInt numMiddle=0);
+    BlocksStructure(const Basis& Spectrum) : SpectrumPtr_(&Spectrum), num_vertices_(0), numLeft_(0), numMiddle_(0) {};
+    BlocksStructure(const std::string&  Name, const Basis& Spectrum, uMPXInt num_vertices=0, uMPXInt numLeft=0, uMPXInt numMiddle=0);
     
     uMPXInt size() const {return num_vertices_;}
     uMPXInt left_size() const {return numLeft_;}
@@ -114,6 +130,7 @@ namespace ajaj {
   public:
     MPSDecomposition CentralDecomposition;
     SuperBlock(const std::string& Name, const MPO_matrix& H, const State& TargetState, uMPXInt num_vertices=0, uMPXInt numLeft=0, uMPXInt numMiddle=0);
+    SuperBlock(const std::string&  OldName, const std::string&  NewName,  const MPO_matrix& H, uMPXInt num_vertices, const c_specifier_array& cspec);
     
     const MPO_matrix& getH() const {return *H_ptr_;}
     const MPSDecomposition& getCentralDecomposition() const {return CentralDecomposition;}
@@ -139,7 +156,6 @@ namespace ajaj {
 
     static const bool Rightwards_=1;
     static const bool Leftwards_=0;
-
     
     //useful once?
     std::pair<MPS_matrix,MPS_matrix> FetchProjectorStatePair(uMPXInt ls);
@@ -150,6 +166,7 @@ namespace ajaj {
       namestream << "Projector_" << Name;
       return namestream.str();
     }
+
   public:
     ProjectorBlocks(const std::string&  Name, const EigenStateArray& Spectrum, uMPXInt num_vertices, uMPXInt numLeft, uMPXInt numMiddle, double Weight) : BlocksStructure(MakeName(Name),Spectrum,num_vertices,numLeft,numMiddle),Weight_(Weight),ProjectorStateName_(Name),ProjectorStatePair_(FetchProjectorStatePair(numLeft)),left_mark_(numLeft),right_mark_(num_vertices-numMiddle-numLeft) {
       //projector state pair knows to incorporate the singular values at the centre of the system
@@ -163,57 +180,33 @@ namespace ajaj {
     void move_right_two_vertex(const MPS_matrix& LeftMatrix);
   };
 
-  class iDMRG : public SuperBlock {
-  private:
-    DataOutput& output_ref_;
+  class TwoVertexComponents{
   public:
-    //iDMRG(const std::string& Name, const MPO_matrix& H, const State& TargetState, DataOutput& resultsref) : SuperBlock(Name,H,TargetState),output_ref_(resultsref) {};
-    iDMRG(const std::string& Name, const MPO_matrix& H, const State& TargetState, DataOutput& resultsref, uMPXInt num_vertices=0) : SuperBlock(Name,H,TargetState,num_vertices,num_vertices >2 ? num_vertices/2-1 : (num_vertices==2 ? 1 : 0), num_vertices > 2 ? 2 : 0),output_ref_(resultsref) {};
-    //note above the special case of 2 vertices, where the blocks for the next step have been precalculated, and need to be fetched (as they are expected to be in storage).
-    
-    void run(uMPXInt number_of_steps=0, double convergence_criterion=0.0,  uMPXInt chi=0, double truncation=0.0); /**< Perform infinite algorithm growth steps*/
+    const MPX_matrix& LeftBlock;
+    const MPO_matrix& H;
+    const MPX_matrix& RightBlock;
+    const std::vector<ProjectorBlocks>* ProjectorsPtr;//needs numbers for left and right in order to load
+    const State* TargetStatePtr;
 
-    double fidelity() const {return fidelity_;}
-  };
+    std::vector<MPXIndex> indices;
+    std::vector<MPXInt> allowed_indices;
+    std::vector<MPXInt> left_allowed_indices;
+    std::vector<std::array<MPXInt,2> > rows_and_cols;
+    uMPXInt vrows;
+    uMPXInt vcols;
+    MPX_matrix LeftPart;
+    MPX_matrix RightPart;
+    std::vector<TensorWeightPair> ProjectorTensors;
 
-  class FiniteDMRG : public SuperBlock {
+    TwoVertexComponents(const MPX_matrix& L, const MPO_matrix& HMPO, const MPX_matrix& R, const std::vector<ProjectorBlocks>* P=nullptr, const State* StatePtr=nullptr);
+    //TwoVertexComponents(const MPX_matrix& L, const MPO_matrix& HMPO, const MPX_matrix& R, const State* StatePtr) : TwoVertexComponents(L,HMPO,R,nullptr,StatePtr) {}
+
+    SparseHED HED(MPXInt numevals, char which[3],const SparseMatrix* initial=nullptr, bool converge=1) const;
+    MPXInt length()const {return m_length;}
   private:
-    double chi_;
-    double truncation_;
-    DataOutput& output_ref_;
-  public:
-    FiniteDMRG(SuperBlock& previous, DataOutput& resultsref) : SuperBlock(std::move(previous)),output_ref_(resultsref) {}
-    FiniteDMRG(iDMRG& infrun, DataOutput& resultsref) : SuperBlock(std::move(infrun)),output_ref_(resultsref) {}
-    void run(uMPXInt num_sweeps, uMPXInt chi=0, double truncation=0.0);
-    double chi() const {return chi_;}
-    double truncation() const {return truncation_;}
+    uMPXInt m_length;
   };
-
-  class ExcitedStateFiniteDMRG : public SuperBlock {
-  private:
-    DataOutput& output_ref_;
-    std::string BaseName_;
-    const std::string GSName_;
-    std::string HBlocksName_; //need this to load H blocks
-    bool init_flag_;
-    std::vector<ProjectorBlocks> PBlocks_;
-  public:
-    //steal resources from finite dmrg object if possible
-    ExcitedStateFiniteDMRG(const std::string& Name, FiniteDMRG& FD, double Weight, DataOutput& resultsref) : SuperBlock(std::move(FD)),output_ref_(resultsref),BaseName_(Name),GSName_(ResetName(BaseName_,1)),HBlocksName_(GSName_),init_flag_(1),PBlocks_(1,ProjectorBlocks(HBlocksName_,getSpectrum(),size(),left_size(),middle_size(),Weight)) {}
-    void init(double chi, double truncation, bool converge=1);
-    void run(uMPXInt number_of_sweeps, uMPXInt chi, double truncation);
-    Data move_right_two_vertex(uMPXInt chi=0, double truncation=0.0, bool converge=1);
-    Data move_left_two_vertex(uMPXInt chi=0, double truncation=0.0, bool converge=1);
-
-    void next_state(double Weight){
-      //push_back projectorblocks       //update name
-      HBlocksName_=getName();
-      PBlocks_.push_back(ProjectorBlocks(ResetName(BaseName_,PBlocks_.size()+1),getSpectrum(),size(),left_size(),middle_size(),Weight));
-      init_flag_=1;
-    };
-
-  };
-
+  
   /** Form a left end, open boundary conditions, Hamiltonian MPO_matrix. The leftmost matrix index will be a dummy. */
   //inline MPO_matrix LeftOpenBCHamiltonian(const MPO_matrix& H){return H.ExtractSubMPX(std::vector<MPXPair>(1,MPXPair(1,H.dimsvector()[1]-1)));}
   inline MPO_matrix LeftOpenBCHamiltonian(const MPO_matrix& H){return H.ExtractMPOBlock(std::pair<MPXInt,MPXInt> ({H.dimsvector()[1]-1,H.dimsvector()[1]-1}),std::pair<MPXInt,MPXInt>({0,H.dimsvector()[3]-1}));}
@@ -245,35 +238,6 @@ namespace ajaj {
   /** checks overlap between prediction vector and new wavefunction */
   double CheckConvergence(const Prediction& guess,const std::vector<double>& Lambda);
   double CheckConvergence(const Prediction& guess,const MPSDecomposition& Decomp);
-
-
-  class TwoVertexComponents{
-  public:
-    const MPX_matrix& LeftBlock;
-    const MPO_matrix& H;
-    const MPX_matrix& RightBlock;
-    const std::vector<ProjectorBlocks>* ProjectorsPtr;//needs to numbers for left and right in order to load
-    const State* TargetStatePtr;
-
-    std::vector<MPXIndex> indices;
-    std::vector<MPXInt> allowed_indices;
-    std::vector<MPXInt> left_allowed_indices;
-    std::vector<std::array<MPXInt,2> > rows_and_cols;
-    uMPXInt vrows;
-    uMPXInt vcols;
-    MPX_matrix LeftPart;
-    MPX_matrix RightPart;
-    std::vector<TensorWeightPair> ProjectorTensors;
-
-    TwoVertexComponents(const MPX_matrix& L, const MPO_matrix& HMPO, const MPX_matrix& R, const std::vector<ProjectorBlocks>* P=nullptr, const State* StatePtr=nullptr);
-    //TwoVertexComponents(const MPX_matrix& L, const MPO_matrix& HMPO, const MPX_matrix& R, const State* StatePtr) : TwoVertexComponents(L,HMPO,R,nullptr,StatePtr) {}
-
-
-    SparseHED HED(MPXInt numevals, char which[3],const SparseMatrix* initial=nullptr, bool converge=1) const;
-    MPXInt length()const {return m_length;}
-  private:
-    uMPXInt m_length;
-  };
 
   void TwoVertexMPOMPSMultiply(const TwoVertexComponents* array, std::complex<double> *in, std::complex<double> *out);
 

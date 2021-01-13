@@ -10,7 +10,7 @@
 #include "common_defs.hpp"
 #include "vertex.hpp"
 #include "MPX.hpp"
-#include "DMRG_routines.hpp"
+#include "DMRG.hpp"
 #include "measurement.hpp"
 #include "data.hpp"
 #include "command_line_input.hpp"
@@ -39,7 +39,6 @@ int main(int argc, char** argv){
     }
 
     ajaj::DataOutput results(ajaj::OutputName(PreName+RuntimeArgs.filename(),"Energies.dat"),"Index, Energy, Energy/vertex, Entropy, Truncation, Fidelity",RuntimeArgs.resume());
-
     
     ajaj::iDMRG infvol(std::string("GroundState"),myModel.H_MPO,TargetState,results,2*RuntimeArgs.resume());
 

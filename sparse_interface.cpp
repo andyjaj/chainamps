@@ -17,12 +17,6 @@
 #include <tbb/tbb.h>
 #define TBBNZ 1000  //used as part of the threading cutoff
 
-#if defined(USETBB) && !defined(NDEBUG)
-#include <mutex>
-std::mutex ajaj::MutexPrint::_mutexPrint{}; //from common_defs.hpp
-#endif
-
-
 #endif
 
 namespace ajaj {
@@ -1825,10 +1819,6 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
   void feed_to_answer(cs_cl* U, cs_cl* P,const Sparseint Pcol){//destroys unsorted U as it goes along, Pcol is the insertion column
     Sparseint Unz=U->p[U->n];
 
-#if defined (USETBB) && !defined (NDEBUG)
-    ajaj::MutexPrint{} << "feed_to_answer(*U,*P,Pcol): Pcol = " << Pcol << "\n" << "U rows,cols " << U->m <<"," << U->n << ", Unzmax " << U->nzmax << ", Unz " << U->nz << ", U nonzeros " << ((U->nz ==-1) ? U->p[U->n] : U->p[U->nzmax-1]) << "\n"<< "P rows,cols " << P->m <<"," << P->n << ", Pnzmax " << P->nzmax << ", Pnz " << P->nz << ", P nonzeros " << ((P->nz ==-1) ? P->p[P->n] : P->p[P->nzmax-1]) << "\n";
-#endif
-
     std::copy(U->i,U->i+Unz,P->i+P->p[Pcol]);
     std::copy(U->x,U->x+Unz,P->x+P->p[Pcol]);
     cs_cl_spfree(U);
@@ -1978,9 +1968,6 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
       //feed_to_answer(local_answer,ans_,start_col);//moves to full answer and destroys local answer
       if (NoSort_){
 
-#if !defined(NDEBUG)
-	ajaj::MutexPrint{} << "reduce_sparse NoSort_ call to feed_to_answer(local,ans,startcol): \n" << "startcol = " << start_col << "\n"<< "local rows,cols " << local_answer->m <<"," << local_answer->n << ", local nzmax " << local_answer->nzmax << ", local nz " << local_answer->nz << ", local nonzeros " << ((local_answer->nz ==-1) ? local_answer->p[local_answer->n] : local_answer->p[local_answer->nzmax-1]) << "\n"<< "ans rows,cols " << ans_->m <<"," << ans_->n << ", ans nzmax " << ans_->nzmax << ", ans nz " << ans_->nz << ", ans nonzeros " << ((ans_->nz ==-1) ? ans_->p[ans_->n] : ans_->p[ans_->nzmax-1]) << "\n";
-#endif
 	feed_to_answer(local_answer,ans_,start_col);//moves to full answer and destroys local answer
       }
       else {

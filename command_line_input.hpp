@@ -202,7 +202,7 @@ namespace ajaj {
       { 0, 0, 0, 0, 0, 0 }
     };
 
-  const option::Descriptor fDMRG_usage[8] =
+  const option::Descriptor fDMRG_usage[10] =
     {
       {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: fDMRG_DRV.bin [OPTIONS] <model_filename> <number of vertices/chains> \n  <number of vertices/chains> must be EVEN.\n"
 	"Options:"},
@@ -218,6 +218,10 @@ namespace ajaj {
        "  \tThe weight factor if calculating excited states. Must be > 0. Specifying this indicates that the number of requested excited states is at least 1." },
       {TARGET,0,"T","target-charges",Arg::CommaSepShorts,"  -T <number>,<number>,<number>, --target-charges=<n>,<n>,<n>"
        "  \tCharges for target state."},
+      {INITIAL_STATE_NAME,0,"i","initial-unit-cell",Arg::NonEmpty,"  -i <initial_unit_cell>, \t--initial-unit-cell=<initial_unit_cell>"
+       "  \tSpecify an initial unit cell." },
+      {C_SPECIFIER,0,"c","c-number-file",Arg::NonEmpty,"  -c <c-specifier-file>,"
+       "  \tFile with c-numbers for initial state."},
       { 0, 0, 0, 0, 0, 0 }
     };
 
@@ -238,7 +242,7 @@ namespace ajaj {
        "  \tMeasurement at every <number> steps. Default is 1 (measurement at every step)."},
       {INITIAL_STATE_NAME,0,"i","initial-unit-cell",Arg::NonEmpty,"  -i <initial_unit_cell>, \t--initial-unit-cell=<initial_unit_cell>"
        "  \tSpecify an initial unit cell." },
-      {C_SPECIFIER,0,"c","c-number-file",Arg::NonEmpty," -c <c-specifier-file>,"
+      {C_SPECIFIER,0,"c","c-number-file",Arg::NonEmpty,"  -c <c-specifier-file>,"
        "  \tFile with c-numbers for initial state."},
       { 0, 0, 0, 0, 0, 0 }
     };
@@ -314,7 +318,7 @@ namespace ajaj {
        "  \tSpecify an initial state." },
       {FINITE_MEASUREMENT,0,"M","finite-measurement",Arg::FiniteMeasurementInfo,"  -M <opfile1>,<vertex1>[,<opfile2>,<vertex2>], \t--finite-measurement=<opfile1>,<vertex1>[,<opfile2>,<vertex2>]"
        "  \tSpecify a one or two point measurement."},
-      {C_SPECIFIER,0,"c","c-number-file",Arg::NonEmpty," -c <c-specifier-file>,"
+      {C_SPECIFIER,0,"c","c-number-file",Arg::NonEmpty,"  -c <c-specifier-file>,"
        "  \tFile with c-numbers for initial state."},
       { 0, 0, 0, 0, 0, 0 }
     };
@@ -457,6 +461,8 @@ namespace ajaj {
     double Weight_;
     unsigned int N_; //used by finite codes
     std::vector<short int> target_;
+    std::string initial_state_name_;
+    std::string c_number_filename_;
 
   public:
     fDMRG_Args(int argc, char* argv[]) : Base_Args(argc,argv,fDMRG_usage), E_(0), F_(0), Weight_(100.0),N_(0) {
@@ -488,6 +494,16 @@ namespace ajaj {
 	  std::istringstream tss(options[TARGET].arg);
 	  tss >> target_;
 	}
+	if (options[INITIAL_STATE_NAME])
+	  initial_state_name_=std::string(options[INITIAL_STATE_NAME].arg);
+	
+	if (options[C_SPECIFIER])
+	  c_number_filename_=std::string(options[C_SPECIFIER].arg);
+	
+	if (options[C_SPECIFIER] && options[INITIAL_STATE_NAME]){
+	  valid_=0;
+	  std::cout <<"Cannot specify initial state through options -c and -i simultaneously!"<<std::endl;
+	}
       }
       print();
     };
@@ -498,6 +514,14 @@ namespace ajaj {
     double weight_factor() const {return Weight_;}
     const std::vector<short int>& target() const {
       return target_;
+    }
+
+    const std::string& initial_state_name() const {
+      return initial_state_name_;
+    }
+
+    const std::string& c_number_filename() const {
+      return c_number_filename_;
     }
 
   };
@@ -532,10 +556,10 @@ namespace ajaj {
 	  step_size_=stod(options[STEP_SIZE].arg);
 	if (options[INITIAL_STATE_NAME])
 	  initial_unit_cell_=std::string(options[INITIAL_STATE_NAME].arg);
-	if (options[C_SPECIFIER]){
+	
+	if (options[C_SPECIFIER])  
 	  c_number_filename_=std::string(options[C_SPECIFIER].arg);
-	}
-
+	
 	if (options[C_SPECIFIER] && options[INITIAL_STATE_NAME]){
 	  valid_=0;
 	  std::cout <<"Cannot specify initial state through options -c and -i simultaneously!"<<std::endl;
@@ -603,8 +627,6 @@ namespace ajaj {
 	  measurement_interval_=stod(options[MEASUREMENT_INTERVAL].arg);
 	if (options[STEP_SIZE])
 	  step_size_=stod(options[STEP_SIZE].arg);
-	if (options[INITIAL_STATE_NAME])
-	  initial_state_name_=std::string(options[INITIAL_STATE_NAME].arg);
 	if (options[FINITE_MEASUREMENT]){
 	  for (option::Option* opt = options[FINITE_MEASUREMENT]; opt; opt = opt->next()){
 	    StringIndexPairs temp;
@@ -621,10 +643,12 @@ namespace ajaj {
 	      finite_measurements_.emplace_back(temp);
 	  }
 	}
+
+	if (options[INITIAL_STATE_NAME])
+	  initial_state_name_=std::string(options[INITIAL_STATE_NAME].arg);
 	
-	if (options[C_SPECIFIER]){
+	if (options[C_SPECIFIER])
 	  c_number_filename_=std::string(options[C_SPECIFIER].arg);
-	}
 
 	if (options[C_SPECIFIER] && options[INITIAL_STATE_NAME]){
 	  valid_=0;

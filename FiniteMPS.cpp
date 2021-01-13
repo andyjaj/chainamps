@@ -109,7 +109,65 @@ namespace ajaj{
     
     Current_.second.store(filename(position(),matrix().is_left_shape()));
 
-  }																		 
+  }
+
+  std::complex<double> FiniteMPS::mixed_canonical(uMPXInt mixposition,const std::string& name){
+    //check not already in correct form - if it is, then just copy if requested
+    
+    //if state non canonical, left canonise first, up to position and then go right, right canonising
+    //if state is left canonical already, start at position and go right, right canonising
+    //if state is right canonical already, start at position and go left, left canonising
+
+    if(mixposition>NumVertices_){
+      std::cout << "Inavlid position " << mixposition << " > " << NumVertices_ <<std::endl;
+      exit(1);
+    }
+
+    
+    MPX_matrix Vd;
+    if (Canonization_==MPSCanonicalType::Mixed){ //lambda should exist and be used
+      std::stringstream Lambdanamestream;
+      Lambdanamestream << MPSName_ << "_Lambda_" << MixPoint_ << "_" << NumVertices_-MixPoint_ << ".MPX_matrix";
+      Vd=load_MPX_matrix(Lambdanamestream.str(),Basis_);
+    }
+
+    //const std::vector<MPXPair>& contractids=Canonical_ ? contract10 : contract11;
+
+    for (uMPXInt p=1;p<=mixposition;++p){
+      //only load if not left canonical, or if we have requested a copy.
+      if ((!name.empty() && name!=MPSName_) || MatrixCanonizations_[p-1]!=MPS_matrixCanonicalType::Left){
+	std::cout << p << std::endl;
+	fetch_matrix(p,MatrixCanonizations_.at(p-1)!=MPS_matrixCanonicalType::Right);
+	//if not left canonical, then we need to canonize
+	if (MatrixCanonizations_.at(p-1)!=MPS_matrixCanonicalType::Left){
+	  //contract Vd on and decompose, if initial step for right canonical or non canonical, Vd will be empty
+	  MPXDecomposition decomp((Vd.empty() ? Current_.second : MPS_matrix(contract(Vd,0,matrix(),0,MatrixCanonizations_[p-1]==MPS_matrixCanonicalType::Non ? contract11 : contract10))).left_shape().SVD());
+	  //record row vectors (Vdagger part) as new Vd
+	  Vd=std::move(contract(MPX_matrix(Basis_,decomp.RowMatrix.Index(0),decomp.Values),0,decomp.RowMatrix,0,contract10));
+	  Current_.second=std::move(decomp.ColumnMatrix);
+	  store_current(); //store new left canonical matrix
+	  set_matrix_canonization(p,MPS_matrixCanonicalType::Left);
+	  //if there is a non empty Vd and the next matrix was left canonical, we need to change the flag to trick it into being loaded.
+	  if (p<NumVertices_ && !Vd.empty() && MatrixCanonizations_[p]==MPS_matrixCanonicalType::Left)
+	    set_matrix_canonization(p+1,MPS_matrixCanonicalType::Non);
+	}
+	//if we want to store a copy...
+	if (!name.empty() && name!=MPSName_)
+	  matrix().store(filename(position(),matrix().is_left_shape(),name));
+      }
+    }
+
+    Canonical_=1;
+    MixPoint_=NumVertices_;
+    Canonization_=MPSCanonicalType::Left;
+    if (Vd.empty()){
+      return Weight_;
+    }
+    else {
+      Weight_*=Vd.Trace();
+      return Weight_;
+    }
+  }
 
   std::complex<double> FiniteMPS::makeLC(const std::string& name){
 
