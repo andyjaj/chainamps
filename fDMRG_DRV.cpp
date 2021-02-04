@@ -35,20 +35,21 @@ int main(int argc, char** argv){
 
     ajaj::State TargetState(myModel.make_target(RuntimeArgs.target()));
     ajaj::DataOutput results(ajaj::OutputName(RuntimeArgs.filename(),"Energies.dat"),"Index, Energy, Energy/vertices, Entropy, Truncation, 1-Fidelity"); //open file for output
-    
-    ajaj::iDMRG infvol(std::string("GroundState"),myModel.H_MPO,TargetState,results); //create an infinite sweep simulation object
 
+    ajaj::SuperBlock SB(std::string("GroundState"),myModel.H_MPO,TargetState); //initialise an empty superblock
+    
     if (!RuntimeArgs.initial_state_name().empty()){
       //loads an initial state
-      infvol.load(RuntimeArgs.initial_state_name());
+      SB.fill(RuntimeArgs.initial_state_name(),number_of_vertices);
     }
     else if (!RuntimeArgs.c_number_filename().empty()){
-      //builds an initial guess product state based on simple single site description
-      infvol.load(ajaj::LoadCNumbers(RuntimeArgs.c_number_filename()));
+      //builds an initial product state based input c number specification
+      SB.fill(ajaj::LoadCNumbers(RuntimeArgs.c_number_filename()),number_of_vertices);
     }
-    else {
-      //default is iDMRG to build state
-      infvol.run(number_of_vertices/2,-1.0,CHI,trunc); //convergence criterion: not used if negative, number of vertices used instead	  
+
+    ajaj::iDMRG infvol(SB,results); //create an infinite sweep simulation object using the superblock we created
+    if (infvol.size()!=number_of_vertices) {//if our superblock isn't the right size yet, we will need to run it
+      infvol.run(number_of_vertices/2-(infvol.size()/2),-1.0,CHI,trunc); //convergence criterion: not used if negative, number of vertices used instead	  
     }
     
     //auto t1 = std::chrono::high_resolution_clock::now();

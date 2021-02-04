@@ -30,7 +30,7 @@ namespace ajaj {
     std::vector<ProjectorBlocks> PBlocks_;
   public:
     //steal resources from finite dmrg object if possible
-    ExcitedStateFiniteDMRG(const std::string& Name, FiniteDMRG& FD, double Weight, DataOutput& resultsref) : SuperBlock(std::move(FD)),output_ref_(resultsref),BaseName_(Name),GSName_(ResetName(BaseName_,1)),HBlocksName_(GSName_),init_flag_(1),PBlocks_(1,ProjectorBlocks(HBlocksName_,getSpectrum(),size(),left_size(),middle_size(),Weight)) {}
+    ExcitedStateFiniteDMRG(const std::string& Name, FiniteDMRG& FD, double Weight, DataOutput& resultsref) : SuperBlock(std::move(FD)),output_ref_(resultsref),BaseName_(Name),GSName_(SetName(BaseName_,1)),HBlocksName_(GSName_),init_flag_(1),PBlocks_(1,ProjectorBlocks(HBlocksName_,getSpectrum(),size(),left_size(),middle_size(),Weight)) {}
     void init(double chi, double truncation, bool converge=1);
     void run(uMPXInt number_of_sweeps, uMPXInt chi, double truncation);
     Data move_right_two_vertex(uMPXInt chi=0, double truncation=0.0, bool converge=1);
@@ -39,7 +39,7 @@ namespace ajaj {
     void next_state(double Weight){
       //push_back projectorblocks       //update name
       HBlocksName_=getName();
-      PBlocks_.push_back(ProjectorBlocks(ResetName(BaseName_,PBlocks_.size()+1),getSpectrum(),size(),left_size(),middle_size(),Weight));
+      PBlocks_.push_back(ProjectorBlocks(SetName(BaseName_,PBlocks_.size()+1),getSpectrum(),size(),left_size(),middle_size(),Weight));
       init_flag_=1;
     };
 

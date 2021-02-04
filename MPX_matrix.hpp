@@ -122,7 +122,9 @@ namespace ajaj{
     MPX_matrix& MoveDummyIndices(const std::vector<MPXInt>& newindexorder); /**< Move dummy indices only. */
     MPX_matrix& ShiftNumRowIndices(const Sparseint numrows); /**< Move some row MPXIndex indices to columns or vice-versa. */
     MPX_matrix& Rescale(std::complex<double> factor); /**<Scale all values in array by some factor. */
-    complex<double> Trace() const {return m_Matrix.trace();} /**< If MPX_matrix is square, find the trace.*/
+    std::complex<double> Trace() const {return m_Matrix.trace();} /**< If MPX_matrix is square, find the trace.*/
+    double norm() const {return m_Matrix.square_norm();} /**< If MPX_matrix is square, find the trace.*/
+
     MPX_matrix ZeroLastBlock(); /**< Given a particular index and a value of that index, zero the other data*/
     MPX_matrix& CombineSimilarMatrixIndices(bool PhysicalInMiddle=0);
     

@@ -32,9 +32,4 @@ namespace ajaj {
     set_2();//if num vertices is only 2, need to adjust so that result is ok as input for other methods.
   }
 
-  void iDMRG::load(const std::string& initfilename){} //Create superblock by loading in an MPS and applying Hamiltonian to it.
-  
-  void iDMRG::load(const c_specifier_array& cspec){} //Create superblock from simple product state description, and apply Hamiltonian to it.
-
-
 }
