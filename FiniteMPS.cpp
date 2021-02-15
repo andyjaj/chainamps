@@ -158,8 +158,8 @@ namespace ajaj{
 
       //now we can do the decomposition      
       MPXDecomposition decomp((Vd.empty() ? Current_.second : MPS_matrix(contract(Vd,0,matrix(),0,MatrixCanonizations_[p-1]!=MPS_matrixCanonicalType::Right ? contract11 : contract10))).left_shape().SVD());
-      Vd=std::move(decomp.RowMatrix); //decomp row vectors
       DecompLambda=MPX_matrix(Basis_,decomp.RowMatrix.Index(0),decomp.Values); //decomp lambda
+      Vd=std::move(decomp.RowMatrix); //decomp row vectors
       Current_.second=std::move(decomp.ColumnMatrix); //update matrix for this position
       store_current(); //store new left canonical matrix 
       set_matrix_canonization(p,MPS_matrixCanonicalType::Left); //record that this matrix is now left canonical
@@ -177,7 +177,7 @@ namespace ajaj{
   }
 
   std::complex<double> FiniteMPS::makeLC(const std::string& name){
-    std::pair<MPX_matrix,MPX_matrix> LambdaVd=left_canonize_to(NumVertices_);
+    std::pair<MPX_matrix,MPX_matrix> LambdaVd=left_canonize_to(NumVertices_,name);
     //Canonical_=1;
     //LambdaPosition_=NumVertices_;
     HasLambda_=0;
@@ -227,11 +227,11 @@ namespace ajaj{
       //now we can do the decomposition
       MPXDecomposition decomp((U.empty() ? Current_.second : MPS_matrix(contract(matrix(),0,U,0,contract20))).right_shape().SVD());
 
-      U=std::move(decomp.ColumnMatrix); //decomp row vectors
       DecompLambda=MPX_matrix(Basis_,decomp.ColumnMatrix.Index(1),decomp.Values); //decomp lambda
+      U=std::move(decomp.ColumnMatrix); //decomp row vectors
       Current_.second=std::move(decomp.RowMatrix); //update matrix for this position
-      store_current(); //store new left canonical matrix 
-      set_matrix_canonization(p,MPS_matrixCanonicalType::Right); //record that this matrix is now left canonical
+      store_current(); //store new right canonical matrix
+      set_matrix_canonization(p,MPS_matrixCanonicalType::Right); //record that this matrix is now right canonical
 
       if (!name.empty() && name!=MPSName_){ //if copy is requested store this matrix again
 	matrix().store(filename(position(),matrix().is_left_shape(),name));
@@ -246,7 +246,7 @@ namespace ajaj{
   }
 
   std::complex<double> FiniteMPS::makeRC(const std::string& name){
-    std::pair<MPX_matrix,MPX_matrix> ULambda=right_canonize_to(1);
+    std::pair<MPX_matrix,MPX_matrix> ULambda=right_canonize_to(1,name);
     Canonization_=MPSCanonicalType::Right;
     HasLambda_=0;
     if (ULambda.first.empty()){
@@ -372,7 +372,7 @@ namespace ajaj{
       else {
 	MPS_matrix M=load_MPS_matrix(filename(R,0),Basis_);
 	if (M.isConsistent()) {
-	  LMAX=NumVertices_-R+1;
+	 RMAX=NumVertices_-R+1;
 	  if (!newname.empty()){
 	    M.store(filename(R,0,newname)); 
 	  }
@@ -394,7 +394,7 @@ namespace ajaj{
       }
     }
 
-    for (uMPXInt R=NumVertices_;R>=1;--R){
+    /*   for (uMPXInt R=NumVertices_;R>=1;--R){
       std::ifstream Rfile;
       Rfile.open(filename(R,0));
       if (Rfile.is_open()){
@@ -406,7 +406,7 @@ namespace ajaj{
       else {
 	break;
       }
-    }
+      }*/
 
     //This version only looks for lambda files in the middle of the system
     
@@ -416,13 +416,20 @@ namespace ajaj{
     lambdafile.open(Lambdanamestream.str().c_str(),ios::in);
     if (lambdafile.is_open()){
       HasLambda_=1;
-      LambdaPosition_=NumVertices_;
+      LambdaPosition_=NumVertices_/2;
+      MPX_matrix L(load_MPX_matrix(Lambdanamestream.str(),Basis_));
+      std::cout << "Lambda norm is " << L.norm() << std::endl;
+      //std::cout << "Lambda trace is " << L.Trace() << std::endl;
+      //L.print_matrix();
+      //exit(1);
       if (!newname.empty()){
 	std::stringstream newLambdanamestream;
 	newLambdanamestream << newname << "_Lambda_" << NumVertices_/2 << "_" << NumVertices_/2 << ".MPX_matrix";
 	//load and re-store lambda
-	load_MPX_matrix(Lambdanamestream.str(),Basis_).store(newLambdanamestream.str());
+	L.store(newLambdanamestream.str());
+	//load_MPX_matrix(Lambdanamestream.str(),Basis_).store(newLambdanamestream.str());
       }
+      
     }
 
     //if lambda exists, then we assume mixed over all other types
@@ -433,7 +440,9 @@ namespace ajaj{
       std::vector<MPS_matrixCanonicalType> Rpart(NumVertices_-LambdaPosition_,MPS_matrixCanonicalType::Right);
       MatrixCanonizations_.insert(MatrixCanonizations_.end(),Rpart.begin(),Rpart.end());
       //update_MPS_canonization_status();
-      Canonization_= canon ? MPSCanonicalType::Mixed : MPSCanonicalType::Non; // Just in case we somehow defined a non canonical state with a lambda
+      Canonization_= MPSCanonicalType::Mixed;
+
+      //Canonization_= canon ? MPSCanonicalType::Mixed : MPSCanonicalType::Non; // Just in case we somehow defined a non canonical state with a lambda
     }
     else if (LMAX==NumVertices_){
       //assume nothing
@@ -455,6 +464,17 @@ namespace ajaj{
       //update_MPS_canonization_status();
       Canonization_=MPSCanonicalType::Error;
     }
+
+    std::cout << std::endl << "Found files for MPS " << MPSName_ << " with properties:" << std::endl;
+    std::cout << "Left, right shape files = " << LMAX << "," << RMAX <<std::endl;
+    std::cout << "Lambda? ";
+    if (HasLambda_){
+      std::cout << "True, position = " << LambdaPosition_; 
+    }
+    std::cout << std::endl;
+    std::cout << "Canonization = " << canon_type_string() <<std::endl;
+    std::cout << "Total Charges = " << total_charges() <<std::endl <<std::endl;
+    
     return Canonization_;
     
   }

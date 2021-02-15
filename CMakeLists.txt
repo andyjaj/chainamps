@@ -46,7 +46,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   include_directories(${LAPACKE_INCLUDE_DIRS})
 
   #probably needs gfortran too
-  find_library(GFORTRAN_LIBRARIES gfortran HINTS ${LIB_HINT} PATHS /usr/lib64 /usr/lib/gcc/x86_64-linux-gnu/6 /usr/lib /usr/local/ /usr/)
+  find_library(GFORTRAN_LIBRARIES gfortran HINTS ${LIB_HINT} PATHS /usr/lib64 /usr/lib/gcc/x86_64-linux-gnu/ /usr/lib /usr/local/ /usr/)
   message (STATUS "GFORTRAN:" ${GFORTRAN_LIBRARIES})	
   set (EXTERNAL_LIBS ${EXTERNAL_LIBS} ${GFORTRAN_LIBRARIES})
 endif()
