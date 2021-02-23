@@ -26,7 +26,11 @@ ALLMPXDEPS = MPX.hpp $(UNITCELLDEPS) $(FMPSDEPS) $(MPODEPS)
 
 MODELDEPS = command_line_input.hpp model.hpp make_model.hpp vertex.hpp vertex_generators/*.hpp vertex_generators/ll/*.hpp $(ALLMPXDEPS)
 
-DMRGDEPS =  DMRG_routines.hpp iDMRG_routines.hpp fDRMG_routines.hpp data.hpp measurement.hpp $(MODELDEPS)
+DMRGDEPS =  DMRG_routines.hpp data.hpp measurement.hpp $(MODELDEPS)
+
+fDMRGDEPS = fDRMG_routines.hpp $(DMRGDEPS) $(FMPSDEPS)
+
+iDMRGDEPS = iDRMG_routines.hpp $(DMRGDEPS)
 
 TEBDDEPS =  TEBD_routines.hpp data.hpp measurement.hpp $(MODELDEPS)
 
