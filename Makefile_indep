@@ -100,7 +100,13 @@ TEBD_DYN_MEASURE.o: TEBD_DYN_MEASURE.cpp $(DYN_DEPS)
 2VE_DRV.o: 2VE_DRV.cpp $(TWOVEDEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-DMRG_routines.o: DMRG_routines.cpp DMRG_routines.hpp iDMRG_routines.cpp iDMRG_routines.hpp fDMRG_routines.cpp fDMRG_routines.hpp $(ALLMPXDEPS)
+DMRG_routines.o: DMRG_routines.cpp DMRG_routines.hpp $(ALLMPXDEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+iDMRG_routines.o: iDMRG_routines.cpp iDMRG_routines.hpp $(DMRGDEPS) $(ALLMPXDEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+fDMRG_routines.o: fDMRG_routines.cpp fDMRG_routines.hpp $(DMRGDEPS) $(ALLMPXDEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 TEBD_routines.o: TEBD_routines.cpp TEBD_routines.hpp $(ALLMPXDEPS)
