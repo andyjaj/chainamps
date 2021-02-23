@@ -570,7 +570,7 @@ namespace ajaj{
 	}
       }
 
-      if (!sameflag) {//need to do col_block parts
+      if (!sameflag) {//need to do col_block parts separately
 	for (size_t col=0; col<col_sp.cols();++col){
 	  for (size_t p=col_sp.get_p(col); p<col_sp.get_p(col+1);++p){
 	    MPXInt i=col_sp.get_i(p);

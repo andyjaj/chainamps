@@ -4,7 +4,7 @@ MPXOBJ = UnitCell.o FiniteMPS.o MPS_matrix.o MPO_matrix.o MPX_matrix.o MPXIndex.
 
 MEASOBJ =  measurement.o
 
-DMRGOBJ = DMRG_routines.o $(MEASOBJ)
+DMRGOBJ = DMRG_routines.o fDMRG_routines.o iDMRG_routines.o $(MEASOBJ)
 
 TEBDOBJ = TEBD_routines.o $(MEASOBJ)
 
@@ -26,7 +26,7 @@ ALLMPXDEPS = MPX.hpp $(UNITCELLDEPS) $(FMPSDEPS) $(MPODEPS)
 
 MODELDEPS = command_line_input.hpp model.hpp make_model.hpp vertex.hpp vertex_generators/*.hpp vertex_generators/ll/*.hpp $(ALLMPXDEPS)
 
-DMRGDEPS =  DMRG_routines.hpp data.hpp measurement.hpp $(MODELDEPS)
+DMRGDEPS =  DMRG_routines.hpp iDMRG_routines.hpp fDRMG_routines.hpp data.hpp measurement.hpp $(MODELDEPS)
 
 TEBDDEPS =  TEBD_routines.hpp data.hpp measurement.hpp $(MODELDEPS)
 
@@ -100,7 +100,7 @@ TEBD_DYN_MEASURE.o: TEBD_DYN_MEASURE.cpp $(DYN_DEPS)
 2VE_DRV.o: 2VE_DRV.cpp $(TWOVEDEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-DMRG_routines.o: DMRG_routines.cpp DMRG_routines.hpp $(ALLMPXDEPS)
+DMRG_routines.o: DMRG_routines.cpp DMRG_routines.hpp iDMRG_routines.cpp iDMRG_routines.hpp fDMRG_routines.cpp fDMRG_routines.hpp $(ALLMPXDEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 TEBD_routines.o: TEBD_routines.cpp TEBD_routines.hpp $(ALLMPXDEPS)
