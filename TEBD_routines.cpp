@@ -799,7 +799,7 @@ namespace ajaj{
     //Need to check here if there is no coupling part in the MPO (i.e. vertices are uncoupled).
     if (H.dimsvector()[1]-1==1 || H.dimsvector()[3]-1==1){
       std::cout << "Even bond is empty" << std::endl;
-      exit(1);
+      //exit(1);
     }
     
     /*std::vector<MPXPair> LeftKeepers;

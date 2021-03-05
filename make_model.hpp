@@ -94,7 +94,7 @@ namespace ajaj{
       else { //parse strings
 	if (stringbuffer.size()>3){
 	  std::cout << "Input file has more than 3 non empty lines." << std::endl;
-	  std::cout << "Only the first coupling definition line will be used by static routines." << std::endl;
+	  std::cout << "Static routines will only use the first coupling definition line." << std::endl;
 	  std::cout << "Time routines will interpret suitably formatted extra lines as time dependent coupling information." << std::endl;
 	}
 	//first line is Model Name
