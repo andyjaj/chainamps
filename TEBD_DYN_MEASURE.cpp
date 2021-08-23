@@ -23,30 +23,27 @@
 
 int main(int argc, char** argv){
 
-  ajaj::TEBD_DYN_Args RuntimeArgs(argc,argv);
+  ajaj::TEBD_DYN_Args RuntimeArgs(argc,argv); //Process the command line input
   if (RuntimeArgs.is_valid()){
-    ajaj::Model myModel(ajaj::MakeModelFromArgs(RuntimeArgs));
-    ajaj::uMPXInt CHI(RuntimeArgs.chi());
-    double trunc(RuntimeArgs.trunc());
-    ajaj::uMPXInt number_of_vertices(RuntimeArgs.num_vertices());
-    ajaj::uMPXInt trotter_order(RuntimeArgs.trotter_order());
+    ajaj::Model myModel(ajaj::MakeModelFromArgs(RuntimeArgs)); //Create the model, based on input
+    ajaj::uMPXInt CHI(RuntimeArgs.chi()); //bond dimension
+    double trunc(RuntimeArgs.trunc()); //allowed truncation error
+    ajaj::uMPXInt number_of_vertices(RuntimeArgs.num_vertices()); //number of vertices/nodes
+    ajaj::uMPXInt trotter_order(RuntimeArgs.trotter_order()); //set the trotter decomposition order
 
-    std::vector<ajaj::NamedMPO_matrix> generated_MPOs; //actual storage for MPOs
-    typedef std::vector<std::vector<std::pair<size_t,ajaj::uMPXInt> > > MPOIndexVertexPairs;
-    MPOIndexVertexPairs measurement_lookups;
-    
-    std::ostringstream measurednames;
-    //build all required measurement MPOs (no repeats) and index them
-
+    //TEBD_DYN_MEASURE can only measure one pair of operators per run, because different operators lead to different
+    //time evolution for unequal time correlators.
+    //The required operators need their MPOs built, the below is probably overkill, as it is borrowed from other drivers
+    //with more measurements.
+    std::vector<ajaj::NamedMPO_matrix> generated_MPOs; //storage for MPOs
     std::vector<std::string> ops({RuntimeArgs.Op1_name(), RuntimeArgs.Op2_name()});
-
-    std::vector<ajaj::uMPXInt> operator_storage_position;
+    std::vector<ajaj::uMPXInt> operator_storage_position;//indices for the operator's position in storage
     
     for (auto&& op : ops){
       bool found(0);
       size_t index;
-      for (size_t m=0;m< generated_MPOs.size();++m){//search through generated MPOs
-	if (op==generated_MPOs.at(m).Name){
+      for (size_t m=0;m< generated_MPOs.size();++m){//search through generated MPOs (initial size is zero, so skipped on first run)
+	if (op==generated_MPOs.at(m).Name){ //if found in the list, then skip it
 	  found=1;
 	  index=m;
 	  break;//found
@@ -87,15 +84,15 @@ int main(int argc, char** argv){
       
     }
 
-    //We have loaded the model and operators
-    //We now need to load the info from the time file.
-    //The name will be INPUTFILE_TEBD_NUMVERTICES_INITIALSTATENAME_Evolution.dat
+    //The model and operators are now loaded
+    //Next load the info from the time file.
+    //The name should be INPUTFILE_TEBD_NUMVERTICES_INITIALSTATENAME_Evolution.dat
     std::stringstream tfnamestream;
     tfnamestream << RuntimeArgs.filename() << "_TEBD_" << RuntimeArgs.num_vertices() << "_" << RuntimeArgs.initial_state_name() << "_Evolution.dat";
-    
-    //From this we will need the indices and times
-    typedef std::pair<size_t,double> idx_dble;
-    std::vector<idx_dble> idx_times;
+    //From this need the indices and times
+    //Note that there is no way to discern what Trotter order was used!
+    typedef std::pair<size_t,double> idx_dble;//typedef for convenience
+    std::vector<idx_dble> idx_times; //storage for timeslice index and time
     
     idx_times.emplace_back(0,0.0);
     
