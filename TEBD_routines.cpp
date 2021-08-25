@@ -598,7 +598,7 @@ namespace ajaj{
   TEBD::TEBD(const MPO_matrix& H, FiniteMPS& F, DataOutput& results) : TimeBase(0.0,results),F_(F),MPSName_(F.name()),Basis_(H.basis()),NumVertices_(F.size()),SingleVertexOp_(MPO_matrix()),m_EvolutionOperators(TrotterDecomposition(H,0.0,0)),GoodInitial_(0),SaveAll_(0) {
     std::stringstream Evolvingnamestream;
     Evolvingnamestream << "Evolving_" << MPSName_;
-    initial_weight_=F.makeRC(Evolvingnamestream.str()); //combination of initial state norm and overall phase
+    initial_weight_=F.makeLC(Evolvingnamestream.str()); //combination of initial state norm and overall phase
     //it is useful to do the above for measurements, just to ensure normalisation, and that all files exist.
     
     std::cout << "Initial state weight was " << initial_weight_ <<std::endl;
@@ -650,6 +650,7 @@ namespace ajaj{
     if (GoodInitial_){
      
       if (m_EvolutionOperators.order()==0){
+	F_.makeRC();//standard behaviour is to load F left canonical, but need it right canonical for the measurement. Inefficienct and annoying...
 	left_canonise_measure_special(measurements, num_steps);
       }
       else if (m_EvolutionOperators.order()==1){
@@ -677,7 +678,6 @@ namespace ajaj{
 	std::cout <<"2nd order time step evolution" <<std::endl;
 	//bond order grows rapidly, so need to compress after each application of a set of bond operators
 	//first step
-	std::cout << "Odd bonds" <<std::endl;
 	apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS); //half step
 	left_canonise();
 	for (uMPXInt n=0;n<num_steps;++n){
