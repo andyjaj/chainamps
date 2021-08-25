@@ -632,11 +632,11 @@ namespace ajaj{
     
   }
 
-  void TEBD::change_bond_operator(const MPO_matrix& H, double time_step_size,const State* blockstate_ptr){
+  void TEBD::change_bond_operator(const MPO_matrix& H, double time_step_size, uMPXInt order, const State* blockstate_ptr){
     m_time_step_size=time_step_size;
     SingleVertexOp_=MakeSingleSiteEvolutionOperatorFromLowTriMPO(H,time_step_size);
     
-    m_EvolutionOperators=TrotterDecomposition(H,time_step_size,m_EvolutionOperators.order(),blockstate_ptr);
+    m_EvolutionOperators=TrotterDecomposition(H,time_step_size,order,blockstate_ptr);
      if (SaveAll_){
 	std::stringstream H_MPO_Filename;
 	H_MPO_Filename << SAVEALLNAME << "_"<< current_time_step() <<"_H.MPO_matrix";

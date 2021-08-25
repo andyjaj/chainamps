@@ -89,8 +89,8 @@ public:
   TEBD(const MPO_matrix& H, FiniteMPS& F, DataOutput& results);
   TEBD(const MPO_matrix& H, FiniteMPS& F, double time_step_size, DataOutput& results, uMPXInt order=1,const State* blockstate_ptr=nullptr,bool save_all_flag=0); //use FiniteMPS class
 
-  void change_bond_operator(const MPO_matrix& H, double time_step_size,const State* blockstate_ptr=nullptr);
-
+  void change_bond_operator(const MPO_matrix& H, double time_step_size, uMPXInt order, const State* blockstate_ptr=nullptr);
+  
   void evolve(uMPXInt num_steps, std::vector<MultiVertexMeasurement>& measurements, uMPXInt bond_dimension=0, double minS=0.0, uMPXInt measurement_interval=1);
   void left_info();
   void right_info();
