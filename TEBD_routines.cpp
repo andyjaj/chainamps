@@ -676,30 +676,31 @@ namespace ajaj{
       }
       else if (m_EvolutionOperators.order()==2){
 	std::cout <<"2nd order time step evolution" <<std::endl;
-	//bond order grows rapidly, so need to compress after each application of a set of bond operators
-	//first step
-	apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS); //half step
-	left_canonise();
-	for (uMPXInt n=0;n<num_steps;++n){
-	  update_time();
-	  //	  ++m_current_time_step;
-	  std::cout << "Time " << current_time() << std::endl;
-	  apply_to_even_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS);
+	if (num_steps>0){
+	  //bond order grows rapidly, so need to compress after each application of a set of bond operators
+	  //first step
+	  apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS); //half step
 	  left_canonise();
-	  if (m_current_time_step % measurement_interval==0) /*make measurement*/ {
-	    apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[2]),bond_dimension,minS);
-	    std::cout << "Left canonize measure" <<std::endl;
-	    left_canonise_measure(measurements);//measurement
-	    apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
-	    std::cout << "Left canonize" <<std::endl;
+	  for (uMPXInt n=0;n<num_steps;++n){
+	    update_time();
+	    apply_to_even_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS);
 	    left_canonise();
+	    if (m_current_time_step % measurement_interval==0) /*make measurement*/ {
+	      apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[2]),bond_dimension,minS);
+	      left_canonise_measure(measurements);//measurement
+	      if (n!=num_steps-1){
+		apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
+		left_canonise();
+	      }
+	    }
+	    else {
+	      if (n!=num_steps-1){
+		apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS);
+		left_canonise();
+	      }
+	    }
+	    max_truncation_=0.0; //reset
 	  }
-	  else {
-	    apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS);
-	    std::cout << "Left canonize" <<std::endl;
-	    left_canonise();
-	  }
-	  max_truncation_=0.0; //reset
 	}
       }
       else if (m_EvolutionOperators.order()==4){
