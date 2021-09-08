@@ -688,13 +688,13 @@ namespace ajaj{
 	    if (m_current_time_step % measurement_interval==0) /*make measurement*/ {
 	      apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[2]),bond_dimension,minS);
 	      left_canonise_measure(measurements);//measurement
-	      if (n!=num_steps-1){
+	      if (n<num_steps-1){
 		apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
 		left_canonise();
 	      }
 	    }
 	    else {
-	      if (n!=num_steps-1){
+	      if (n<num_steps-1){
 		apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS);
 		left_canonise();
 	      }

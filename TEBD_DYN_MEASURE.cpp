@@ -187,73 +187,87 @@ int main(int argc, char** argv){
       
       std::stringstream mpsrootnamestream;
       mpsrootnamestream << ajaj::SAVEALLNAME << "_" << t2p.first << "_" << RuntimeArgs.initial_state_name();
+
+      
+      
       ajaj::FiniteMPS F(myModel.basis(),mpsrootnamestream.str(),WorkingName,number_of_vertices,1/*should be canonical*/,number_of_vertices); //load finite MPS from storage, and save a working copy 'F'.
 
       //equal time bit
       //removed for testing
-      /*{
+      {
 	ajaj::ConstFiniteMPS CF(F);
 	std::vector<std::complex<double> > equal_time_results;
 	for (ajaj::uMPXInt y1=1;y1<=number_of_vertices;++y1){
 	  equal_time_results.emplace_back(ajaj::GeneralisedOverlap(CF,std::vector<ajaj::meas_pair>{{y1,&(generated_MPOs[operator_storage_position[0]].Matrix)},{RuntimeArgs.y2(),&(generated_MPOs[operator_storage_position[1]].Matrix)}}));
 	}
 	results.push(++results_index,ajaj::Data(std::vector<double>{t2p.second,t2p.second},equal_time_results));
-	}*/
+      }
       
       //apply operator_2 to F and canonize new F
       std::complex<double> op2weight=ApplySingleVertexOperatorToMPS(generated_MPOs[operator_storage_position[1]].Matrix,F,RuntimeArgs.y2(),ajaj::MPSCanonicalType::Left);
-      std::cout << "Weight after applying op2 " << op2weight <<std::endl;
 
-      { //equal time measurement using unequal time method
-	ajaj::ConstFiniteMPS CF(F);
-	std::vector<std::complex<double> > equal_time_results;
-	ajaj::ConstFiniteMPS BraState(myModel.basis(),mpsrootnamestream.str(),number_of_vertices);
-	for (ajaj::uMPXInt y1=1;y1<=number_of_vertices;++y1){
-	  equal_time_results.emplace_back(op2weight*ajaj::GeneralisedOverlap(BraState,CF,generated_MPOs[operator_storage_position[0]].Matrix,y1));
-	  std::cout << equal_time_results.back() << std::endl;
-	}
-	results.push(++results_index,ajaj::Data(std::vector<double>{t2p.second,t2p.second},equal_time_results));
-      }
-
-      std::vector<ajaj::MultiVertexMeasurement> dummy_measurements; //TEBD object requires a measurement object, even if empty.
-
-      //time ordered part
       //need to setup a TEBD object with an initial MPO and step size
 
       //create TEBD object for inner loop
-      
-      ajaj::TEBD finrun(myModel.H_MPO,F,dummyresults); //doesn't mess about creating bond operators.
-      for (ajaj::uMPXInt tidx=t2p.first; tidx<idx_times.back().first; ++tidx){
-	//check H for this step and update if necessary
-	if (tidx==t2p.first || H_MPO_idx!=H_MPO_indices[tidx]){
-	  double stepsize= idx_times[tidx+1].second-idx_times[tidx].second;
-	  H_MPO_idx=H_MPO_indices[tidx];
-	  std::stringstream tSliceHMPOnamestream;
-	  tSliceHMPOnamestream << ajaj::SAVEALLNAME << "_" << H_MPO_idx << "_H.MPO_matrix";
+      std::vector<ajaj::MultiVertexMeasurement> dummy_measurements; //TEBD object requires a measurement object, even if empty.
+      //time ordered part
+      {
+	ajaj::TEBD finrun(myModel.H_MPO,F,dummyresults); //doesn't mess about creating bond operators.
+	for (ajaj::uMPXInt tidx=t2p.first; tidx<idx_times.back().first; ++tidx){
+	  //check H for this step and update if necessary
+	  if (tidx==t2p.first || H_MPO_idx!=H_MPO_indices[tidx]){
+	    double stepsize= idx_times[tidx+1].second-idx_times[tidx].second;
+	    H_MPO_idx=H_MPO_indices[tidx];
+	    std::stringstream tSliceHMPOnamestream;
+	    tSliceHMPOnamestream << ajaj::SAVEALLNAME << "_" << H_MPO_idx << "_H.MPO_matrix";
 	  finrun.change_bond_operator(myModel.update_H_MPO_from_file(tSliceHMPOnamestream.str()),stepsize,trotter_order);
+	  }
+	  //evolve one step
+	  //std::cout << "Evolve one step " <<std::endl;
+	  finrun.evolve(1,dummy_measurements,CHI,trunc);
+	  ajaj::ConstFiniteMPS TEBDCF(finrun.GetEvolvingState());
+	  std::stringstream mpst1namestream;
+	  mpst1namestream << ajaj::SAVEALLNAME << "_" << tidx+1 << "_" << RuntimeArgs.initial_state_name();
+	  //std::cout << "Loading bra state" <<std::endl;
+	  ajaj::ConstFiniteMPS BraState(myModel.basis(),mpst1namestream.str(),number_of_vertices);
+	  std::vector<std::complex<double> > unequal_time_results;
+	  for (ajaj::uMPXInt y1=1;y1<=number_of_vertices;++y1){
+	    //std::cout << "measurement" <<std::endl;
+	    
+	    unequal_time_results.emplace_back(op2weight*ajaj::GeneralisedOverlap(BraState,TEBDCF,generated_MPOs[operator_storage_position[0]].Matrix,y1));
+	  }
+	  results.push(++results_index,ajaj::Data(std::vector<double>{idx_times[tidx+1].second,t2p.second},unequal_time_results));
 	}
-	//evolve one step
-	std::cout << "Evolve one step " <<std::endl;
-	finrun.evolve(1,dummy_measurements,CHI,trunc);
-	ajaj::ConstFiniteMPS TEBDCF(finrun.GetEvolvingState());
-	std::stringstream mpst1namestream;
-	mpst1namestream << ajaj::SAVEALLNAME << "_" << tidx+1 << "_" << RuntimeArgs.initial_state_name();
-	std::cout << "Loading bra state" <<std::endl;
-	ajaj::ConstFiniteMPS BraState(myModel.basis(),mpst1namestream.str(),number_of_vertices);
-	std::vector<std::complex<double> > unequal_time_results;
-	for (ajaj::uMPXInt y1=1;y1<=number_of_vertices;++y1){
-	  std::cout << "measurement" <<std::endl;
-
-	  unequal_time_results.emplace_back(op2weight*ajaj::GeneralisedOverlap(BraState,TEBDCF,generated_MPOs[operator_storage_position[0]].Matrix,y1));
-	}
-	results.push(++results_index,ajaj::Data(std::vector<double>{idx_times[tidx+1].second,t2p.second},unequal_time_results));
-	
       }
 
       //anti-time ordered
+      if (RuntimeArgs.include_reverse()){
+	ajaj::TEBD finrun_rev(myModel.H_MPO,F,dummyresults); //doesn't mess about creating bond operators.
 
-      if (RuntimeArgs.include_reverse() && t2p.first>0){
-      
+	for (ajaj::uMPXInt tidx=t2p.first; tidx>0; --tidx){
+	  //check H for this step and update if necessary
+	  if (tidx==t2p.first || H_MPO_idx!=H_MPO_indices[tidx-1]){
+	    double stepsize= idx_times[tidx-1].second-idx_times[tidx].second;
+	    H_MPO_idx=H_MPO_indices[tidx-1];
+	    std::stringstream tSliceHMPOnamestream;
+	    tSliceHMPOnamestream << ajaj::SAVEALLNAME << "_" << H_MPO_idx << "_H.MPO_matrix";
+	    finrun_rev.change_bond_operator(myModel.update_H_MPO_from_file(tSliceHMPOnamestream.str()),stepsize,trotter_order);
+	  }
+	  //evolve one step
+	  finrun_rev.evolve(1,dummy_measurements,CHI,trunc);
+	  ajaj::ConstFiniteMPS TEBDCF(finrun_rev.GetEvolvingState());
+	  std::stringstream mpst1namestream;
+	  mpst1namestream << ajaj::SAVEALLNAME << "_" << tidx-1 << "_" << RuntimeArgs.initial_state_name();
+	  //std::cout << "Loading bra state" <<std::endl;
+	  ajaj::ConstFiniteMPS BraState(myModel.basis(),mpst1namestream.str(),number_of_vertices);
+	  std::vector<std::complex<double> > unequal_time_results;
+	  for (ajaj::uMPXInt y1=1;y1<=number_of_vertices;++y1){
+	    //std::cout << "measurement" <<std::endl;
+	    
+	    unequal_time_results.emplace_back(op2weight*ajaj::GeneralisedOverlap(BraState,TEBDCF,generated_MPOs[operator_storage_position[0]].Matrix,y1));
+	  }
+	  results.push(++results_index,ajaj::Data(std::vector<double>{idx_times[tidx-1].second,t2p.second},unequal_time_results));
+	}
       }
       
     }
