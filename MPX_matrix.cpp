@@ -585,7 +585,7 @@ namespace ajaj{
     }
 
   MPX_matrix load_MPX_matrix_binary(const std::string& filename,const Basis& spectrum){
-    std::cout << "LOADING " << filename << std::endl; 
+    //std::cout << "LOADING " << filename << std::endl; 
     std::ifstream infile;
     infile.open(filename.c_str(),ios::in | ios::binary);
     return load_MPX_matrix_binary(infile,spectrum);

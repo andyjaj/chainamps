@@ -137,8 +137,11 @@ int main(int argc, char** argv){
       }
       else H_MPO_indices.push_back(H_MPO_indices.back());
     }
-    //std::cout << "There are " << H_MPO_indices.size() << " time slices at which the Hamiltonian changes (including t=0)." <<std::endl;
-    
+    std::cout << "H_MPO index at each time slice " <<std::endl;
+    ajaj::uMPXInt hi=0;
+    for (auto &h : H_MPO_indices){
+      std::cout << idx_times[hi++].second << " " << h <<std::endl;
+    }
     
     //Before continuing need to check for and load H_MPO for time slice 0.
     /*std::stringstream FirstHMPOnamestream;
@@ -187,8 +190,6 @@ int main(int argc, char** argv){
       
       std::stringstream mpsrootnamestream;
       mpsrootnamestream << ajaj::SAVEALLNAME << "_" << t2p.first << "_" << RuntimeArgs.initial_state_name();
-
-      
       
       ajaj::FiniteMPS F(myModel.basis(),mpsrootnamestream.str(),WorkingName,number_of_vertices,1/*should be canonical*/,number_of_vertices); //load finite MPS from storage, and save a working copy 'F'.
 
@@ -218,9 +219,10 @@ int main(int argc, char** argv){
 	  if (tidx==t2p.first || H_MPO_idx!=H_MPO_indices[tidx]){
 	    double stepsize= idx_times[tidx+1].second-idx_times[tidx].second;
 	    H_MPO_idx=H_MPO_indices[tidx];
+	    std::cout << "Time slice " << tidx << ". Updating H_MPO idx to " << H_MPO_indices[H_MPO_idx] <<std::endl;
 	    std::stringstream tSliceHMPOnamestream;
 	    tSliceHMPOnamestream << ajaj::SAVEALLNAME << "_" << H_MPO_idx << "_H.MPO_matrix";
-	  finrun.change_bond_operator(myModel.update_H_MPO_from_file(tSliceHMPOnamestream.str()),stepsize,trotter_order);
+	    finrun.change_bond_operator(myModel.update_H_MPO_from_file(tSliceHMPOnamestream.str()),stepsize,trotter_order);
 	  }
 	  //evolve one step
 	  //std::cout << "Evolve one step " <<std::endl;
@@ -249,6 +251,7 @@ int main(int argc, char** argv){
 	  if (tidx==t2p.first || H_MPO_idx!=H_MPO_indices[tidx-1]){
 	    double stepsize= idx_times[tidx-1].second-idx_times[tidx].second;
 	    H_MPO_idx=H_MPO_indices[tidx-1];
+	    std::cout << "Time slice " << tidx << ". Updating H_MPO idx to " << H_MPO_indices[H_MPO_idx] <<std::endl;	   
 	    std::stringstream tSliceHMPOnamestream;
 	    tSliceHMPOnamestream << ajaj::SAVEALLNAME << "_" << H_MPO_idx << "_H.MPO_matrix";
 	    finrun_rev.change_bond_operator(myModel.update_H_MPO_from_file(tSliceHMPOnamestream.str()),stepsize,trotter_order);
