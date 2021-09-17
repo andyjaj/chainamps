@@ -681,26 +681,36 @@ namespace ajaj{
 	  //first step
 	  apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS); //half step
 	  left_canonise();
-	  for (uMPXInt n=0;n<num_steps;++n){
+	  
+	  for (uMPXInt n=0;n<num_steps-1;++n){
 	    update_time();
 	    apply_to_even_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS);
 	    left_canonise();
 	    if (m_current_time_step % measurement_interval==0) /*make measurement*/ {
 	      apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[2]),bond_dimension,minS);
 	      left_canonise_measure(measurements);//measurement
-	      if (n<num_steps-1){
-		apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
-		left_canonise();
-	      }
+	      //if (n<num_steps-1){
+	      apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
+	      left_canonise();
+		//}
 	    }
 	    else {
-	      if (n<num_steps-1){
-		apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS);
-		left_canonise();
-	      }
+	      //if (n<num_steps-1){
+	      apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS);
+	      left_canonise();
+		//}
 	    }
 	    max_truncation_=0.0; //reset
 	  }
+	  
+	  update_time();
+	  apply_to_even_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS);
+	  left_canonise();
+	  apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
+	  if (m_current_time_step % measurement_interval==0) /*make measurement*/
+	    left_canonise_measure(measurements);//measurement
+	  else
+	    left_canonise();
 	}
       }
       else if (m_EvolutionOperators.order()==4){
