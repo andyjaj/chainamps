@@ -580,7 +580,7 @@ namespace ajaj {
 
   std::complex<double> SparseMatrix::trace() const{
     if (!m_finalised){std::cout << "Not finalised! Probably you didn't mean to do this yet!" << std::endl; exit(1);}
-    if (m_array->m!=m_array->n) {std::cout << "NOT A SQUARE MATRIX" << std::endl; exit(1);}
+    if (m_array->m!=m_array->n) {std::cout << "NOT A SQUARE MATRIX: " <<  m_array->m << " " << m_array->n << std::endl; exit(1);}
     std::complex<double> trace=0.0;
     for (Sparseint col=0;col<m_array->n;++col){
       for (Sparseint j=m_array->p[col];j<m_array->p[col+1];++j){

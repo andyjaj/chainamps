@@ -101,14 +101,18 @@ namespace ajaj{
     real_results.push_back(m_truncation);
     real_results.push_back(entropy(ortho.Lambdas.at(0)));
     real_results.push_back(abs(complex_results.at(0)));
+
     for (std::vector<MPO_matrix>::const_iterator cit=measuredMPOs.begin();cit!=measuredMPOs.end();++cit){
       complex_results.emplace_back(OneVertexMeasurement(*cit,ortho));
     }
+
+    std::cout << "Measuring done" << std::endl;
+
     m_results.push(m_current_time_step,Data(real_results,complex_results));
-    std::ofstream DensityFileStream_;
+    /*std::ofstream DensityFileStream_;
     DensityFileStream_.open("iTEBD_One_Vertex_Densities.dat",ios::out | ios::app);
     ortho.OutputPhysicalIndexDensities(DensityFileStream_);
-    DensityFileStream_.close();
+    DensityFileStream_.close();*/
   }
 
   const UnitCell& iTEBD::evolve(uMPXInt num_steps, const std::vector<MPO_matrix>& measuredMPOs, uMPXInt bond_dimension, double minS, uMPXInt measurement_interval){

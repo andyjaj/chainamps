@@ -300,15 +300,16 @@ namespace ajaj {
   }
 
   std::vector<std::complex<double> > Overlap(const UnitCell& bra, const UnitCell& ket, uMPXInt nev){
-    return MakeLTransferMatrix(bra,ket).LeftEigs(nev,LARGESTMAGNITUDE).Values;
+    return TransferMatrixComponents(bra,ket,0,State(ket.basis().getChargeRules())).LeftED(nev,LARGESTMAGNITUDE).Values;
+    //return MakeLTransferMatrix(bra,ket).LeftEigs(nev,LARGESTMAGNITUDE).Values;
   }
 
   std::vector<std::complex<double> > TransferMatrixEigs(const UnitCell& ket, uMPXInt nev,const State& TargetState){
     //make the required bits
-    std::vector<const MPS_matrix*> ket_ptrs;
+    /*std::vector<const MPS_matrix*> ket_ptrs;
     for (auto&& k: ket.Matrices){
       ket_ptrs.emplace_back(&k);
-    }
+    }*/
     return TransferMatrixComponents(ket,1,TargetState).LeftED(nev,LARGESTMAGNITUDE).Values;
     //return TransferMatrixComponents(ket_ptrs,1,TargetState).LeftED(nev,LARGESTMAGNITUDE).Values;
   }
@@ -378,16 +379,18 @@ namespace ajaj {
     if (Ortho.Matrices.size()!=2){std::cout << "Only two vertex basis accepted for now" <<std::endl; return 0.0;}
 
     MPX_matrix LAMBDA0(H1.basis(),Ortho.Matrices.at(0).Index(1),Ortho.Lambdas.at(0));
-
-    std::complex<double> LocalEnergy(contract_to_sparse(contract(Ortho.Matrices.at(1),1,contract(contract(Ortho.Matrices.at(0),1,contract(H1,0,Ortho.Matrices.at(0),0,contract20),0,contract0013),0,Ortho.Matrices.at(1),0,contract31),0,contract0310),0,contract(LAMBDA0,0,LAMBDA0,0,contract10),0,contract0130).trace());
-    LocalEnergy+=OneVertexMeasurement(H1,Ortho);
+    std::cout << "Calculating energy" <<std::endl;
+    std::complex<double> LocalEnergy=0.0;
+    if (!H1.empty()){
+      LocalEnergy+=contract_to_sparse(contract(Ortho.Matrices.at(1),1,contract(contract(Ortho.Matrices.at(0),1,contract(H1,0,Ortho.Matrices.at(0),0,contract20),0,contract0013),0,Ortho.Matrices.at(1),0,contract31),0,contract0310),0,contract(LAMBDA0,0,LAMBDA0,0,contract10),0,contract0130).trace(); //contribution from 1st site
+      LocalEnergy+=OneVertexMeasurement(H1,Ortho); //add contribution from 2nd site
+    }
+    std::cout << "On vertex energy =" << LocalEnergy <<std::endl;
     std::complex<double> Bond1Energy(TwoVertexMeasurement(RowX,ColX,Ortho.Matrices.at(0),Ortho.Matrices.at(1),LAMBDA0));
+    std::cout << "Bond 1 energy =" << Bond1Energy <<std::endl;
     //and now a more complicated thing...
     std::complex<double> Bond2Energy(contract_to_sparse(contract(Ortho.Matrices.at(1),1,contract(contract(Ortho.Matrices.at(0),1,contract(contract(Ortho.Matrices.at(0),0,contract(Ortho.Matrices.at(1),1,contract(contract(contract(Ortho.Matrices.at(0),1,Ortho.Matrices.at(0),0,contract0011),0,Ortho.Matrices.at(1),0,contract11),0,RowX,0,contract12),0,contract0210),0,contract11),0,ColX,0,contract0241),0,contract0311),0,Ortho.Matrices.at(1),0,contract11),0,contract0310),0,contract(LAMBDA0,0,LAMBDA0,0,contract10),0,contract0130).trace());
-
-    std::cout << "On vertex energy " << LocalEnergy <<std::endl;
-    std::cout << "Bond 1 energy " << Bond1Energy <<std::endl;
-    std::cout << "Bond 2 energy " << Bond2Energy <<std::endl;
+    std::cout << "Bond 2 energy = " << Bond2Energy <<std::endl;
 
     return 0.5*(LocalEnergy+Bond1Energy+Bond2Energy);
 
