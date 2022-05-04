@@ -42,12 +42,12 @@ namespace ajaj{
 	
 	BondOperators.emplace_back(MakeBondEvolutionOperator(OddBondH,0.5*tau));
 	BondOperators.emplace_back(MakeBondEvolutionOperator(EvenBondH,tau));
-	BondOperators.emplace_back(MakeBondEvolutionOperator(OddBondH,tau));
+	//BondOperators.emplace_back(MakeBondEvolutionOperator(OddBondH,tau));
 
 	//safeish to have pointer to vector element if the vector no longer grows
 	OrderedOperatorPtrs.emplace_back(&BondOperators.at(0));
 	OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
-	OrderedOperatorPtrs.emplace_back(&BondOperators.at(2));
+	//OrderedOperatorPtrs.emplace_back(&BondOperators.at(0));
       }
 
       else if (m_order==4){
@@ -143,34 +143,52 @@ namespace ajaj{
     }
     else if (order()==2){
       std::cout <<"2nd order time step evolution" <<std::endl;
-      //2nd order special start
-      apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
-      for (uMPXInt n=0;n<num_steps;++n){
-	//++m_current_time_step;
+      if (num_steps>0){
+
+	//2nd order special start
+	apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS); // 12 to 21
+	for (uMPXInt n=0;n<num_steps-1;++n){
+	  //++m_current_time_step;
+	  update_time();
+	  std::cout << "Time " << current_time() << std::endl;
+	  apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS); //21 to 12
+	  if (m_current_time_step % measurement_interval==0) /*make measurement*/ {
+	    
+	    apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);//12 to 21
+	    //swap order
+	    m_unit.swap(0,1); //21 to 12
+	    //measure etc.
+	    UnitCell ortho(OrthogonaliseInversionSymmetric(m_unit));
+	    if (ortho.size()){ //if generating unitcell works, then measure and use it
+	      ortho.store(Name_,m_current_time_step);
+	      this->do_measurements(ortho,measuredMPOs);
+	      m_unit=std::move(ortho);
+	    }
+	    
+	    //m_unit.OutputOneVertexDensityMatrix("OneVertexRho",m_current_time_step);
+	    //complete time step
+	    apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS); //12 to 21
+	  }
+	  else {
+	    apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS); //12 to 21
+	  }
+	}
+	//final step
 	update_time();
 	std::cout << "Time " << current_time() << std::endl;
-	apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS);
-	if (m_current_time_step % measurement_interval==0) /*make measurement*/ {
-	  
-	  apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
-	  //swap order
-	  m_unit.swap(0,1);
-	  //measure etc.
+	apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS); //21 to 12
+	apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS); //12 to 21
+	//swap order to return to 12 form
+	m_unit.swap(0,1); //21 to 12
+	if (m_current_time_step % measurement_interval==0){
 	  UnitCell ortho(OrthogonaliseInversionSymmetric(m_unit));
 	  if (ortho.size()){ //if generating unitcell works, then measure and use it
 	    ortho.store(Name_,m_current_time_step);
 	    this->do_measurements(ortho,measuredMPOs);
 	    m_unit=std::move(ortho);
 	  }
-
-	  m_unit.OutputOneVertexDensityMatrix("OneVertexRho",m_current_time_step);
-	  //complete time step
-	  apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
+	  //m_unit.OutputOneVertexDensityMatrix("OneVertexRho",m_current_time_step);
 	}
-	else {
-	  apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[2]),bond_dimension,minS);
-	}
-       
       }
     }
     else if (order()==4){
@@ -702,7 +720,7 @@ namespace ajaj{
 	    }
 	    else {
 	      //if (n<num_steps-1){
-	      apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[2]),bond_dimension,minS);
+	      apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS);
 	      left_canonise();
 		//}
 	    }
