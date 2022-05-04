@@ -42,10 +42,12 @@ namespace ajaj{
 	
 	BondOperators.emplace_back(MakeBondEvolutionOperator(OddBondH,0.5*tau));
 	BondOperators.emplace_back(MakeBondEvolutionOperator(EvenBondH,tau));
+	BondOperators.emplace_back(MakeBondEvolutionOperator(OddBondH,tau));
+
 	//safeish to have pointer to vector element if the vector no longer grows
 	OrderedOperatorPtrs.emplace_back(&BondOperators.at(0));
 	OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
-	OrderedOperatorPtrs.emplace_back(&BondOperators.at(0));
+	OrderedOperatorPtrs.emplace_back(&BondOperators.at(2));
       }
 
       else if (m_order==4){
@@ -150,7 +152,7 @@ namespace ajaj{
 	apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS);
 	if (m_current_time_step % measurement_interval==0) /*make measurement*/ {
 	  
-	  apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[2]),bond_dimension,minS);
+	  apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
 	  //swap order
 	  m_unit.swap(0,1);
 	  //measure etc.
@@ -166,7 +168,7 @@ namespace ajaj{
 	  apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
 	}
 	else {
-	  apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS);
+	  apply_and_decompose(*(m_EvolutionOperators.OrderedOperatorPtrs[2]),bond_dimension,minS);
 	}
        
       }
@@ -691,7 +693,7 @@ namespace ajaj{
 	    apply_to_even_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS);
 	    left_canonise();
 	    if (m_current_time_step % measurement_interval==0) /*make measurement*/ {
-	      apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[2]),bond_dimension,minS);
+	      apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
 	      left_canonise_measure(measurements);//measurement
 	      //if (n<num_steps-1){
 	      apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[0]),bond_dimension,minS);
@@ -700,7 +702,7 @@ namespace ajaj{
 	    }
 	    else {
 	      //if (n<num_steps-1){
-	      apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS);
+	      apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[2]),bond_dimension,minS);
 	      left_canonise();
 		//}
 	    }
