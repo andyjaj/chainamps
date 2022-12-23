@@ -30,6 +30,7 @@ int main(int argc, char** argv){
     double trunc(RuntimeArgs.trunc()); //allowed truncation error
     ajaj::uMPXInt number_of_vertices(RuntimeArgs.num_vertices()); //number of vertices/nodes
     ajaj::uMPXInt trotter_order(RuntimeArgs.trotter_order()); //set the trotter decomposition order
+    ajaj::uMPXInt t2idx(RuntimeArgs.num_indx()); // ket idx is set by command line
 
     //TEBD_DYN_MEASURE can only measure one pair of operators per run, because different operators lead to different
     //time evolution for unequal time correlators.
@@ -84,6 +85,30 @@ int main(int argc, char** argv){
       
     }
 
+    //load the file that contains the full time list with their indices
+    std::stringstream full_tfnamestream;
+    full_tfnamestream << RuntimeArgs.filename() << "_Full_idxtime.dat"; // Load the file which contains the full list of indices/times
+      
+    typedef std::pair<size_t,double> idx_full;//typedef for convenience
+    std::vector<idx_full> full_idx_times; //storage for timeslice index and time
+      
+    full_idx_times.emplace_back(0,0.0);
+    std::ifstream full_time_file;
+    full_time_file.open(full_tfnamestream.str().c_str(),ios::in);
+      
+    if (full_time_file.is_open()){
+      std::cout << "Opened " << full_tfnamestream.str() << "." << std::endl;
+      size_t idx_full;
+      double time_full;
+      std::string sdump1;
+      full_time_file >> std::ws;
+      if (full_time_file.peek()=='#'){getline(full_time_file,sdump1);}//dump the comment line
+      while (full_time_file >> idx_full >> time_full){
+	getline(full_time_file,sdump1); //dump the rest of the line
+	full_idx_times.emplace_back(idx_full,time_full);
+      }
+    }
+      
     //The model and operators are now loaded
     //Next load the info from the time file.
     //The name should be INPUTFILE_TEBD_NUMVERTICES_INITIALSTATENAME_Evolution.dat
@@ -117,6 +142,7 @@ int main(int argc, char** argv){
 	}
 
 	std::cout << "There are " << idx_times.size() << " (index,time) pairs." <<std::endl;
+	std::cout<<"There are "<< full_idx_times.size()<< " (index,time) pairs in the full file"<<std::endl;
 	std::cout << "Note, index 0 at time 0.0 is created by default. " <<std::endl << std::endl;
 	
       }
@@ -130,8 +156,9 @@ int main(int argc, char** argv){
 
 
     //make a list of the timeslices at which the Hamiltonian changes (includes 0)
+    // Here we want to take the H_MPOs from the full list full_idx_times
     std::vector<ajaj::uMPXInt> H_MPO_indices; 
-    for (auto& t : idx_times){
+    for (auto& t : full_idx_times){
       if (ajaj::check_for_H_MPO_file(ajaj::SAVEALLNAME,t.first)){
 	H_MPO_indices.push_back(t.first);
       }
@@ -140,18 +167,18 @@ int main(int argc, char** argv){
     std::cout << "H_MPO index at each time slice " <<std::endl;
     ajaj::uMPXInt hi=0;
     for (auto &h : H_MPO_indices){
-      std::cout << idx_times[hi++].second << " " << h <<std::endl;
+      std::cout << full_idx_times[hi++].second << " Here is it " << h <<std::endl;
     }
     
     //Before continuing need to check for and load H_MPO for time slice 0.
     /*std::stringstream FirstHMPOnamestream;
-    FirstHMPOnamestream << ajaj::SAVEALLNAME << "_0_H.MPO_matrix";
-    ajaj::MPO_matrix H_MPO(load_MPO_matrix(FirstHMPOnamestream.str(),myModel.basis()));
-    if (!H_MPO.isConsistent()){
+      FirstHMPOnamestream << ajaj::SAVEALLNAME << "_0_H.MPO_matrix";
+      ajaj::MPO_matrix H_MPO(load_MPO_matrix(FirstHMPOnamestream.str(),myModel.basis()));
+      if (!H_MPO.isConsistent()){
       std::cout << "Problem with " << FirstHMPOnamestream.str() << std::endl;
       return 1;
-    }
-    else {
+      }
+      else {
       std::cout << "Successfully loaded " << FirstHMPOnamestream.str() << std::endl;
       H_MPO.print_indices();
       }*/
@@ -170,39 +197,44 @@ int main(int argc, char** argv){
     outfilenamestream<<RuntimeArgs.filename()<<"_DYN_"<<number_of_vertices<<"_"<<RuntimeArgs.initial_state_name()<<"_" << RuntimeArgs.Op1_name() << "_y1_" << RuntimeArgs.Op2_name() << "_"<< RuntimeArgs.y2() <<".dat";
     ajaj::DataOutput results(outfilenamestream.str(),commentlinestream.str());
     ajaj::DataOutput dummyresults;
+    ajaj::DataOutput dummyfullresults;
 
     std::string WorkingName("TempMPS");
     
-    //loop over t2
 
     ajaj::uMPXInt H_MPO_idx=0;
     ajaj::uMPXInt results_index=0;
 
-    //Don't want to be recreating the bond operators needlessly
+    //check t2 index is in the list of saved states, and if so, what the index is
+    ajaj::uMPXInt ketsliceidx=0;
+    while(ketsliceidx<idx_times.size()){
+      if (idx_times[ketsliceidx].first==t2idx) break;
+      else ketsliceidx++;
+    }
     
     
-    for (const auto& t2p : idx_times){
-      std::cout << t2p.first << " " << t2p.second <<std::endl;
+    if (ketsliceidx<idx_times.size()){ //only do this if requested t2 was in the list
+      double t2=idx_times[ketsliceidx].second;
+      std::cout << "ket idx " << t2idx << ", here t2 = " << t2 <<std::endl;
 
       //We will need to load the MPS at each timeslice
       //Its files should be named SAVEALLNAME_timesliceidx_INITIALSTATENAME_Left_i.MPS_matrix
       //SAVEALLNAME is defined in TEBD_routines.hpp
       
       std::stringstream mpsrootnamestream;
-      mpsrootnamestream << ajaj::SAVEALLNAME << "_" << t2p.first << "_" << RuntimeArgs.initial_state_name();
+      mpsrootnamestream << ajaj::SAVEALLNAME << "_" << t2idx << "_" << RuntimeArgs.initial_state_name();
       
       ajaj::FiniteMPS F(myModel.basis(),mpsrootnamestream.str(),WorkingName,number_of_vertices,1/*should be canonical*/,number_of_vertices); //load finite MPS from storage, and save a working copy 'F'.
 
-      //equal time bit
-      //removed for testing
-      {
-	ajaj::ConstFiniteMPS CF(F);
-	std::vector<std::complex<double> > equal_time_results;
-	for (ajaj::uMPXInt y1=1;y1<=number_of_vertices;++y1){
-	  equal_time_results.emplace_back(ajaj::GeneralisedOverlap(CF,std::vector<ajaj::meas_pair>{{y1,&(generated_MPOs[operator_storage_position[0]].Matrix)},{RuntimeArgs.y2(),&(generated_MPOs[operator_storage_position[1]].Matrix)}}));
-	}
-	results.push(++results_index,ajaj::Data(std::vector<double>{t2p.second,t2p.second},equal_time_results));
-      }
+      //equal time bit for testing
+      // {
+      // 	ajaj::ConstFiniteMPS CF(F);
+      // 	std::vector<std::complex<double> > equal_time_results;
+      // 	for (ajaj::uMPXInt y1=1;y1<=number_of_vertices;++y1){
+      // 	  equal_time_results.emplace_back(ajaj::GeneralisedOverlap(CF,std::vector<ajaj::meas_pair>{{y1,&(generated_MPOs[operator_storage_position[0]].Matrix)},{RuntimeArgs.y2(),&(generated_MPOs[operator_storage_position[1]].Matrix)}}));
+      // 	}
+      // 	results.push(++results_index,ajaj::Data(std::vector<double>{t2,t2},equal_time_results));
+      // }
       
       //apply operator_2 to F and canonize new F
       std::complex<double> op2weight=ApplySingleVertexOperatorToMPS(generated_MPOs[operator_storage_position[1]].Matrix,F,RuntimeArgs.y2(),ajaj::MPSCanonicalType::Left);
@@ -213,70 +245,104 @@ int main(int argc, char** argv){
       std::vector<ajaj::MultiVertexMeasurement> dummy_measurements; //TEBD object requires a measurement object, even if empty.
       //time ordered part
       {
-	ajaj::TEBD finrun(myModel.H_MPO,F,dummyresults); //doesn't mess about creating bond operators.
-	for (ajaj::uMPXInt tidx=t2p.first; tidx<idx_times.back().first; ++tidx){
+	ajaj::uMPXInt current_ket_idx=t2idx;
+	ajaj::TEBD finrun(myModel.H_MPO,F,dummyresults, dummyfullresults); //doesn't mess about creating bond operators.
+	
+	for (ajaj::uMPXInt brasliceidx=ketsliceidx; brasliceidx<idx_times.size(); brasliceidx++){  // Loop over saved states for t1
+	  ajaj::uMPXInt t1idx=idx_times[brasliceidx].first;
+	  double t1=idx_times[brasliceidx].second;
+	  
+	  std::cout<<"bra idx is " <<t1idx<< " and t1= " << t1 << std::endl;
+
+	  
 	  //check H for this step and update if necessary
-	  if (tidx==t2p.first || H_MPO_idx!=H_MPO_indices[tidx]){
-	    double stepsize= idx_times[tidx+1].second-idx_times[tidx].second;
-	    H_MPO_idx=H_MPO_indices[tidx];
-	    std::cout << "Time slice " << tidx << ". Updating H_MPO idx to " << H_MPO_indices[H_MPO_idx] <<std::endl;
-	    std::stringstream tSliceHMPOnamestream;
-	    tSliceHMPOnamestream << ajaj::SAVEALLNAME << "_" << H_MPO_idx << "_H.MPO_matrix";
-	    finrun.change_bond_operator(myModel.update_H_MPO_from_file(tSliceHMPOnamestream.str()),stepsize,trotter_order);
+        
+	  for (ajaj::uMPXInt tstepidx=current_ket_idx; tstepidx<t1idx; ++tstepidx){  //Loop over exponentials, starting from t2 and ending at t1 - 1
+	    //if (t1idx == t2idx){tstepidx = t2idx;}
+            std::cout<<"Index for t2 is "<<t2idx <<", index for t1 is "<<t1idx<<" and index for step is "<<tstepidx<<std::endl;
+
+            if (tstepidx==t2idx || H_MPO_idx!=H_MPO_indices[tstepidx]){ //if first step load H, or if step when H changes load new H
+                
+	      std::cout<<"Here the MPO index is "<<H_MPO_indices[tstepidx] << " and the time is"<< full_idx_times[tstepidx].second <<std::endl;
+            
+	      std::cout<<"Delta t has a final time:" <<full_idx_times[tstepidx+1].second<<" and an initial time: "<<full_idx_times[tstepidx].second<<std::endl;
+	      double stepsize = full_idx_times[tstepidx+1].second - full_idx_times[tstepidx].second ;
+	      H_MPO_idx=H_MPO_indices[tstepidx];
+                
+	      std::cout << "Time slice " << tstepidx << ". Updating H_MPO idx to " << H_MPO_indices[tstepidx] <<std::endl;
+	      std::stringstream tSliceHMPOnamestream;
+	      tSliceHMPOnamestream << ajaj::SAVEALLNAME << "_" << H_MPO_idx << "_H.MPO_matrix";
+	      finrun.change_bond_operator(myModel.update_H_MPO_from_file(tSliceHMPOnamestream.str()),stepsize,trotter_order);
+	      //evolve one step                
+            }
+            finrun.evolve(1,dummy_measurements,CHI,trunc); // The real state has been evolved herec
 	  }
-	  //evolve one step
-	  //std::cout << "Evolve one step " <<std::endl;
-	  finrun.evolve(1,dummy_measurements,CHI,trunc);
-	  ajaj::ConstFiniteMPS TEBDCF(finrun.GetEvolvingState());
+	  current_ket_idx=t1idx;
+	  
+	  ajaj::ConstFiniteMPS TEBDCF(finrun.GetEvolvingState());  // We created a copy of that state to use it in order to perform unequal time measurements
+        
 	  std::stringstream mpst1namestream;
-	  mpst1namestream << ajaj::SAVEALLNAME << "_" << tidx+1 << "_" << RuntimeArgs.initial_state_name();
+	  mpst1namestream << ajaj::SAVEALLNAME << "_" << t1idx << "_" << RuntimeArgs.initial_state_name(); //t1dx should refer to the coorect bra state
 	  //std::cout << "Loading bra state" <<std::endl;
 	  ajaj::ConstFiniteMPS BraState(myModel.basis(),mpst1namestream.str(),number_of_vertices);
 	  std::vector<std::complex<double> > unequal_time_results;
 	  for (ajaj::uMPXInt y1=1;y1<=number_of_vertices;++y1){
 	    //std::cout << "measurement" <<std::endl;
-	    
 	    unequal_time_results.emplace_back(op2weight*ajaj::GeneralisedOverlap(BraState,TEBDCF,generated_MPOs[operator_storage_position[0]].Matrix,y1));
 	  }
-	  results.push(++results_index,ajaj::Data(std::vector<double>{idx_times[tidx+1].second,t2p.second},unequal_time_results));
+          
+	  results.push(++results_index,ajaj::Data(std::vector<double>{t1,t2},unequal_time_results));
+	  
 	}
       }
-
       //anti-time ordered
       if (RuntimeArgs.include_reverse()){
-	ajaj::TEBD finrun_rev(myModel.H_MPO,F,dummyresults); //doesn't mess about creating bond operators.
-
-	for (ajaj::uMPXInt tidx=t2p.first; tidx>0; --tidx){
-	  //check H for this step and update if necessary
-	  if (tidx==t2p.first || H_MPO_idx!=H_MPO_indices[tidx-1]){
-	    double stepsize= idx_times[tidx-1].second-idx_times[tidx].second;
-	    H_MPO_idx=H_MPO_indices[tidx-1];
-	    std::cout << "Time slice " << tidx << ". Updating H_MPO idx to " << H_MPO_indices[H_MPO_idx] <<std::endl;	   
-	    std::stringstream tSliceHMPOnamestream;
-	    tSliceHMPOnamestream << ajaj::SAVEALLNAME << "_" << H_MPO_idx << "_H.MPO_matrix";
-	    finrun_rev.change_bond_operator(myModel.update_H_MPO_from_file(tSliceHMPOnamestream.str()),stepsize,trotter_order);
+	ajaj::uMPXInt current_ket_idx=t2idx;
+	ajaj::TEBD finrun_rev(myModel.H_MPO,F,dummyresults,dummyfullresults); //doesn't mess about creating bond operators.
+	
+	for (ajaj::uMPXInt brasliceidx=ketsliceidx; brasliceidx>0; brasliceidx--){  // Loop over slices for t1
+	  ajaj::uMPXInt t1idx=idx_times[brasliceidx-1].first;
+	  double t1=idx_times[brasliceidx-1].second;
+	  std::cout<<"anti_order t1 = "<<t1<<std::endl;
+	  for (ajaj::uMPXInt tstepidx=current_ket_idx; tstepidx>t1idx; --tstepidx){  //Loop over exponentials, starting from t2 and ending at t1 - 1
+            //check H for this step and update if necessary
+            if (tstepidx==t2idx || H_MPO_idx!=H_MPO_indices[tstepidx-1]){
+	      std::cout<<"Anti-time ordeR: Here the MPO index: "<<H_MPO_indices[tstepidx-1]<<std::endl;
+	      double stepsize= full_idx_times[tstepidx-1].second-full_idx_times[tstepidx].second;
+	      std::cout<<"Passed here"<<std::endl;
+	      H_MPO_idx=H_MPO_indices[tstepidx-1];
+                
+	      std::cout << "Time slice " << t1idx << ". Updating H_MPO idx to " << H_MPO_indices[H_MPO_idx] <<std::endl;
+	      std::stringstream tSliceHMPOnamestream;
+	      tSliceHMPOnamestream << ajaj::SAVEALLNAME << "_" << H_MPO_idx << "_H.MPO_matrix";
+	      finrun_rev.change_bond_operator(myModel.update_H_MPO_from_file(tSliceHMPOnamestream.str()),stepsize,trotter_order);
+                
+            }
+            //evolve one step
+            finrun_rev.evolve(1,dummy_measurements,CHI,trunc);
 	  }
-	  //evolve one step
-	  finrun_rev.evolve(1,dummy_measurements,CHI,trunc);
+	  current_ket_idx=t1idx;
 	  ajaj::ConstFiniteMPS TEBDCF(finrun_rev.GetEvolvingState());
 	  std::stringstream mpst1namestream;
-	  mpst1namestream << ajaj::SAVEALLNAME << "_" << tidx-1 << "_" << RuntimeArgs.initial_state_name();
+	  mpst1namestream << ajaj::SAVEALLNAME << "_" << t1idx << "_" << RuntimeArgs.initial_state_name();
 	  //std::cout << "Loading bra state" <<std::endl;
 	  ajaj::ConstFiniteMPS BraState(myModel.basis(),mpst1namestream.str(),number_of_vertices);
 	  std::vector<std::complex<double> > unequal_time_results;
 	  for (ajaj::uMPXInt y1=1;y1<=number_of_vertices;++y1){
-	    //std::cout << "measurement" <<std::endl;
-	    
-	    unequal_time_results.emplace_back(op2weight*ajaj::GeneralisedOverlap(BraState,TEBDCF,generated_MPOs[operator_storage_position[0]].Matrix,y1));
+            //std::cout << "measurement" <<std::endl;
+            unequal_time_results.emplace_back(op2weight*ajaj::GeneralisedOverlap(BraState,TEBDCF,generated_MPOs[operator_storage_position[0]].Matrix,y1));
 	  }
-	  results.push(++results_index,ajaj::Data(std::vector<double>{idx_times[tidx-1].second,t2p.second},unequal_time_results));
+	
+	  results.push(++results_index,ajaj::Data(std::vector<double>{t1,t2},unequal_time_results));
 	}
       }
       
+    
+      return 0;
+    
     }
-    
-    return 0;
-    
+    std::cout << "Requested t2 index not in list of saved states." <<std::endl;
+    return 1;
   }
 
   return 1;

@@ -27,7 +27,7 @@ namespace ajaj{
     return MPX_matrix(BondH.basis(),indices,2,Exponentiate(BondH.Eigs(blockstate),std::complex<double>(0.0,-timestep)));
   }
 
-  TwoVE::TwoVE(const MPO_matrix& HMPO, FiniteMPS& F, double time_step_size, DataOutput& results, const State& blockstate) : TimeBase(time_step_size,results),MPSName_(F.name()),Basis_(HMPO.basis()),EvolutionOperator_(Make2VEvolutionOperator(Make2VBondHamiltonian(HMPO),time_step_size,blockstate)),GoodInitial_(0),BlockState_(blockstate) {
+  TwoVE::TwoVE(const MPO_matrix& HMPO, FiniteMPS& F, double time_step_size, DataOutput& results, DataOutput& fresults ,const State& blockstate) : TimeBase(time_step_size,results,fresults),MPSName_(F.name()),Basis_(HMPO.basis()),EvolutionOperator_(Make2VEvolutionOperator(Make2VBondHamiltonian(HMPO),time_step_size,blockstate)),GoodInitial_(0),BlockState_(blockstate) {
    
     std::stringstream Evolvingnamestream;
     Evolvingnamestream << "Evolving_" << MPSName_;

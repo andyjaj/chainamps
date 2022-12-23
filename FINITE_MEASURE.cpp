@@ -115,6 +115,7 @@ int main(int argc, char** argv){
     }
 
     ajaj::DataOutput results("FINITE_RESULTS.dat",commentline.str());
+      ajaj::DataOutput dummyfullresults;
     
     size_t Index(0);
     if (!RuntimeArgs.fdmrg_mode()){ //processes explicitly given state names
@@ -125,7 +126,7 @@ int main(int argc, char** argv){
 	  std::cout << "Couldn't find a valid set of files for this state." <<std::endl;
 	  return 1;
 	}
-	ajaj::TEBD finrun(myModel.H_MPO,F,results);
+	ajaj::TEBD finrun(myModel.H_MPO,F,results,dummyfullresults);
 	finrun.evolve(Index,measurements);
 	if (!finrun.good()){
 	  return 1;
@@ -150,7 +151,7 @@ int main(int argc, char** argv){
 	
 	std::cout << StateName <<std::endl;
 
-	ajaj::TEBD finrun(myModel.H_MPO,F,results);
+	ajaj::TEBD finrun(myModel.H_MPO,F,results,dummyfullresults);
 	finrun.evolve(Index,measurements);
 	if (!finrun.good()){
 	  return 1;

@@ -42,12 +42,12 @@ namespace ajaj{
 	
 	BondOperators.emplace_back(MakeBondEvolutionOperator(OddBondH,0.5*tau));
 	BondOperators.emplace_back(MakeBondEvolutionOperator(EvenBondH,tau));
-	//BondOperators.emplace_back(MakeBondEvolutionOperator(OddBondH,tau));
+	BondOperators.emplace_back(MakeBondEvolutionOperator(OddBondH,tau));
 
 	//safeish to have pointer to vector element if the vector no longer grows
 	OrderedOperatorPtrs.emplace_back(&BondOperators.at(0));
 	OrderedOperatorPtrs.emplace_back(&BondOperators.at(1));
-	//OrderedOperatorPtrs.emplace_back(&BondOperators.at(0));
+	OrderedOperatorPtrs.emplace_back(&BondOperators.at(2));
       }
 
       else if (m_order==4){
@@ -84,7 +84,7 @@ namespace ajaj{
     }
   }
 
-  iTEBD::iTEBD(const MPO_matrix& H,const UnitCell& C, double time_step_size, DataOutput& results, const std::string& Name, uMPXInt order) : TimeBase(time_step_size,results),m_EvolutionOperators(TrotterDecomposition(H,time_step_size,order)),m_initial_unit(C),m_unit(C),Name_(Name) {
+  iTEBD::iTEBD(const MPO_matrix& H,const UnitCell& C, double time_step_size, DataOutput& results, DataOutput& fresults, const std::string& Name, uMPXInt order) : TimeBase(time_step_size,results,fresults),m_EvolutionOperators(TrotterDecomposition(H,time_step_size,order)),m_initial_unit(C),m_unit(C),Name_(Name) {
     std::ofstream DensityFileStream_;
     //std::stringstream dnamestream;
     //dnamestream << "iTEBD_One_Vertex_Densities.dat";
@@ -619,7 +619,7 @@ namespace ajaj{
     m_results.push(Index,Data(real_results,complex_results));
   }
   
-  TEBD::TEBD(const MPO_matrix& H, FiniteMPS& F, DataOutput& results) : TimeBase(0.0,results),F_(F),MPSName_(F.name()),Basis_(H.basis()),NumVertices_(F.size()),SingleVertexOp_(MPO_matrix()),m_EvolutionOperators(TrotterDecomposition(H,0.0,0)),GoodInitial_(0),SaveAll_(0) {
+  TEBD::TEBD(const MPO_matrix& H, FiniteMPS& F, DataOutput& results, DataOutput& fresults) : TimeBase(0.0,results,fresults),F_(F),MPSName_(F.name()),Basis_(H.basis()),NumVertices_(F.size()),SingleVertexOp_(MPO_matrix()),m_EvolutionOperators(TrotterDecomposition(H,0.0,0)),GoodInitial_(0),SaveAll_(0) {
     std::stringstream Evolvingnamestream;
     Evolvingnamestream << "Evolving_" << MPSName_;
     initial_weight_=F.makeLC(Evolvingnamestream.str()); //combination of initial state norm and overall phase
@@ -631,7 +631,7 @@ namespace ajaj{
       GoodInitial_=1;
   }
   
-  TEBD::TEBD(const MPO_matrix& H, FiniteMPS& F, double time_step_size, DataOutput& results, uMPXInt order,const State* blockstate_ptr, bool save_all_flag) : TimeBase(time_step_size,results),F_(F),MPSName_(F.name()),Basis_(H.basis()),NumVertices_(F.size()),m_EvolutionOperators(TrotterDecomposition(H,time_step_size,order,blockstate_ptr)),GoodInitial_(0),SaveAll_(save_all_flag) {
+  TEBD::TEBD(const MPO_matrix& H, FiniteMPS& F, double time_step_size, DataOutput& results, DataOutput& fresults, uMPXInt order,const State* blockstate_ptr, bool save_all_flag) : TimeBase(time_step_size,results,fresults),F_(F),MPSName_(F.name()),Basis_(H.basis()),NumVertices_(F.size()),m_EvolutionOperators(TrotterDecomposition(H,time_step_size,order,blockstate_ptr)),GoodInitial_(0),SaveAll_(save_all_flag) {
 
     SingleVertexOp_=std::move(MakeSingleSiteEvolutionOperatorFromLowTriMPO(H,time_step_size));
     
@@ -690,13 +690,17 @@ namespace ajaj{
 	    apply_to_even_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS);
 	  }
 	  if (m_current_time_step % measurement_interval==0) /*make measurement*/ {
+          std::cout<<"what is current time step: "<<m_current_time_step<<std::endl;
 	    left_canonise_measure(measurements);
 	  }
 	  else {
 	    left_canonise();
 	  }
 	  max_truncation_=0.0; //reset
-	}
+        
+        std::cout<<"Here I changed\nI assume that time is:"<<current_time()<<" while index is: "<<m_current_time_step<<std::endl;
+        f_results.push(m_current_time_step,current_time());
+        }
       }
       else if (m_EvolutionOperators.order()==2){
 	std::cout <<"2nd order time step evolution" <<std::endl;
@@ -720,11 +724,12 @@ namespace ajaj{
 	    }
 	    else {
 	      //if (n<num_steps-1){
-	      apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[1]),bond_dimension,minS);
+	      apply_to_odd_bonds(*(m_EvolutionOperators.OrderedOperatorPtrs[2]),bond_dimension,minS);
 	      left_canonise();
 		//}
 	    }
 	    max_truncation_=0.0; //reset
+        f_results.push(m_current_time_step,current_time());
 	  }
 	  
 	  update_time();
@@ -735,6 +740,7 @@ namespace ajaj{
 	    left_canonise_measure(measurements);//measurement
 	  else
 	    left_canonise();
+        f_results.push(m_current_time_step,current_time());
 	}
       }
       else if (m_EvolutionOperators.order()==4){
@@ -772,6 +778,7 @@ namespace ajaj{
 	    left_canonise();
 	  }
 	  max_truncation_=0.0; //reset
+        f_results.push(m_current_time_step,current_time());
 	}
       }
       else {

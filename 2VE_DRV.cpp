@@ -138,6 +138,7 @@ int main(int argc, char** argv){
     std::stringstream Rss;
     Rss<<RuntimeArgs.filename()<<"_2VE_"<<StateName;
     ajaj::DataOutput results(ajaj::OutputName(Rss.str(),"Evolution.dat"),commentline.str());
+      ajaj::DataOutput dummyfullresults;
     ajaj::FiniteMPS F(myModel.basis(),StateName,number_of_vertices,CSpec); //if CSpec is empty, nothing is changed.
 
     F.makeLC();
@@ -153,7 +154,7 @@ int main(int argc, char** argv){
       if (!myModel.times().size()){ //need this for builtin models, with old style coupling params
 	std::cout <<"Evolution hamiltonian is static." <<std::endl;
 	//ajaj::TEBD finrun(myModel.H_MPO,F,time_step_size,results,1,&blockstate);
-	ajaj::TwoVE finrun(myModel.H_MPO,F,time_step_size,results,blockstate);
+	ajaj::TwoVE finrun(myModel.H_MPO,F,time_step_size,results, dummyfullresults,blockstate);
 	finrun.evolve(number_of_time_steps,measurements);
       
 	if (finrun.good()){
@@ -174,7 +175,7 @@ int main(int argc, char** argv){
 	if (num_1>number_of_time_steps) num_1=number_of_time_steps;
 
 	//ajaj::TEBD finrun(myModel.H_MPO,F,current_step_size_1,results,1,&blockstate);
-	ajaj::TwoVE finrun(myModel.H_MPO,F,current_step_size_1,results,blockstate);
+	ajaj::TwoVE finrun(myModel.H_MPO,F,current_step_size_1,results, dummyfullresults,blockstate);
 
 	finrun.evolve(num_1,measurements);
 	number_of_time_steps-=num_1;

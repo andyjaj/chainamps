@@ -148,11 +148,37 @@ int main(int argc, char** argv){
     ajaj::DataOutput results(ajaj::OutputName(Rss.str(),"Evolution.dat"),commentline.str());
     ajaj::FiniteMPS F(myModel.basis(),StateName,number_of_vertices,CSpec); //if CSpec is empty, nothing is changed.
     
+    //set up results file
+      std::ostringstream commentlinestream;
+      commentlinestream << "Index, time";
+      
+      std::stringstream outfilenamestream;
+      outfilenamestream<<RuntimeArgs.filename()<<"_Full_idxtime.dat";
+      ajaj::DataOutput fresults(outfilenamestream.str(),commentlinestream.str());
+      ajaj::DataOutput dummyfullresults;
+      
+      
+      /*
+      // Create a vector that stores the full list of index-times
+      typedef std::pair<size_t,double> idx_em;
+      std::vector<idx_em> full_indx_times ;
+      for (int counter = 1 ; counter <= myModel.times().size()-1; ++ counter){
+          //std::cout<<"Time at counter "<<counter<<" is: \n"<<myModel.times()[counter]<<std::endl;
+          full_indx_times.emplace_back(counter , myModel.times()[counter]);
+      }
+      std::cout << "There are " << full_indx_times.size() << " (index,time) pairs." <<std::endl;
+    
+      for (auto& x : full_indx_times){
+          std::cout<<"Index "<<x.first <<" has time: "<<x.second<<std::endl;
+          full_results.push(x.first,x.second);
+      }
+
+     */
+
     //if we don't have time dependent couplings...
     if (!myModel.times().size()){ //need this for builtin models, with old style coupling params
       std::cout <<"Evolution hamiltonian is static." <<std::endl;
-      ajaj::TEBD finrun(myModel.H_MPO,F,time_step_size,results,trotter_order,nullptr,save_all_flag);
-      
+      ajaj::TEBD finrun(myModel.H_MPO,F,time_step_size,results,fresults,trotter_order,nullptr,save_all_flag);
       finrun.evolve(number_of_time_steps,measurements,CHI/*bond dimension*/,trunc,measurement_interval);
       if (finrun.good()){
 	return 0;
@@ -171,8 +197,8 @@ int main(int argc, char** argv){
       ajaj::uMPXInt num_1=1;
       while (current_step_size_1>time_step_size){current_step_size_1=ramp_step_size_1/(++num_1);}
       if (num_1>number_of_time_steps) num_1=number_of_time_steps;
-
-      ajaj::TEBD finrun(myModel.H_MPO,F,current_step_size_1,results,trotter_order,nullptr,save_all_flag);     
+        std::cout<<"Current step size here is:"<< current_step_size_1<<" while num1 is "<< num_1<<std::endl;
+      ajaj::TEBD finrun(myModel.H_MPO,F,current_step_size_1,results,fresults,trotter_order,nullptr,save_all_flag);
       finrun.evolve(num_1,measurements,CHI/*bond dimension*/,trunc/*min s val*/,measurement_interval);
       number_of_time_steps-=num_1;
       ++ramp_step;
@@ -181,9 +207,12 @@ int main(int argc, char** argv){
       while (number_of_time_steps>0 && ramp_step < myModel.times().size() && finrun.good()){
 	double ramp_step_size=myModel.times()[ramp_step]-myModel.times()[ramp_step-1];
 	double current_step_size=ramp_step_size;
-	ajaj::uMPXInt num=1;
+    if ((current_step_size - time_step_size) < (0.000001)){current_step_size = time_step_size;}
+    std::cout<<"Current step size:"<<current_step_size<<std::endl;
+    ajaj::uMPXInt num=1;
 	while (current_step_size>time_step_size){current_step_size=ramp_step_size/(++num);}
 	if (num>number_of_time_steps) num=number_of_time_steps;
+          //std::cout<<"Current step size:"<<current_step_size<<std::endl;
 
 	finrun.change_bond_operator(myModel.change_H_MPO(myModel.coupling_arrays()[ramp_step-1]),current_step_size,trotter_order);
 	

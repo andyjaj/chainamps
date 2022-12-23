@@ -39,11 +39,12 @@ namespace ajaj {
     uMPXInt m_current_time_step;
     double m_time_step_size;
     DataOutput& m_results;
+    DataOutput& f_results;
     double m_truncation;
     double m_current_time;
     double update_time() {++m_current_time_step; return m_current_time+=m_time_step_size;}
   public:
-    TimeBase(double time_step_size, DataOutput& results) : m_current_time_step(0),m_time_step_size(time_step_size),m_results(results),m_truncation(0.0),m_current_time(0.0){}
+    TimeBase(double time_step_size, DataOutput& results, DataOutput& fresults) : m_current_time_step(0),m_time_step_size(time_step_size),m_results(results),f_results(fresults),m_truncation(0.0),m_current_time(0.0){}
 
     double time_step_size() const {return m_time_step_size;}
     double current_time() const {return m_current_time;}
@@ -59,7 +60,7 @@ namespace ajaj {
     const UnitCell& apply_and_decompose(const MPX_matrix& BondOp,uMPXInt  bond_dimension, double minS);
     void do_measurements(const UnitCell& ortho, const std::vector<MPO_matrix>& measuredMPOs);
   public:
-    iTEBD(const MPO_matrix& H,const UnitCell& C, double time_step_size, DataOutput& results, const std::string& Name, uMPXInt order=1);
+    iTEBD(const MPO_matrix& H,const UnitCell& C, double time_step_size, DataOutput& results, DataOutput& fresults,const std::string& Name, uMPXInt order=1);
     const UnitCell& evolve(uMPXInt num_steps, const std::vector<MPO_matrix>& measuredMPOs, uMPXInt bond_dimension=0, double minS=0.0, uMPXInt measurement_interval=1);
     uMPXInt order() const {return m_EvolutionOperators.order();}
     void change_bond_operator(const MPO_matrix& H, double time_step_size);
@@ -86,8 +87,8 @@ private:
   double max_truncation_=0.0;
 
 public:
-  TEBD(const MPO_matrix& H, FiniteMPS& F, DataOutput& results);
-  TEBD(const MPO_matrix& H, FiniteMPS& F, double time_step_size, DataOutput& results, uMPXInt order=1,const State* blockstate_ptr=nullptr,bool save_all_flag=0); //use FiniteMPS class
+  TEBD(const MPO_matrix& H, FiniteMPS& F, DataOutput& results, DataOutput& fresults );
+  TEBD(const MPO_matrix& H, FiniteMPS& F, double time_step_size, DataOutput& results, DataOutput& fresults, uMPXInt order=1,const State* blockstate_ptr=nullptr,bool save_all_flag=0); //use FiniteMPS class
 
   void change_bond_operator(const MPO_matrix& H, double time_step_size, uMPXInt order, const State* blockstate_ptr=nullptr);
   

@@ -35,7 +35,7 @@ namespace ajaj {
     void left_canonise_measure(std::vector<MultiVertexMeasurement>& measurement);
     
   public:
-    TwoVE(const MPO_matrix& HMPO, FiniteMPS& F, double time_step_size, DataOutput& results, const State& blockstate); //use FiniteMPS class   
+    TwoVE(const MPO_matrix& HMPO, FiniteMPS& F, double time_step_size, DataOutput& results, DataOutput& fresults, const State& blockstate); //use FiniteMPS class   
     void change_bond_operator(const MPO_matrix& HMPO, double time_step_size);   
     void evolve(uMPXInt num_steps, std::vector<MultiVertexMeasurement>& measurements);
     bool good() const {return GoodInitial_;}

@@ -177,7 +177,7 @@ namespace ajaj {
 
   };
 
-  enum optionIndex {UNKNOWN,CHI,TRUNC,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET,FINITE_MEASUREMENT,NEV,ENTANGLEMENT,VERTEX_ENTANGLEMENT,C_SPECIFIER,TIMEFILE,FDMRG_MODE,IENERGY,SAVE_ALL,REVERSE,RESUME};
+  enum optionIndex {UNKNOWN,CHI,TRUNC,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET,FINITE_MEASUREMENT,NEV,ENTANGLEMENT,VERTEX_ENTANGLEMENT,C_SPECIFIER,TIMEFILE,FDMRG_MODE,IENERGY,SAVE_ALL,REVERSE,RESUME,TIME_T2_INDEX};
 
   const option::Descriptor store_usage[2] =
     {
@@ -336,6 +336,8 @@ namespace ajaj {
        "  \tSpecify an initial state." },
       {REVERSE,0,"R","include-reverse-time",Arg::None,"  -R, \t--include-reverse-time"
        "  \tAlso calculate reverse time ordered correlators." },
+      {TIME_T2_INDEX,0,"q","t2-index",Arg::PositiveNumeric,"  -q <number>, \t--t2-index=<number>"
+       "  \tDefault index is zero" },
       { 0, 0, 0, 0, 0, 0 }
     };
   
@@ -657,13 +659,13 @@ namespace ajaj {
 	
 	if (options[SAVE_ALL]) {
 	  save_all_=1; //set true
-	  if (measurement_interval_!=1){
+	  /*if (measurement_interval_!=1){
 	    std::cout <<"Cannot specify both 'save-all' and a 'measurement-interval' not equal to 1." <<std::endl;
 	    valid_=0;
 	  }
 	  else { 
 	    measurement_interval_=1;
-	  }
+	  }*/
 	}
       }
       print();
@@ -932,9 +934,10 @@ class fMEAS_Args : public Base_Args{
     std::string Op1_name_;
     std::string Op2_name_;
     bool include_reverse_;
+    unsigned long t2_;
     
   public:
-    TEBD_DYN_Args(int argc, char* argv[]) : Base_Args(argc,argv,TEBD_DYN_usage), trotter_order_(2),N_(0),include_reverse_(0){
+    TEBD_DYN_Args(int argc, char* argv[]) : Base_Args(argc,argv,TEBD_DYN_usage), trotter_order_(2),N_(0),include_reverse_(0),t2_(0){
       
      if (parse.nonOptionsCount()!=5 || std::string(parse.nonOption(0))==std::string("-")){
 	std::cout << "Incorrect command line arguments." << std::endl <<std::endl;
@@ -967,6 +970,9 @@ class fMEAS_Args : public Base_Args{
 
 	if (options[REVERSE])
 	  include_reverse_=1;
+          
+    if (options[TIME_T2_INDEX])
+        t2_=stoul(options[TIME_T2_INDEX].arg);
 
       }
       print();
@@ -990,7 +996,10 @@ class fMEAS_Args : public Base_Args{
     bool include_reverse() const {
       return include_reverse_;
     }
-
+      
+    unsigned int num_indx(){
+        return t2_ ;
+        }
   };
   
 }
