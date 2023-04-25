@@ -76,6 +76,27 @@ namespace ajaj{
       return H_MPO;
     }
 
+    const MPO_matrix& change_H_MPO(MPO_matrix&& newH){
+      H_MPO=std::move(newH);
+      return H_MPO;
+    }
+
+    const MPO_matrix&  update_H_MPO_from_file(const std::string& name){
+    
+    //check file exists and can be opened
+    
+    std::ifstream fs;
+    
+    fs.open(name.c_str(),ios::in);
+    
+    if (fs.is_open()){
+      H_MPO=std::move(load_MPO_matrix(name,basis()));
+      std::cout << "Successfully loaded " << name << std::endl;
+    }
+    
+    return H_MPO;
+  }
+
     friend void swap(Model& first, Model& second){
       std::swap(first.times_,second.times_);
       std::swap(first.CAs_,second.CAs_); 
@@ -87,9 +108,11 @@ namespace ajaj{
     Model(Model&& other) : Model() {
       swap(*this,other);
     }
-    
-    //MPO_matrix H_local() const;
 
+    bool empty() const {
+      return makeH_==nullptr;
+    }
+    
     Model& operator=(Model other)
     {
       swap(*this, other);

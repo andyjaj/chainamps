@@ -153,6 +153,15 @@ namespace ajaj {
       if (msg) std::cout << "Option '" << std::string(option.name,option.namelen) << "' requires a positive numeric argument" <<std::endl;
       return option::ARG_ILLEGAL;
     }
+    static option::ArgStatus PositiveSemiDefDouble(const option::Option& option, bool msg)
+    {
+      size_t pos(0);
+      if (option.arg != nullptr && stod(option.arg,&pos)>=0.0){
+	  return option::ARG_OK;
+      }
+      if (msg) std::cout << "Option '" << std::string(option.name,option.namelen) << "' requires a positive or zero numeric argument" <<std::endl;
+      return option::ARG_ILLEGAL;
+    }
     static option::ArgStatus FiniteMeasurementInfo(const option::Option& option, bool msg)
     {
       if (option.arg != 0 && option.arg[0] && option.arg[0] != '-'){
@@ -166,22 +175,9 @@ namespace ajaj {
       return option::ARG_ILLEGAL;
     }
 
-    /*static option::ArgStatus CNumberSpecifier(const option::Option& option, bool msg)
-    {
-      if (option.arg != 0 && option.arg[0] && option.arg[0] != '-'){
-	C_Spec check;
-	std::istringstream ss(option.arg);
-	ss >>check;
-	if (check.size()) return option::ARG_OK;
-      }
-
-      if (msg) std::cout << "Option '" << std::string(option.name,option.namelen) << "' requires list of c number specifications." <<std::endl;
-      return option::ARG_ILLEGAL;
-    }*/
-
   };
 
-  enum optionIndex {UNKNOWN,CHI,TRUNC,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET,FINITE_MEASUREMENT,NEV,ENTANGLEMENT,VERTEX_ENTANGLEMENT,C_SPECIFIER,TIMEFILE,FDMRG_MODE,IENERGY};
+  enum optionIndex {UNKNOWN,CHI,TRUNC,NUMBER_OF_STEPS,MINS,NUMBER_OF_EXCITED,NUMBER_OF_SWEEPS,WEIGHT_FACTOR,TROTTER_ORDER,TIME_STEPS,STEP_SIZE,MEASUREMENT_INTERVAL,INITIAL_STATE_NAME,SEPARATION,NOINDEX,OPERATORFILE,TARGET,FINITE_MEASUREMENT,NEV,ENTANGLEMENT,VERTEX_ENTANGLEMENT,C_SPECIFIER,TIMEFILE,FDMRG_MODE,IENERGY,SAVE_ALL,REVERSE,RESUME,TIME_T2_INDEX};
 
   const option::Descriptor store_usage[2] =
     {
@@ -190,27 +186,29 @@ namespace ajaj {
       { 0, 0, 0, 0, 0, 0 }
     };
 
-  const option::Descriptor iDMRG_usage[6] =
+  const option::Descriptor iDMRG_usage[7] =
     {
       {UNKNOWN, 0,"", "",Arg::Unknown, "USAGE: iDMRG_DRV.bin [OPTIONS] <model_filename>"},
       {CHI,0,"B","bond-dimension",Arg::PositiveNumeric,"  -B <number>, --bond-dimension=<number>"
        "  \tThe maximum bond dimension, >= 0. If 0, then ignored." },
-      {TRUNC,0,"e","truncation-error",Arg::PositiveDouble,"  -e <number>, --truncation-error=<number>"
+      {TRUNC,0,"e","truncation-error",Arg::PositiveSemiDefDouble,"  -e <number>, --truncation-error=<number>"
        "  \tThe allowed truncation error, >= 0." },
       {NUMBER_OF_STEPS,0,"N","number-of-steps",Arg::PositiveNumeric,"  -N <number>, --number-of-steps=<number>"
        "  \tThe number of infinite volume steps, >= 0" },
       {TARGET,0,"T","target-charges",Arg::CommaSepShorts,"  -T <number>,<number>,<number>, --target-charges=<n>,<n>,<n>"
        "  \t Charges to target for the unit cell."},
+      {RESUME,0,"R", "resume-step",Arg::PositiveNumeric,"  -R <step>, --resume-step=<step>"
+       "  \t Resume a previous iDMRG run at step <step>"},
       { 0, 0, 0, 0, 0, 0 }
     };
 
-  const option::Descriptor fDMRG_usage[8] =
+  const option::Descriptor fDMRG_usage[10] =
     {
       {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: fDMRG_DRV.bin [OPTIONS] <model_filename> <number of vertices/chains> \n  <number of vertices/chains> must be EVEN.\n"
 	"Options:"},
       {CHI,0,"B","bond-dimension",Arg::PositiveNumeric,"  -B <number>, --bond-dimension=<number>"
        "  \tThe maximum bond dimension, >= 0. If 0, then ignored." },
-      {TRUNC,0,"e","truncation-error",Arg::PositiveDouble,"  -e <number>, --truncation-error=<number>"
+      {TRUNC,0,"e","truncation-error",Arg::PositiveSemiDefDouble,"  -e <number>, --truncation-error=<number>"
        "  \tThe allowed truncation error >= 0." },
       {NUMBER_OF_EXCITED,0,"X","excited-states",Arg::PositiveNumeric,"  -X <number>, --excited-states=<number>"
        "  \tThe number of excited states to calculate, >= 0. If this is specified but a projective weight factor is not, then a default value of 100.0 is used." },
@@ -220,6 +218,10 @@ namespace ajaj {
        "  \tThe weight factor if calculating excited states. Must be > 0. Specifying this indicates that the number of requested excited states is at least 1." },
       {TARGET,0,"T","target-charges",Arg::CommaSepShorts,"  -T <number>,<number>,<number>, --target-charges=<n>,<n>,<n>"
        "  \tCharges for target state."},
+      {INITIAL_STATE_NAME,0,"i","initial-unit-cell",Arg::NonEmpty,"  -i <initial_unit_cell>, \t--initial-unit-cell=<initial_unit_cell>"
+       "  \tSpecify an initial unit cell." },
+      {C_SPECIFIER,0,"c","c-number-file",Arg::NonEmpty,"  -c <c-specifier-file>,"
+       "  \tFile with c-numbers for initial state."},
       { 0, 0, 0, 0, 0, 0 }
     };
 
@@ -228,7 +230,7 @@ namespace ajaj {
       {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: iTEBD_DRV.bin [-B <number> -n <number> -s <number> -O <number>] <model_filename>"},
       {CHI,0,"B","bond-dimension",Arg::PositiveNumeric,"  -B <number>, \t--bond-dimension=<number>"
        "  \tThe maximum bond dimension, >= 0. If 0, then ignored." },
-      {TRUNC,0,"e","truncation-error",Arg::PositiveDouble,"  -e <number>, \t--truncation-error=<number>"
+      {TRUNC,0,"e","truncation-error",Arg::PositiveSemiDefDouble,"  -e <number>, \t--truncation-error=<number>"
        "  \tThe allowed truncation error, >= 0." },
       {NUMBER_OF_STEPS,0,"n","time-steps",Arg::PositiveNumeric,"  -n <number>, \t--time-steps=<number>"
        "  \tThe number of time steps. Default is 1." },
@@ -240,17 +242,17 @@ namespace ajaj {
        "  \tMeasurement at every <number> steps. Default is 1 (measurement at every step)."},
       {INITIAL_STATE_NAME,0,"i","initial-unit-cell",Arg::NonEmpty,"  -i <initial_unit_cell>, \t--initial-unit-cell=<initial_unit_cell>"
        "  \tSpecify an initial unit cell." },
-      {C_SPECIFIER,0,"c","c-number-file",Arg::NonEmpty," -c <c-specifier-file>,"
+      {C_SPECIFIER,0,"c","c-number-file",Arg::NonEmpty,"  -c <c-specifier-file>,"
        "  \tFile with c-numbers for initial state."},
       { 0, 0, 0, 0, 0, 0 }
     };
 
-  const option::Descriptor TEBD_usage[11] =
+  const option::Descriptor TEBD_usage[12] =
     {
       {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: TEBD_DRV.bin [OPTIONS] <model_filename> <number of vertices(chains)> \n  <number of vertices/chains> must be EVEN.\n"},
       {CHI,0,"B","bond-dimension",Arg::PositiveNumeric,"  -B <number>, \t--bond-dimension=<number>"
        "  \tThe maximum bond dimension, >= 0. If 0, then ignored." },
-      {TRUNC,0,"e","truncation-error",Arg::PositiveDouble,"  -e <number>, \t--truncation-error=<number>"
+      {TRUNC,0,"e","truncation-error",Arg::PositiveSemiDefDouble,"  -e <number>, \t--truncation-error=<number>"
        "  \tThe allowed truncation error, >= 0." },
       {NUMBER_OF_STEPS,0,"n","time-steps",Arg::PositiveNumeric,"  -n <number>, \t--time-steps=<number>"
        "  \tThe number of time steps. Default is 1." },
@@ -262,14 +264,14 @@ namespace ajaj {
        "  \tMeasurement at every <number> steps. Default is 1 (measurement at every step)."},
       {INITIAL_STATE_NAME,0,"i","initial-state-name",Arg::NonEmpty,"  -i <initial_state_name>, \t--initial-state-name=<initial_state_name>"
        "  \tSpecify an initial state." },
-      {FINITE_MEASUREMENT,0,"M","finite-measurement",Arg::FiniteMeasurementInfo,"  -M <opfile1>,<vertex1>[,<opfile2>,<vertex2>], \t--finite-measurement=<opfile1>,<vertex1>[,<opfile2>,<vertex2>]"
+      {FINITE_MEASUREMENT,0,"M","finite-measurement",Arg::FiniteMeasurementInfo,"  -M <op1>,<vertex1>[,<op2>,<vertex2>], \t--finite-measurement=<op1>,<vertex1>[,<op2>,<vertex2>]"
        "  \tSpecify a one or two point measurement."},
-      //{C_SPECIFIER,0,"c","c-number-specifier",Arg::CNumberSpecifier," -c {<idx>,<c-value>,<idx>,<c-value>,...},{...},"
-      // "  \tSpecify c-numbers for initial state."},
-      {C_SPECIFIER,0,"c","c-number-file",Arg::NonEmpty," -c <c-specifier-file>,"
+      {C_SPECIFIER,0,"c","c-number-file",Arg::NonEmpty,"  -c <c-specifier-file>,  \t--c-number-file=<c-specifier-file>"
        "  \tFile with c-numbers for initial state."},
+      {SAVE_ALL,0,"A","save-all",Arg::None,"  -A, \t--save-all"
+       "  \tSave files for all times. Also sets measurement-interval=1."},
       { 0, 0, 0, 0, 0, 0 }
-    };
+    };  
 
   const option::Descriptor iMEAS_usage[11] =
     {
@@ -298,14 +300,47 @@ namespace ajaj {
   const option::Descriptor fMEAS_usage[4] =
     {
       {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: FINITE_MEASURE.bin [OPTIONS] <model_filename> <number of vertices(chains)> <state_name1> ... \n  <number of vertices/chains> must be EVEN.\n"},
-      {FINITE_MEASUREMENT,0,"M","finite-measurement",Arg::FiniteMeasurementInfo,"  -M <opfile1>,<vertex1>[,<opfile2>,<vertex2>], \t--finite-measurement=<opfile1>,<vertex1>[,<opfile2>,<vertex2>]"
+      {FINITE_MEASUREMENT,0,"M","finite-measurement",Arg::FiniteMeasurementInfo,"  -M <op1>,<vertex1>[,<op2>,<vertex2>], \t--finite-measurement=<op1>,<vertex1>[,<op2>,<vertex2>]"
        "  \tSpecify a one or two point measurement."},
       {FDMRG_MODE,0,"D","fDMRG-mode",Arg::None,"  -D, \t--fDMRG-mode"
        "  \tSpecial mode for fDMRG output files, needs no input filenames."},
-      
       { 0, 0, 0, 0, 0, 0 }
     };
 
+  const option::Descriptor TwoVE_usage[7] =
+    {
+      {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: 2VE_DRV.bin [OPTIONS] <model_filename> \n Exact diagonalisation used to time evolve two vertices."},
+      {STEP_SIZE,0,"s","step-size",Arg::PositiveDouble,"  -s <number>, \t--step-size=<number>"
+       "  \tMeasurements are taken at time intervals separated by the step size. Default is 0.1" },
+      {NUMBER_OF_STEPS,0,"n","time-steps",Arg::PositiveNumeric,"  -n <number>, \t--time-steps=<number>"
+       "  \tThe number of time steps. Default is 1." },
+      {INITIAL_STATE_NAME,0,"i","initial-state-name",Arg::NonEmpty,"  -i <initial_state_name>, \t--initial-state-name=<initial_state_name>"
+       "  \tSpecify an initial state." },
+      {FINITE_MEASUREMENT,0,"M","finite-measurement",Arg::FiniteMeasurementInfo,"  -M <opfile1>,<vertex1>[,<opfile2>,<vertex2>], \t--finite-measurement=<opfile1>,<vertex1>[,<opfile2>,<vertex2>]"
+       "  \tSpecify a one or two point measurement."},
+      {C_SPECIFIER,0,"c","c-number-file",Arg::NonEmpty,"  -c <c-specifier-file>,"
+       "  \tFile with c-numbers for initial state."},
+      { 0, 0, 0, 0, 0, 0 }
+    };
+
+  const option::Descriptor TEBD_DYN_usage[8] =
+    {
+      {UNKNOWN, 0,"", "",        Arg::Unknown, "USAGE: TEBD_DYN_MEASURE.bin [OPTIONS] <model_filename> <number of vertices(chains)> <opfile1> <opfile2> <vertex2>\n  <number of vertices/chains> must be EVEN.\n"},
+      {CHI,0,"B","bond-dimension",Arg::PositiveNumeric,"  -B <number>, \t--bond-dimension=<number>"
+       "  \tThe maximum bond dimension, >= 0. If 0, then ignored." },
+      {TRUNC,0,"e","truncation-error",Arg::PositiveSemiDefDouble,"  -e <number>, \t--truncation-error=<number>"
+       "  \tThe allowed truncation error, >= 0." },
+      {TROTTER_ORDER,0,"O","trotter-order",Arg::PositiveNumeric,"  -O <number>, \t--trotter-order=<number>"
+       "  \tThe Trotter order (currently 1 or 2). Second order (2) is default." },
+      {INITIAL_STATE_NAME,0,"i","initial-state-name",Arg::NonEmpty,"  -i <initial_state_name>, \t--initial-state-name=<initial_state_name>"
+       "  \tSpecify an initial state." },
+      {REVERSE,0,"R","include-reverse-time",Arg::None,"  -R, \t--include-reverse-time"
+       "  \tAlso calculate reverse time ordered correlators." },
+      {TIME_T2_INDEX,0,"q","t2-index",Arg::PositiveNumeric,"  -q <number>, \t--t2-index=<number>"
+       "  \tDefault index is zero" },
+      { 0, 0, 0, 0, 0, 0 }
+    };
+  
   class Base_Args{
 
   protected:
@@ -380,10 +415,11 @@ namespace ajaj {
   class iDMRG_Args : public Base_Args{
   private:
     unsigned long num_steps_;
+    unsigned long resume_;
     std::vector<short int> target_;
 
   public:
-    iDMRG_Args(int argc, char* argv[]) : Base_Args(argc,argv,iDMRG_usage), num_steps_(0){
+    iDMRG_Args(int argc, char* argv[]) : Base_Args(argc,argv,iDMRG_usage), num_steps_(0),resume_(0){
       
       //REQUIRE ONE NON OPTIONAL ARGUMENT, TREAT AS A FILENAME
       if (parse.nonOptionsCount()!=1 || std::string(parse.nonOption(0))==std::string("-")){
@@ -400,6 +436,9 @@ namespace ajaj {
 	  std::istringstream tss(options[TARGET].arg);
 	  tss >> target_;
 	}
+	if (options[RESUME])
+	  resume_=stoul(options[RESUME].arg);
+	
       }
       print();
     }
@@ -411,6 +450,10 @@ namespace ajaj {
       return target_;
     }
 
+    unsigned long resume() const {
+      return resume_;
+    }
+
   };
 
   class fDMRG_Args : public Base_Args{
@@ -420,6 +463,8 @@ namespace ajaj {
     double Weight_;
     unsigned int N_; //used by finite codes
     std::vector<short int> target_;
+    std::string initial_state_name_;
+    std::string c_number_filename_;
 
   public:
     fDMRG_Args(int argc, char* argv[]) : Base_Args(argc,argv,fDMRG_usage), E_(0), F_(0), Weight_(100.0),N_(0) {
@@ -451,6 +496,16 @@ namespace ajaj {
 	  std::istringstream tss(options[TARGET].arg);
 	  tss >> target_;
 	}
+	if (options[INITIAL_STATE_NAME])
+	  initial_state_name_=std::string(options[INITIAL_STATE_NAME].arg);
+	
+	if (options[C_SPECIFIER])
+	  c_number_filename_=std::string(options[C_SPECIFIER].arg);
+	
+	if (options[C_SPECIFIER] && options[INITIAL_STATE_NAME]){
+	  valid_=0;
+	  std::cout <<"Cannot specify initial state through options -c and -i simultaneously!"<<std::endl;
+	}
       }
       print();
     };
@@ -461,6 +516,14 @@ namespace ajaj {
     double weight_factor() const {return Weight_;}
     const std::vector<short int>& target() const {
       return target_;
+    }
+
+    const std::string& initial_state_name() const {
+      return initial_state_name_;
+    }
+
+    const std::string& c_number_filename() const {
+      return c_number_filename_;
     }
 
   };
@@ -495,10 +558,10 @@ namespace ajaj {
 	  step_size_=stod(options[STEP_SIZE].arg);
 	if (options[INITIAL_STATE_NAME])
 	  initial_unit_cell_=std::string(options[INITIAL_STATE_NAME].arg);
-	if (options[C_SPECIFIER]){
+	
+	if (options[C_SPECIFIER])  
 	  c_number_filename_=std::string(options[C_SPECIFIER].arg);
-	}
-
+	
 	if (options[C_SPECIFIER] && options[INITIAL_STATE_NAME]){
 	  valid_=0;
 	  std::cout <<"Cannot specify initial state through options -c and -i simultaneously!"<<std::endl;
@@ -538,9 +601,10 @@ namespace ajaj {
     unsigned int N_; //used by finite codes
     std::vector<StringIndexPairs> finite_measurements_;
     std::string c_number_filename_;
+    bool save_all_;
 
   public:
-    TEBD_Args(int argc, char* argv[]) : Base_Args(argc,argv,TEBD_usage), num_steps_(1), step_size_(0.1), trotter_order_(2), measurement_interval_(1),N_(0){
+    TEBD_Args(int argc, char* argv[]) : Base_Args(argc,argv,TEBD_usage), num_steps_(1), step_size_(0.1), trotter_order_(2), measurement_interval_(1),N_(0),save_all_(0){
       
      if (parse.nonOptionsCount()!=2 || std::string(parse.nonOption(0))==std::string("-")){
 	std::cout << "Incorrect command line arguments." << std::endl <<std::endl;
@@ -565,8 +629,6 @@ namespace ajaj {
 	  measurement_interval_=stod(options[MEASUREMENT_INTERVAL].arg);
 	if (options[STEP_SIZE])
 	  step_size_=stod(options[STEP_SIZE].arg);
-	if (options[INITIAL_STATE_NAME])
-	  initial_state_name_=std::string(options[INITIAL_STATE_NAME].arg);
 	if (options[FINITE_MEASUREMENT]){
 	  for (option::Option* opt = options[FINITE_MEASUREMENT]; opt; opt = opt->next()){
 	    StringIndexPairs temp;
@@ -583,16 +645,28 @@ namespace ajaj {
 	      finite_measurements_.emplace_back(temp);
 	  }
 	}
-	if (options[C_SPECIFIER]){
+
+	if (options[INITIAL_STATE_NAME])
+	  initial_state_name_=std::string(options[INITIAL_STATE_NAME].arg);
+	
+	if (options[C_SPECIFIER])
 	  c_number_filename_=std::string(options[C_SPECIFIER].arg);
-	}
 
 	if (options[C_SPECIFIER] && options[INITIAL_STATE_NAME]){
 	  valid_=0;
 	  std::cout <<"Cannot specify initial state through options -c and -i simultaneously!"<<std::endl;
 	}
-	  
-
+	
+	if (options[SAVE_ALL]) {
+	  save_all_=1; //set true
+	  /*if (measurement_interval_!=1){
+	    std::cout <<"Cannot specify both 'save-all' and a 'measurement-interval' not equal to 1." <<std::endl;
+	    valid_=0;
+	  }
+	  else { 
+	    measurement_interval_=1;
+	  }*/
+	}
       }
       print();
     }
@@ -622,6 +696,10 @@ namespace ajaj {
 
     const std::string& c_number_filename() const {
       return c_number_filename_;
+    }
+
+    bool save_all_flag() const {
+      return save_all_;
     }
 
   };
@@ -769,5 +847,160 @@ class fMEAS_Args : public Base_Args{
     }
   };
 
+  class TwoVE_Args : public Base_Args{
+    unsigned long num_steps_;
+    double step_size_;
+    std::string initial_state_name_;
+    std::vector<StringIndexPairs> finite_measurements_;
+    std::string c_number_filename_;
+    
+  public:
+    TwoVE_Args(int argc, char* argv[]) : Base_Args(argc,argv,TwoVE_usage), num_steps_(1), step_size_(0.1) {
+      
+      //Need at least the model specified on command line
+     if (parse.nonOptionsCount()!=1 || std::string(parse.nonOption(0))==std::string("-")){
+	std::cout << "Incorrect command line arguments." << std::endl <<std::endl;
+	valid_=0;
+      }
+      else {
+	valid_=(valid_==1);
+      }
+      //
+      if (is_valid()){
+	if (options[NUMBER_OF_STEPS])
+	  num_steps_=stoul(options[NUMBER_OF_STEPS].arg);
+	if (options[STEP_SIZE])
+	  step_size_=stod(options[STEP_SIZE].arg);
+	if (options[INITIAL_STATE_NAME])
+	  initial_state_name_=std::string(options[INITIAL_STATE_NAME].arg);
+	if (options[FINITE_MEASUREMENT]){
+	  for (option::Option* opt = options[FINITE_MEASUREMENT]; opt; opt = opt->next()){
+	    StringIndexPairs temp;
+	    std::istringstream ss(opt->arg);
+	    ss >> temp;
+	    //check all locations specified in temp
+	    for (auto&& l : temp){
+	      if (l.second < 1 || l.second >2) {
+		std::cout << "Specified measurement vertex " << l.second << " is not 1 or 2!" <<std::endl;
+		valid_=0;
+	      }
+	    }
+	    if (valid_)
+	      finite_measurements_.emplace_back(temp);
+	  }
+	}
+	if (options[C_SPECIFIER]){
+	  c_number_filename_=std::string(options[C_SPECIFIER].arg);
+	}
+
+	if (options[C_SPECIFIER] && options[INITIAL_STATE_NAME]){
+	  valid_=0;
+	  std::cout <<"Cannot specify initial state through options -c and -i simultaneously!"<<std::endl;
+	}
+	  
+
+      }
+      print();
+    }
+
+    unsigned int num_vertices() const {return 2;}
+
+    unsigned long number_of_steps() const {
+      return num_steps_;
+    }
+    double step_size() const {
+      return step_size_;
+    }
+
+    const std::string& initial_state_name() const {
+      return initial_state_name_;
+    }
+
+    const std::vector<StringIndexPairs>& finite_measurements() const {
+      return finite_measurements_;
+    }
+
+    const std::string& c_number_filename() const {
+      return c_number_filename_;
+    }
+
+  };
+
+  class TEBD_DYN_Args : public Base_Args{
+    unsigned long trotter_order_;
+    std::string initial_state_name_;
+    unsigned int N_; //used by finite codes
+    unsigned int y2_;
+    std::string Op1_name_;
+    std::string Op2_name_;
+    bool include_reverse_;
+    unsigned long t2_;
+    
+  public:
+    TEBD_DYN_Args(int argc, char* argv[]) : Base_Args(argc,argv,TEBD_DYN_usage), trotter_order_(2),N_(0),include_reverse_(0),t2_(0){
+      
+     if (parse.nonOptionsCount()!=5 || std::string(parse.nonOption(0))==std::string("-")){
+	std::cout << "Incorrect command line arguments." << std::endl <<std::endl;
+	valid_=0;
+      }
+      else {
+	N_=stoul(parse.nonOption(1));
+	Op1_name_=std::string(parse.nonOption(2));
+	Op2_name_=std::string(parse.nonOption(3));
+	y2_=stoul(parse.nonOption(4));
+	if (y2_ < 1 || y2_ > N_){
+	  std::cout << "Specified measurement vertex " << y2_ << " not within system!" <<std::endl;
+	  valid_=0;
+	}
+        //valid_=(valid_==1);	
+      }
+      //
+      if (is_valid()){
+	if (N_==0 || (N_ % 2)){
+	  std::cout << "Illegal number of vertices requested: " << N_ << std::endl;
+	  std::cout << "Must be a positive even value!" <<std::endl<<std::endl;
+	  valid_=0;
+	}
+	if (options[TROTTER_ORDER])
+	  trotter_order_=stoul(options[TROTTER_ORDER].arg);
+	if (options[INITIAL_STATE_NAME])
+	  initial_state_name_=std::string(options[INITIAL_STATE_NAME].arg);
+	else
+	  initial_state_name_="DefaultState";
+
+	if (options[REVERSE])
+	  include_reverse_=1;
+          
+    if (options[TIME_T2_INDEX])
+        t2_=stoul(options[TIME_T2_INDEX].arg);
+
+      }
+      print();
+    }
+
+    unsigned int y2() const {return y2_;}
+
+    const std::string& Op1_name() const {return Op1_name_;}
+    const std::string& Op2_name() const {return Op2_name_;}
+    
+    unsigned int num_vertices() const {return N_;}
+
+    unsigned long trotter_order() const {
+      return trotter_order_;
+    }
+
+    const std::string& initial_state_name() const {
+      return initial_state_name_;
+    }
+
+    bool include_reverse() const {
+      return include_reverse_;
+    }
+      
+    unsigned int num_indx(){
+        return t2_ ;
+        }
+  };
+  
 }
 #endif

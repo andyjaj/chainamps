@@ -25,6 +25,7 @@ namespace ajaj {
     uMPXInt VertexNumber_;
     const MPO_matrix* OperatorPtr_;
   public:
+    meas_pair() : VertexNumber_(0), OperatorPtr_(nullptr) {}
     meas_pair(uMPXInt vn, const MPO_matrix* op) : VertexNumber_(vn), OperatorPtr_(op) {}
     uMPXInt position() const {return VertexNumber_;}
     const MPO_matrix* MPO_ptr() const {return OperatorPtr_;} 
@@ -139,6 +140,14 @@ namespace ajaj {
 
   double MultiVertexEntropy(const UnitCell& U,uMPXInt v=1);
 
+  bool check_for_H_MPO_file(const std::string& name, uMPXInt sliceindex);
+
+  std::complex<double> GeneralisedOverlap(const ConstFiniteMPS& Bra, const ConstFiniteMPS& Ket, const std::vector<meas_pair>& ops);
+  std::complex<double> GeneralisedOverlap(const ConstFiniteMPS& Ket, const std::vector<meas_pair>& ops);
+
+  std::complex<double> GeneralisedOverlap(const ConstFiniteMPS& Bra, const ConstFiniteMPS& Ket, const MPO_matrix& Op=MPO_matrix(), uMPXInt v=0);
+  
+  //inline std::complex<double> GeneralisedOverlap(const ConstFiniteMPS& Ket, const MPO_matrix& Op=MPO_matrix(), uMPXInt v=0) {return GeneralisedOverlap(Ket,Ket,Op,v);}
 
 }
 

@@ -1,17 +1,4 @@
-/*definitions for construction of chiral portions of states*/
-const int MaxPart=300; /*maximum number of partitions allowed at a given level; used in denumerating number of chiral states*/
-const int MaxChiralStates=600; /*largest allowed number of chiral states*/
-const int UL=10;  /*the level up to (but not including) which we keep chiral states*/
-const int LL=0;
-
-const int MaxNum_a=20; /*the maximum number of chiral a's that we allow in constructing a state, i.e.  
-			 for a state, a_{-n_1} ... a_{-n_{k_L}}\bar a_{-n_1} ... \bar a_{-n_{k_R}}|N,M>,
-			 both k_L and k_R must be less than MaxNum_a; we must have MaxNum_a <= MaxLev */
-
-
-const int MaxLev=20; /*the largest chiral level that we can possibly consider in forming states*/
-
-int nstates_lev[MaxLev] = {1,2,4,7,12,19,30,45,67,97,139,195,272,373,508,684,915,1212,1597,2087}; 
+//int nstates_lev[MaxLev] = {1,2,4,7,12,19,30,45,67,97,139,195,272,373,508,684,915,1212,1597,2087}; 
 /*a vector containing the number of different partitions at a given level (for levels 1 through MaxLev)*/
 
 /*variables to describe chiral components of states as well as their matrix elements*/

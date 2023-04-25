@@ -4,7 +4,6 @@
 #include <complex>
 #include <vector>
 #include <iostream>
-#include <cs.h>
 
 #include "common_defs.hpp" //defines int types
 #include "dense_matrix_functions.hpp"

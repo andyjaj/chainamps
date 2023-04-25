@@ -1,0 +1,6 @@
+CC=/opt/intel/bin/icpc
+#CC=/usr/local/bin/g++
+CFLAGS= -std=c++11 -gxx-name=/opt/local/bin/g++ -DUSETBB -DMKL_ILP64 -DNDEBUG -m64 -I /opt/intel/compilers_and_libraries_2016.1.150/linux/mkl/include -I /opt/intel/compilers_and_libraries_2016.1.150/linux/tbb/include -I /home/ajames/include
+LIBS= -Wl,/opt/local/lib64/libstdc++.a -Wl,-rpath=/home/ajames/lib -L /home/ajames/lib -Wl,/home/ajames/lib/libarpack_erato.a -Wl,/home/ajames/lib/libcxsparse.a -Wl,-rpath=/opt/intel/compilers_and_libraries_2016.1.150/linux/mkl/lib/intel64 -Wl,--start-group /opt/intel/compilers_and_libraries_2016.1.150/linux/mkl/lib/intel64/libmkl_blas95_ilp64.a /opt/intel/compilers_and_libraries_2016.1.150/linux/mkl/lib/intel64/libmkl_lapack95_ilp64.a /opt/intel/compilers_and_libraries_2016.1.150/linux/mkl/lib/intel64/libmkl_intel_ilp64.a /opt/intel/compilers_and_libraries_2016.1.150/linux/mkl/lib/intel64/libmkl_core.a /opt/mkl64/libmkl_tbb_thread.a -Wl,--end-group -Wl,-rpath=/opt/intel/compilers_and_libraries_2016.1.150/linux/compiler/lib/intel64_lin -lifcore -lifcoremt -lifport -L/opt/intel/compilers_and_libraries_2016.1.150/linux/tbb/lib/intel64_lin/gcc4.4 -Wl,-rpath=/opt/intel/compilers_and_libraries_2016.1.150/linux/tbb/lib/intel64_lin/gcc4.4 -ltbb -L /opt/local/lib64 -lm -ldl
+include Makefile_indep
+

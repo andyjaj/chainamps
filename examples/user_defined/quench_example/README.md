@@ -9,7 +9,7 @@ We generate the ground state of a finite system, using fMDRG, then time evolve t
 
 ## GENERATING THE INITIAL STATE ##
 
-### Expalanation of input files ###
+### Explanation of input files ###
 
 The initial hamiltonian is defined as a sum of local field terms, with the field applied along the z direction:
 ~~~~

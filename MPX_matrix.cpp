@@ -7,6 +7,7 @@
 #include <utility>
 #include <algorithm>
 #include <numeric>
+#include <limits>
 
 #include "sparse_interface.hpp"
 //#include "arpack_interface.hpp"
@@ -292,7 +293,7 @@ namespace ajaj{
 	  print_matrix();
 	  print_indices();
 	  
-	  getPhysicalSpectrum().print();
+	  basis().print();
 	  return 0;
 	}
       }
@@ -300,15 +301,15 @@ namespace ajaj{
     return 1;
   }
 
-  MPX_matrix MPX_matrix::ExtractSubMPX(const std::vector<MPXPair >& IndexVal) const {
+  /*MPX_matrix MPX_matrix::ExtractSubMPX(const std::vector<MPXPair >& IndexVal) const {
     MPX_matrix ans(*(m_SpectrumPtr),m_Indices,m_NumRowIndices,m_Matrix.ExtractSubMatrix(m_NumRowIndices,dimsvector(),IndexVal,0)); 
     for (std::vector<MPXPair>::const_iterator cit=IndexVal.begin();cit!=IndexVal.end();++cit){
       ans.m_Indices.at(cit->first)=MPXIndex(m_Indices.at(cit->first),cit->second);
     }
     return ans;
-  }
+    }*/
 
-  MPX_matrix MPX_matrix::RestrictColumnIndex(){
+  MPX_matrix MPX_matrix::ZeroLastBlock(){
     return MPX_matrix(*(m_SpectrumPtr),m_Indices,m_NumRowIndices,m_Matrix.ZeroLastColumns(m_SpectrumPtr->size()));
   }
 
@@ -584,7 +585,7 @@ namespace ajaj{
     }
 
   MPX_matrix load_MPX_matrix_binary(const std::string& filename,const Basis& spectrum){
-    std::cout << "LOADING " << filename << std::endl; 
+    //std::cout << "LOADING " << filename << std::endl; 
     std::ifstream infile;
     infile.open(filename.c_str(),ios::in | ios::binary);
     return load_MPX_matrix_binary(infile,spectrum);
@@ -826,6 +827,9 @@ namespace ajaj{
   }
 
   std::pair<std::vector<double>,MPX_matrix> SqrtDR(const MPX_matrix& M){
+    //#ifndef NDEBUG
+    std::cout << "SqrtDR" << std::endl;
+    //#endif
     //Decompose M into Rdagger D R, where D is diagonal
     //return vector for Sqrt(D) and return an MPX_matrix for R with correct indices
     if (M.m_Matrix.rows()!=M.m_Matrix.cols()){std::cout << "MPX_matrix not square, can't decompose!" << std::endl; exit(1);}
@@ -833,25 +837,56 @@ namespace ajaj{
 
     std::vector<double> roots;
 
+    //find largest and smallest absvals
+    double largest_mag_eval=0.0;
+    double smallest_mag_eval=std::numeric_limits<double>::max();
+    
     //first check the absolute magnitude of the summed evals
     double abssum=0.0;
     for (std::vector<double>::const_iterator it=EigDecomp.Values.begin();it!=EigDecomp.Values.end();++it){
-      abssum+=abs(*it);
+      double absval=abs(*it);
+      if (absval > largest_mag_eval) largest_mag_eval=absval;
+      if (absval < smallest_mag_eval) smallest_mag_eval=absval;
+      //abssum+=abs(*it);
     }
-    //get average magnitude
-    abssum*=((1.0e-10)/double(EigDecomp.Values.size()));
+#ifndef NDEBUG
+    std::cout << "largest magnitude eigenval " <<largest_mag_eval << std::endl;
+    std::cout << "smallest magnitude eigenval " <<smallest_mag_eval << std::endl;
+#endif
+    //we don't want negative eigenvalues
+    //but it is possible that very small/noisy evals could be negative, so we should drop them
+    //we should also drop the corresponding eigenvectors!
+    double tolerance=largest_mag_eval*100*SPARSETOL;
+#ifndef NDEBUG
+    std::cout << "Tolerance threshold " <<tolerance << std::endl;
+#endif
+    
     uMPXInt num_finite=0;
     uMPXInt num_negative=0;
+    MPXInt counter=0;
+    std::vector<MPXInt> kept_cols;    
 
     for (std::vector<double>::const_iterator cit=EigDecomp.Values.begin();cit!=EigDecomp.Values.end();++cit){
-      if (abs(*cit)<=abssum) {
+#ifndef NDEBUG
+      std::cout << "Eigenval " << *cit << std::endl;
+#endif
+      double absval=abs(*cit);
+      if (absval>tolerance) {
+	roots.push_back(sqrt(absval));
+	++num_finite;
+	if(*cit<0.0) ++num_negative;
+	kept_cols.push_back(counter);
+      }
+      ++counter;
+      /*&if (abs(*cit)<=tolerance) {
 	roots.push_back(0.0);
       }
       else {
 	roots.push_back(sqrt(abs(*cit)));
 	++num_finite;
 	if(*cit<0.0) ++num_negative; 
-      }
+	}*/
+      
     }
     if (num_negative!=0 && num_negative!=num_finite){
       std::cout << "Negative eigenvalue, can't decompose into Rdagger D R!" << std::endl;
@@ -859,12 +894,21 @@ namespace ajaj{
 	std::cout << "All eigenvalues:" << std::endl;
 	std::cout << *it << std::endl;
       }
+#ifndef NDEBUG
+      std::cout << "End SqrtDR, with negative eval error, return empty." << std::endl;
+#endif
       return std::pair<std::vector<double>,MPX_matrix>(std::vector<double>(),MPX_matrix());
     }
+
+    //Remove cols corresponding to zero evals
+    EigDecomp.EigenVectors=std::move(EigDecomp.EigenVectors.ExtractColumns(kept_cols));
     
     std::vector<MPXIndex> XIndices;
     XIndices.emplace_back(1,DeduceFromColumns(EigDecomp.EigenVectors.dagger(),M.Index(0)));
     XIndices.emplace_back(0,M.Index(0));
+#ifndef NDEBUG
+    std::cout << "End SqrtDR" << std::endl;
+#endif
     return std::pair<std::vector<double>,MPX_matrix>(roots,MPX_matrix(M.GetPhysicalSpectrum(),XIndices,1,EigDecomp.EigenVectors));
   }
 

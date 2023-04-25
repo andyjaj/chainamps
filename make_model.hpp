@@ -94,7 +94,7 @@ namespace ajaj{
       else { //parse strings
 	if (stringbuffer.size()>3){
 	  std::cout << "Input file has more than 3 non empty lines." << std::endl;
-	  std::cout << "Only the first coupling definition line will be used by static routines." << std::endl;
+	  std::cout << "Static routines will only use the first coupling definition line." << std::endl;
 	  std::cout << "Time routines will interpret suitably formatted extra lines as time dependent coupling information." << std::endl;
 	}
 	//first line is Model Name
@@ -145,6 +145,13 @@ namespace ajaj{
 		times.push_back(temp_time);
 	      }
 	    }
+	    if (times.size()){
+	      if (abs(times[0])>1e-15){
+		std::cout <<std::endl<<"A time dependent evolution Hamiltonian has been defined, but the first time is not t=0" <<std::endl;
+		std::cout <<"Returning empty model!" <<std::endl<<std::endl;
+		return Model();
+	      }
+	    }
 	    //print error if no couplings, but proceed
 	    if (cpas.size()==0 || cpas[0].size()==0){
 	      std::cout << "NO INTER-VERTEX COUPLINGS DEFINED!" << std::endl;
@@ -156,7 +163,6 @@ namespace ajaj{
 	  }
 	  //didn't work
 	  std::cout << "Not enough files specified." <<std::endl;
-	  return Model();
 	}
 
 	else {
@@ -191,7 +197,6 @@ namespace ajaj{
 	    }
 	    else if (stringbuffer.size()>3){ //no time dep info and yet more than 1 coupling line
 	      std::cout << "ERROR: no time data, but more than one coupling defs line!" << std::endl;
-	      return Model();
 	    }
 	    cpas.push_back(CouplingArray());
 	    //Coupling c;
@@ -204,6 +209,14 @@ namespace ajaj{
 	      times.push_back(temp_time);
 	    }
 	  }
+	  if (times.size()){
+	    if (abs(times[0])>1e-15){
+	      std::cout <<std::endl<<"A time dependent evolution Hamiltonian has been defined, but the first time is not t=0" <<std::endl;
+	      std::cout <<"Returning empty model to avoid unexpected behaviour!" <<std::endl<<std::endl;
+	      return Model();
+	    }
+	  }
+	  
 	  //print error if no couplings, but proceed
 	  if (cpas.size()==0 || cpas[0].size()==0){
 	    std::cout << "NO INTER-VERTEX COUPLINGS DEFINED!" << std::endl;
@@ -236,7 +249,7 @@ namespace ajaj{
     else {
       std::cout << "Could not open " << filename << std::endl;
     }
-    return Model();
+    return Model(); //return empty model, error
   }
 
   Model MakeModelFromArgs(Base_Args& cmdln){
@@ -557,7 +570,7 @@ namespace ajaj{
 	}
       }
 
-      if (!sameflag) {//need to do col_block parts
+      if (!sameflag) {//need to do col_block parts separately
 	for (size_t col=0; col<col_sp.cols();++col){
 	  for (size_t p=col_sp.get_p(col); p<col_sp.get_p(col+1);++p){
 	    MPXInt i=col_sp.get_i(p);

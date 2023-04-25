@@ -68,7 +68,7 @@ namespace ajaj{
     //1st arg is a ref to the vertex spectrum,
     //2nd arg is a ref to where all the state arrays are stored
     MPX_matrix() noexcept : m_SpectrumPtr(nullptr) {}; 
-    MPX_matrix(const Basis& spectrum) noexcept; /**< All tensors need to know about the physical spectrum. This might be a design flaw.*/
+    MPX_matrix(const Basis& spectrum) noexcept; /**< All tensors need to know about the physical spectrum. This is a design flaw.*/
     MPX_matrix(const Basis& spectrum, const std::vector<MPXIndex>& indices, const Sparseint numrowindices, const SparseMatrix& matrix); /**< Constructor, indices are listed in order from left to right. numrowindices lets the object know how many of the indices are associated with rows of the SparseMatrix. */
     MPX_matrix(const Basis& spectrum, const std::vector<MPXIndex>& indices, const Sparseint numrowindices, SparseMatrix&& matrix);
     MPX_matrix(const Basis& spectrum, const MPXIndex& index, const std::vector<std::complex<double> >& values,bool inverse=0); /**< Diagonal constructor, with possible inversion of values.*/
@@ -87,6 +87,7 @@ namespace ajaj{
     const Basis& GetPhysicalSpectrum() const {return *m_SpectrumPtr;} /**< Return ref to the Physical spectrum, needs renaming to match convention */
     const Basis& getPhysicalSpectrum() const {return *m_SpectrumPtr;} /**< Return ref to the Physical spectrum */
     const Basis& basis() const {return *m_SpectrumPtr;}
+    SparseMatrix matrix() {return copy(m_Matrix);}
     bool isConsistent() const; /**< Check dimensions of SparseMatrix match the dimensions of the indices.*/
     bool isHermitian() const;
     std::vector<Sparseint> dimsvector() const; /**< Return a vector containing all the dimensions of the MPXIndex indices, from left to right. */
@@ -96,7 +97,7 @@ namespace ajaj{
     void print_sparse_info() const {m_Matrix.print_sparse_info();}
     bool fprint_binary(std::ofstream& outfile) const; /**< Print the MPX_matrix to file in binary format. */
     bool store(const std::string& filename) const; /**< Print the MPX_matrix to file in binary format. */
-    MPX_matrix ExtractSubMPX(const std::vector<MPXPair>& Indexvals) const; /**< Extract a Sub MPX_matrix by giving some indices fixed values according to the pairs in Indexvals . */
+    //MPX_matrix ExtractSubMPX(const std::vector<MPXPair>& Indexvals) const; /**< Extract a Sub MPX_matrix by giving some indices fixed values according to the pairs in Indexvals . */
     std::vector<BlockStateIndices> GetAllBlockColumns() const; /**< Return a vector of BlockStateIndices corresponding to all the groups of columns with the same quantum numbers.*/
     BlockStateIndices GetBlockColumns(const State& specficstate) const; /**< Return BlockStateIndices for the quantum numbers specified by specificstate. */
     BlockStateIndices GetBlockRows(const State& specficstate) const; /**< Return BlockStateIndices for the quantum numbers specified by specificstate. */
@@ -113,15 +114,20 @@ namespace ajaj{
     SparseED RightEigs(const State& blockstate, Sparseint numevals, char which[3],SparseMatrix* initial=NULL) const;/**< Right eigen decomposition, for a specific block defined by blockstate. */
     SparseED RightEigs(Sparseint numevals, char which[3],SparseMatrix* initial=NULL) const;/**< Right eigen decomposition. */
     MPXDecomposition SVD(size_t bond_dimension=0,double min_s_val=0.0) const; /**< Singular value decomposition with possible truncation. Row indices become rows of U, col indices become cols of Vdagger. */
+    
+    std::vector<std::complex<double> > GetDiagonal() {if (!isEmpty()) return m_Matrix.diagonal(); else return std::vector<std::complex<double> >();}
+    
     MPX_matrix& Transpose();
     MPX_matrix& RemoveDummyIndices(std::vector<MPXInt> indices_for_removal); /**< Strip off dummy indices. Useful for simplifying open b.c. ends */
     MPX_matrix& MoveDummyIndices(const std::vector<MPXInt>& newindexorder); /**< Move dummy indices only. */
     MPX_matrix& ShiftNumRowIndices(const Sparseint numrows); /**< Move some row MPXIndex indices to columns or vice-versa. */
     MPX_matrix& Rescale(std::complex<double> factor); /**<Scale all values in array by some factor. */
-    complex<double> Trace() const {return m_Matrix.trace();} /**< If MPX_matrix is square, find the trace.*/
-    MPX_matrix RestrictColumnIndex();
-    MPX_matrix& CombineSimilarMatrixIndices(bool PhysicalInMiddle=0);
+    std::complex<double> Trace() const {return m_Matrix.trace();} /**< If MPX_matrix is square, find the trace.*/
+    double norm() const {return m_Matrix.square_norm();} /**< If MPX_matrix is square, find the trace.*/
 
+    MPX_matrix ZeroLastBlock(); /**< Given a particular index and a value of that index, zero the other data*/
+    MPX_matrix& CombineSimilarMatrixIndices(bool PhysicalInMiddle=0);
+    
     //move assignment operator needed?
     MPX_matrix& operator=(MPX_matrix other){
       swap(*this,other);

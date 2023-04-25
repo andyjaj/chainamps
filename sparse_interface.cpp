@@ -8,7 +8,6 @@
 #include <numeric>
 #include <fstream>
 #include <cassert>
-#include <cs.h>
 
 #include "sparse_interface.hpp"
 #include "dense_interface.hpp"
@@ -17,10 +16,11 @@
 #if defined(USETBB)
 #include <tbb/tbb.h>
 #define TBBNZ 1000  //used as part of the threading cutoff
+
 #endif
 
 namespace ajaj {
-
+    
   void order_rows(cs_cl* A);
   SparseMatrix&& SparseMatrix::order_rows(){ajaj::order_rows(m_array); return std::move(*this);}
 
@@ -81,7 +81,6 @@ namespace ajaj {
     }
     return ans;
   }
-
 
   void index_decompose(Sparseint idx,Sparseint numdims,const Sparseint* dimsvec,Sparseint* subidxarray){
     for (Sparseint cp=0;cp<numdims-1;++cp){
@@ -297,94 +296,6 @@ namespace ajaj {
     ans.put_p(new_col)=count;
     if (new_nz!=count) {std::cout << "ExtractSubMatrix error " << new_nz << " " << count << std::endl; return SparseMatrix();}
     else return ans;
-  }
-
-
-  SparseMatrix SparseMatrix::ExtractSubMatrix(Sparseint num_row_idxs,const std::vector<Sparseint>& old_idx_dims,const std::vector<std::pair<Sparseint,Sparseint> >& IndexVal,const bool conjugate) const {
-    std::vector<std::pair<Sparseint,Sparseint> > RowIndexVal;
-    std::vector<std::pair<Sparseint,Sparseint> > ColIndexVal;
-    for (std::vector<std::pair<Sparseint,Sparseint> >::const_iterator cit=IndexVal.begin();cit!=IndexVal.end();++cit){
-      if (cit->first < num_row_idxs){
-	RowIndexVal.emplace_back(*cit);
-      }
-      else {
-	ColIndexVal.emplace_back(*cit);
-      }
-    }
-    //work out non trivial row and col indices
-    std::vector<Sparseint> NTrowidxs(num_row_idxs);
-    std::iota(NTrowidxs.begin(),NTrowidxs.end(),0);
-    std::vector<Sparseint> NTcolidxs(old_idx_dims.size()-num_row_idxs);
-    std::iota(NTcolidxs.begin(),NTcolidxs.end(),num_row_idxs);
-    
-    //work out new effective rows and cols
-    for (std::vector<std::pair<Sparseint,Sparseint> >::const_iterator cit=RowIndexVal.begin();cit!=RowIndexVal.end();++cit){
-      std::remove(NTrowidxs.begin(),NTrowidxs.end(),cit->first);
-    }
-    NTrowidxs.erase(NTrowidxs.end()-RowIndexVal.size(),NTrowidxs.end());
-    for (std::vector<std::pair<Sparseint,Sparseint> >::const_iterator cit=ColIndexVal.begin();cit!=ColIndexVal.end();++cit){
-      std::remove(NTcolidxs.begin(),NTcolidxs.end(),cit->first);
-    }
-    NTcolidxs.erase(NTcolidxs.end()-ColIndexVal.size(),NTcolidxs.end());
-
-    Sparseint new_num_rows(1);
-    Sparseint new_num_cols(1);
-
-    for (std::vector<Sparseint>::const_iterator cit=NTrowidxs.begin();cit!=NTrowidxs.end();++cit){
-      new_num_rows*=old_idx_dims[*cit];
-    }
-    for (std::vector<Sparseint>::const_iterator cit=NTcolidxs.begin();cit!=NTcolidxs.end();++cit){
-      new_num_cols*=old_idx_dims[*cit];
-    }
-
-    SparseMatrix ans(new_num_rows,new_num_cols,nz());
-    Sparseint* old_idxs=new Sparseint[old_idx_dims.size()];
-    for (Sparseint old_c=0;old_c<m_array->n;++old_c){ //column
-      //take apart the column index
-      index_decompose(old_c,old_idx_dims.size()-num_row_idxs,old_idx_dims.data()+num_row_idxs,&(old_idxs[num_row_idxs]));
-      bool colskipflag=0; //check we have a col index that matches our sub matrix
-      for (std::vector<std::pair<Sparseint,Sparseint> >::const_iterator cit=ColIndexVal.begin();cit!=ColIndexVal.end();++cit){
-	if (cit->second!=old_idxs[cit->first]){
-	  colskipflag=1;
-	  break;
-	}
-      }
-      if (colskipflag) continue;
-      else {
-	for (Sparseint p=m_array->p[old_c];p<m_array->p[old_c+1];++p){ //row pointer
-	  //now do the same for the row index
-	  index_decompose(m_array->i[p],num_row_idxs,old_idx_dims.data(),old_idxs);
-	  bool rowskipflag=0; //check we have a row index that matches our sub matrix
-	  for (std::vector<std::pair<Sparseint,Sparseint> >::const_iterator cit=RowIndexVal.begin();cit!=RowIndexVal.end();++cit){
-	    if (cit->second!=old_idxs[cit->first]){
-	      rowskipflag=1;
-	      break;
-	    }
-	  }
-	  if (rowskipflag) continue;
-	  else {
-	    //ok so we have all the sub indices in hand
-	    //now we have to build new row and column indices
-	    Sparseint new_row=0;
-	    Sparseint row_mult=1;
-	    for (std::vector<Sparseint>::const_iterator cit=NTrowidxs.begin();cit!=NTrowidxs.end();++cit){
-	      new_row+=row_mult*old_idxs[*cit];
-	      row_mult*=old_idx_dims[*cit];
-	    }   
-	    Sparseint new_col=0;
-	    Sparseint col_mult=1;
-	    for (std::vector<Sparseint>::const_iterator cit=NTcolidxs.begin();cit!=NTcolidxs.end();++cit){
-	      new_col+=col_mult*old_idxs[*cit];
-	      col_mult*=old_idx_dims[*cit];
-	    }
-	    std::complex<double> x=m_array->x[p];
-	    ans.entry(new_row,new_col,conjugate ? conj(x) : x);
-	  }
-	}
-      }
-    }
-    delete[] old_idxs;
-    return ans.cheap_finalise();
   }
 
   SparseMatrix SparseMatrix::ExtractColumns(const std::vector<Sparseint>& cols) const{
@@ -669,7 +580,7 @@ namespace ajaj {
 
   std::complex<double> SparseMatrix::trace() const{
     if (!m_finalised){std::cout << "Not finalised! Probably you didn't mean to do this yet!" << std::endl; exit(1);}
-    if (m_array->m!=m_array->n) {std::cout << "NOT A SQUARE MATRIX" << std::endl; exit(1);}
+    if (m_array->m!=m_array->n) {std::cout << "NOT A SQUARE MATRIX: " <<  m_array->m << " " << m_array->n << std::endl; exit(1);}
     std::complex<double> trace=0.0;
     for (Sparseint col=0;col<m_array->n;++col){
       for (Sparseint j=m_array->p[col];j<m_array->p[col+1];++j){
@@ -717,6 +628,7 @@ namespace ajaj {
   }
 
   std::vector<std::complex<double> > SparseMatrix::diagonal() const {
+    if (!m_finalised){std::cout << "Not finalised! Probably you didn't mean to do this yet!" << std::endl; exit(1);}
     std::vector<std::complex<double> > ans;
     for (Sparseint i=0;i<cols();++i){
       ans.push_back(element(i,i));
@@ -732,7 +644,7 @@ namespace ajaj {
 
   SparseMatrix& SparseMatrix::operator*=(const SparseMatrix& rhs)//
   {
-    SparseMatrix other(sparse_multiply_ajaj(*this,rhs));
+    SparseMatrix other(sparse_multiply(*this,rhs));
     swap(*this,other);
     return *this;
     /*swap(*this,SparseMatrix(cs_cl_multiply(rhs.copy_transpose().m_array,this->copy_transpose().m_array),1).transpose());
@@ -745,6 +657,7 @@ namespace ajaj {
     if(!rhs.m_finalised){std::cout << "rhs not finalised!" << std::endl;exit(1);}
     //have to use a temporary object because of all the pointers in m_array
     SparseMatrix temp(cs_cl_add(m_array,rhs.m_array,1.0,1.0),1);
+    temp.order_rows(); //really important, cs_cl_add compresses the answer, but doesn't order rows!
     swap(*this,temp);
     return *this;
   }
@@ -755,23 +668,24 @@ namespace ajaj {
     if(!rhs.m_finalised){std::cout << "rhs not finalised!" << std::endl;exit(1);}
     //have to use a temporary object because of all the pointers in m_array
     SparseMatrix temp(cs_cl_add(m_array,rhs.m_array,1.0,-1.0),1);
+    temp.order_rows();//really important, cs_cl_add compresses the answer, but doesn't order rows!
     swap(*this,temp);
     return *this;
   }
 
   SparseMatrix operator*(const SparseMatrix& lhs, const SparseMatrix& rhs)//why make the copy if it is only about to be destroyed?
   {
-    return sparse_multiply_ajaj(lhs,rhs);
+    return sparse_multiply(lhs,rhs);
   }
 
   SparseMatrix operator+(const SparseMatrix& lhs, const SparseMatrix& rhs)
   {
-    return SparseMatrix(cs_cl_add(lhs.m_array,rhs.m_array,1.0,1.0),1);
+    return SparseMatrix(cs_cl_add(lhs.m_array,rhs.m_array,1.0,1.0),1).order_rows();//really important, cs_cl_add compresses the answer, but doesn't order rows!
   }
 
   SparseMatrix operator-(const SparseMatrix& lhs, const SparseMatrix& rhs)
   {
-    return SparseMatrix(cs_cl_add(lhs.m_array,rhs.m_array,1.0,-1.0),1);
+    return SparseMatrix(cs_cl_add(lhs.m_array,rhs.m_array,1.0,-1.0),1).order_rows();//really important, cs_cl_add compresses the answer, but doesn't order rows!
   }
 
   double SparseMatrix::norm() const {
@@ -1358,7 +1272,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 #ifndef NDEBUG
       std::cout <<"Weight is " << block_weight <<std::endl;
       if (std::isnan(block_weight)){//if not a number, then problem!
-	std::cout << "Nan error" << std::endl;
+	std::cout << "NaN error" << std::endl;
 	this->print();
       }
 #endif
@@ -1498,11 +1412,19 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
   //////////////////////////////////////////////////////////
   //first variant finds all eigenvalues and vectors using blocks and a dense method
   SparseHED SparseMatrix::HED(const std::vector<std::vector<Sparseint> >& B) const{
+    Sparseint NumEvals=0;
+    for (auto&& cvec : B){
+      for (auto cidx : cvec) {
+	++NumEvals;
+      }
+    }
+    
     //std::cout << "METHOD 1" << std::endl;
     if (!this->is_finalised()){std::cout << "Not finalised!" << std::endl; exit(1);}
     //std::cout << "HED on matrix, size " << this->rows() << " * " << this->cols() << std::endl;
     if (this->rows()!=this->cols()){std::cout << "Hermitian matrix not square!" << std::endl; exit(1);}
-    SparseHED ans(this->rows(),this->cols());
+    //SparseHED ans(this->rows(),this->cols());
+    SparseHED ans(this->rows(),NumEvals);
     for (std::vector<std::vector<Sparseint> >::const_iterator cit=B.begin();cit!=B.end();++cit){
       TranslationBlock<DenseMatrix> TB(*this,*cit,*cit); //form block
       DenseHED Blockans=TB.Block.HED(); //do eigen decomposition on block (which will destroy the original block)
@@ -1653,8 +1575,8 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     SparseMatrix* Guessptr;
     SparseMatrix Guess;
     if (initial) {Guess=SpTB.ReverseTranslateRows(*initial); Guessptr=&Guess;}
-    else {Guessptr=NULL;}
-    SparseED SpBlockans(SpTB.Block.ED(numevals,which,Guessptr));
+    else {Guessptr=NULL;}    
+    SparseED SpBlockans(SpTB.Block.ED(numevals,which,Guessptr));    
     ans.Values=SpBlockans.Values; //copy eigenvalues over
     double tol=SPARSETOL/double(SpBlockans.EigenVectors.rows());
     for (Sparseint c=0;c<numevals;++c){
@@ -1677,6 +1599,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 
   //getting the left eigenvectors is a bit trickier
   //requires a transpose of the translation block, use of arpack then transpose back
+  //stores left eigen vectors as columns!
   SparseED SparseMatrix::LeftED(const std::vector<Sparseint>& RowB,const std::vector<Sparseint>& ColB, Sparseint numevals, char which[3],SparseMatrix* initial) const{
     if (!this->is_finalised()){std::cout << "Not finalised!" << std::endl; exit(1);}
     if (this->rows()!=this->cols()){std::cout << "Matrix not square for LeftED!" << std::endl; exit(1);}
@@ -1691,7 +1614,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     if (initial) {Guess=SpTB.ReverseTranslateRows(*initial); Guessptr=&Guess;}
     else {Guessptr=NULL;}
     //below does a transpose, messing up the translation block's sparsematrix
-    SparseED SpBlockans(SpTB.Block.transpose().ED(numevals,which,Guessptr));
+    SparseED SpBlockans(SpTB.Block.transpose().ED(numevals,which,Guessptr));    
     ans.Values=SpBlockans.Values; //copy eigenvalues over
     double tol=SPARSETOL/double(SpBlockans.EigenVectors.rows());
     for (Sparseint c=0;c<numevals;++c){
@@ -1733,6 +1656,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 
 	std::complex<double>* dm=new std::complex<double>[this->rows()*this->rows()];
 	this->to_dense(dm);
+		
 	densefuncs::diagonalise_with_lapack_nh(this->rows(), dm, dEvecs, dEvals);
 	delete[] dm;
 
@@ -1742,10 +1666,12 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 	for (Sparseint i=0; i<this->rows();++i){
 	  if (abs(dEvals[i])>weight) {largest=i;weight=abs(dEvals[i]);}
 	}
+	
 	if (largest!=0){
-	  std::swap_ranges(dEvals,dEvals+1,&dEvals[largest]);
-	  std::swap_ranges(dEvecs,dEvecs+this->rows(),&(dEvecs[largest]));
+	  std::swap_ranges(dEvals,dEvals+1,dEvals+largest);
+	  std::swap_ranges(dEvecs+0,dEvecs+(this->rows()),dEvecs+(largest*this->rows()));
 	}
+	
 	//copy into
 	std::copy(dEvals,dEvals+requested_numevals,Evals);
 	std::copy(dEvecs,dEvecs+this->rows()*requested_numevals,Evecs);
@@ -1783,6 +1709,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     for (std::vector<double>::const_iterator cit=decomp.Values.begin();cit!=decomp.Values.end();++cit ){
       diagpart.push_back(exp(factor*(*cit)));
     }
+    
     return (decomp.EigenVectors*SparseMatrix(diagpart))*decomp.EigenVectors.copy_dagger();
   }
 
@@ -1891,6 +1818,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
 
   void feed_to_answer(cs_cl* U, cs_cl* P,const Sparseint Pcol){//destroys unsorted U as it goes along, Pcol is the insertion column
     Sparseint Unz=U->p[U->n];
+
     std::copy(U->i,U->i+Unz,P->i+P->p[Pcol]);
     std::copy(U->x,U->x+Unz,P->x+P->p[Pcol]);
     cs_cl_spfree(U);
@@ -1923,7 +1851,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
       std::complex<double>* Cx = C->x;
       Cp[j-start] = nz;                  /* column j of C starts here */
 
-      if (Bp[j]!=Bp[j+1]){ //not an empty col
+      if (Bp[j]!=Bp[j+1]){ //if not an empty col
 	for (Sparseint lp=Ap[Bi[Bp[j]]];lp<Ap[Bi[Bp[j]]+1];++lp){
 	  Sparseint i=Ai[lp];
 	  w[i]=j;
@@ -2039,6 +1967,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
       cs_cl* local_answer(multiply_by_blocked_cols(lhs_,rhs_,start_col,end_col,ans_->p));//steals ans_->p to make new answer
       //feed_to_answer(local_answer,ans_,start_col);//moves to full answer and destroys local answer
       if (NoSort_){
+
 	feed_to_answer(local_answer,ans_,start_col);//moves to full answer and destroys local answer
       }
       else {
@@ -2108,7 +2037,7 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     }
   }
 
-  SparseMatrix sparse_multiply_ajaj(const SparseMatrix& lhs, const SparseMatrix& rhs, bool NoSort){
+  SparseMatrix sparse_multiply(const SparseMatrix& lhs, const SparseMatrix& rhs, bool NoSort){
     //first figure out the number of nonzeros in output
     //this is cleaner in terms of reallocations, but might be slower.
     //it should be easy to thread though as we are just accumulating (parallel reducing) nz
@@ -2135,9 +2064,9 @@ bool SparseMatrix::fprint(std::ofstream& outfile) const{
     else {
 #if defined(USETBB)
       {
-#ifndef NDEBUG
-	tbb::task_scheduler_init init(1);
-#endif
+
+
+	
 	bool swap_and_transpose=NoSort ? 0 : (lhs.nz()+rhs.nz()<col_ptrs[rhs.cols()]);
 	if (swap_and_transpose){
 	  cs_free(col_ptrs); //need the swapped transpose version...

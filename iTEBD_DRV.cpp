@@ -70,7 +70,7 @@ int main(int argc, char** argv){
     std::cout << "Using initial state '" << InitialStateName << "'" <<std::endl;
 
     ajaj::DataOutput results(ajaj::OutputName(Rss.str(),"Evolution.dat"),"Index, Time, Truncation, Entropy, abs(Overlap), Real(Overlap), Im(Overlap)");
-
+      ajaj::DataOutput dummyfullresults;
     //before going further, let's measure the energy density
     std::complex<double> InitEnPerVertex = ajaj::iTwoVertexEnergy(myModel.H_MPO,OrthogonaliseInversionSymmetric(Initial));
     std::cout << std::endl << "INITIAL ENERGY PER VERTEX IS " <<  InitEnPerVertex << std::endl << std::endl;
@@ -78,12 +78,16 @@ int main(int argc, char** argv){
     //do we have time dep couplings?
     if (!myModel.times().size()){ //need this for builtin models, with old style coupling params
       std::cout <<"Evolution hamiltonian is static." <<std::endl;
-      ajaj::iTEBD infrun(myModel.H_MPO,Initial,time_step_size,results,InitialStateName,trotter_order);
+      ajaj::iTEBD infrun(myModel.H_MPO,Initial,time_step_size,results,dummyfullresults,InitialStateName,trotter_order);
       infrun.evolve(number_of_time_steps,measured_operators,CHI/*bond dimension*/,trunc,measurement_interval);
       return 0;
     }
+     else if(abs(myModel.times()[0])>1e-15){
+      std::cout <<"A time dependent evolution Hamiltonian has been defined, but the first time is not 0.0" <<std::endl;
+      std::cout <<"Aborting to avoid unexpected behaviour!" <<std::endl;
+      return 0;
+    }
     else {
-
       std::cout <<"Evolution hamiltonian is time dependent." <<std::endl;
       //if ramp step size is smaller than step size, then use that until ramp over (check each time)
       //if step size smaller than ramp step size then use size that is commensurate with ramp step, but smaller than step size.
@@ -94,7 +98,7 @@ int main(int argc, char** argv){
       ajaj::uMPXInt num_1=1;
       while (current_step_size_1>time_step_size){current_step_size_1=ramp_step_size_1/(++num_1);}
       if (num_1>number_of_time_steps) num_1=number_of_time_steps;
-      ajaj::iTEBD infrun(myModel.H_MPO,Initial,current_step_size_1,results,InitialStateName,trotter_order);
+      ajaj::iTEBD infrun(myModel.H_MPO,Initial,current_step_size_1,results,dummyfullresults,InitialStateName,trotter_order);
       infrun.evolve(num_1,measured_operators,CHI/*bond dimension*/,trunc,measurement_interval);
       number_of_time_steps-=num_1;
       ++ramp_step;
@@ -103,6 +107,7 @@ int main(int argc, char** argv){
       while (number_of_time_steps>0 && ramp_step < myModel.times().size()){
 	double ramp_step_size=myModel.times()[ramp_step]-myModel.times()[ramp_step-1];
 	double current_step_size=ramp_step_size;
+        if ((current_step_size - time_step_size) < (0.000001)){current_step_size = time_step_size;}
 	ajaj::uMPXInt num=1;
 	while (current_step_size>time_step_size){current_step_size=ramp_step_size/(++num);}
 	if (num>number_of_time_steps) num=number_of_time_steps;

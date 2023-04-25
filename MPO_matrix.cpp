@@ -1,6 +1,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <algorithm>
 
 #include "common_defs.hpp"
 #include "sparse_interface.hpp"
@@ -81,9 +82,8 @@ namespace ajaj{
     }
     
     return MPO_matrix(basis(),std::vector<MPXIndex>({{1,basis()},{1,std::move(row_matrix_index)},{0,basis()},{0,std::move(col_matrix_index)}}),m_Matrix.ExtractSubMatrix(array_row_range,array_col_range));
-
   }
-
+  
   MPO_matrix UnitaryTransformMPO_matrix(const Basis& b, const std::vector<MPXIndex>& idxs, const SparseMatrix& s, size_t c, double f){
     if (c>=b.getChargeRules().size()){std::cout <<"Error, requested quantum number outised bounds!" <<std::endl; return MPO_matrix();}
 

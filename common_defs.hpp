@@ -8,6 +8,7 @@
 #include <vector> //for std::vector
 #include <complex>
 #include <cs.h> //for SuiteSparse_long
+//#include "sparse_interface.hpp"
 
 /**
  * @namespace ajaj
@@ -22,6 +23,8 @@ namespace ajaj {
   typedef size_t uMPXInt; //unsigned ptr size type so 32bit on a 32bit machine and 64bit otherwise
   /** Type used for pairing indices. Lots of functions take a pair of MPX indices as arguments.*/
   typedef std::pair<MPXInt,MPXInt> MPXPair;
+  typedef std::vector<MPXPair> MPXPairVector;
+  
   typedef std::pair<uMPXInt,std::complex<double> > c_specifier;
   typedef std::vector<c_specifier> c_specifier_vector;
   typedef std::vector<c_specifier_vector> c_specifier_array;
@@ -83,6 +86,7 @@ namespace ajaj {
   static const std::vector<MPXInt> reorder135 {{1,3,5}};
   static const std::vector<MPXInt> reorder0213 {{0,2,1,3}};
   static const std::vector<MPXInt> reorder0132 {{0,1,3,2}};
+  static const std::vector<MPXInt> reorder1032 {{1,0,3,2}};
   static const std::vector<MPXInt> reorder03214 {{0,3,2,1,4}};
   static const std::vector<MPXInt> reorder12403 {{1,2,4,0,3}};
   static const std::vector<MPXInt> reorder032415 {{0,3,2,4,1,5}};
@@ -92,6 +96,15 @@ namespace ajaj {
   static char LARGESTMAGNITUDE[]={'L','M','\n'};
   static char SMALLESTREAL[]={'S','R','\n'}; //lowest real part for energies
 
+inline std::vector<double> vector_of_reals(const std::vector<std::complex<double> >& complexvec){
+    std::vector<double> ans;
+    ans.reserve(complexvec.size());
+    for (auto& c: complexvec){
+      ans.emplace_back(c.real());
+    }
+    return ans;
+  }
+  
 }
 
 #endif

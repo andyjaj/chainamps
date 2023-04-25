@@ -5,12 +5,13 @@
 #include <algorithm>
 #include <vector>
 #include <utility>
+
+#include "dense_matrix_functions.hpp"
+#include "arpack_interface.hpp"
+
 #if defined(USETBB)
 #include <tbb/tbb.h>
 #endif
-#include <cs.h>
-#include "dense_matrix_functions.hpp"
-#include "arpack_interface.hpp"
 
 #define ARPACKTOL -0.0
 

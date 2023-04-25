@@ -41,7 +41,7 @@ namespace ajaj{
     MPO_matrix(const Basis& spectrum, const MPXIndex& index, const std::vector<double>& values,bool inverse=0);
 
     MPO_matrix ExtractMPOBlock(const std::pair<MPXInt,MPXInt>& row_matrix_index_range, const std::pair<MPXInt,MPXInt>& col_matrix_index_range) const;
-
+    
   };
 
 

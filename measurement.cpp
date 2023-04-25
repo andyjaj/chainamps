@@ -129,7 +129,7 @@ namespace ajaj {
   }
   
   UnitCell OrthogonaliseInversionSymmetric(const UnitCell& C){
-    std::cout << "Orthogonalising..." << std::endl;
+    std::cout << "Orthogonalising (inversion symmetric version)..." << std::endl;
     const Basis& basis(C.Matrices.front().basis());
 
     //transfer matrix components with these flags enforces hermiticity of the (reshaped) left eigenvector
@@ -182,7 +182,7 @@ namespace ajaj {
     const Basis& basis(C.Matrices.front().basis());
 
     //transfer matrix components with these flags enforces hermiticity of the (reshaped) left eigenvector
-    SparseED LeftTdecomp(TransferMatrixComponents(C,1,State(C.basis().getChargeRules())).LeftED(NUMEVALS,LARGESTMAGNITUDE));
+    SparseED LeftTdecomp(TransferMatrixComponents(C,1,C.basis().Identity()/*State(C.basis().getChargeRules())*/).LeftED(NUMEVALS,LARGESTMAGNITUDE));
     std::cout << "Leading left eigenvalue of left transfer matrix: " << LeftTdecomp.Values.at(0) << std::endl; //will need to rescale by this
     if (abs(imag(LeftTdecomp.Values.at(0)))>=IMAGTOL*abs(real(LeftTdecomp.Values.at(0)))) {
       std::cout << "Eigenvalue has non negligible imaginary part, numerical error in transfer matrix contraction?" << std::endl;
@@ -192,17 +192,21 @@ namespace ajaj {
     //decompose into Xdagger X form
     std::vector<MPXIndex> VLIndices;
     VLIndices.emplace_back(1,C.Matrices.front().getInwardMatrixIndex());
-    VLIndices.emplace_back(0,C.Matrices.front().getInwardMatrixIndex());
-    //decompose it into Xdagger X form
+    VLIndices.emplace_back(0,C.Matrices.front().getInwardMatrixIndex());    
     std::pair<std::vector<double>,MPX_matrix> VLDecomp(SqrtDR(MPX_matrix(basis,VLIndices,1,reshape(LeftTdecomp.EigenVectors.ExtractColumns(std::vector<MPXInt>({0})),C.Matrices.front().getInwardMatrixIndex().size()))));
     //If failure, return dummy
-    if (!VLDecomp.first.size()) return UnitCell(basis);
+    if (!VLDecomp.first.size()) {
+      std::cout << "SqrtDR failure" <<std::endl;
+      return UnitCell(basis);
+    }
+    std::cout << "Left vector decomposed" << std::endl;
 
     MPX_matrix X(contract(MPX_matrix(basis,VLDecomp.second.Index(0),VLDecomp.first),0,VLDecomp.second,0,contract10));
     //note that SqrtDR should guarantee that X^dagger is the inverse of X
+
     MPX_matrix Xinv(contract(reorder(VLDecomp.second,1,reorder10,1),0,MPX_matrix(basis,VLDecomp.second.Index(0),VLDecomp.first,1),0,contract10));
 
-    SparseED RightTdecompSpecial(TransferMatrixComponents(C,1,State(C.basis().getChargeRules())).RightED(NUMEVALS,LARGESTMAGNITUDE));
+    SparseED RightTdecompSpecial(TransferMatrixComponents(C,1,C.basis().Identity()/*State(C.basis().getChargeRules())*/).RightED(NUMEVALS,LARGESTMAGNITUDE));
 
     std::cout << "Leading right eigenvalue of unshifted right transfer matrix: " << RightTdecompSpecial.Values.at(0) << std::endl; //will need to rescale by this
     if (abs(imag(RightTdecompSpecial.Values.at(0)))>=IMAGTOL*abs(real(RightTdecompSpecial.Values.at(0)))) {
@@ -213,20 +217,27 @@ namespace ajaj {
     std::vector<MPXIndex> VRIndices;
     VRIndices.emplace_back(1,C.Matrices.back().getOutwardMatrixIndex());
     VRIndices.emplace_back(0,C.Matrices.back().getOutwardMatrixIndex());
-    
     std::pair<std::vector<double>,MPX_matrix> VRDecomp(SqrtDR(MPX_matrix(basis,VRIndices,1,reshape(RightTdecompSpecial.EigenVectors.ExtractColumns(std::vector<MPXInt>({0})),C.Matrices.back().getOutwardMatrixIndex().size()))));
     //If failure, return dummy
-    if (!VRDecomp.first.size()) return UnitCell(basis);
+    if (!VRDecomp.first.size()) {
+      std::cout << "VRDecomp failure" <<std::endl;
+      return UnitCell(basis);
+    }
 
+    //std::cout << "Forming lambda * y" <<std::endl;
+    
     MPX_matrix LAMBDA_Y(contract(reorder(VRDecomp.second,1,reorder10,1),0,MPX_matrix(basis,VRDecomp.second.Index(0),VRDecomp.first),0,contract10));
-    // MPXDecomposition XLYDecomp(contract(contract(X,0,MPX_matrix(basis,C.Matrices.back().getOutwardMatrixIndex(),C.Lambdas.front()),0,contract10),0,Y,0,contract10).SVD());
+
+    //std::cout << "Forming XLY" <<std::endl;
     MPXDecomposition XLYDecomp(contract(X,0,LAMBDA_Y,0,contract10).SVD());
     SquareSumRescale(XLYDecomp.Values,1.0);//rescale here to set normalisation
     std::cout << "Entropy: " << entropy(XLYDecomp.Values) <<", Bond dimension: " << XLYDecomp.Values.size() << std::endl;
 
     UnitCell ans(basis);
-    std::vector<double> scalevecX(C.Matrices.front().getInwardMatrixIndex().size(),1.0/sqrt(LeftTdecomp.Values.at(0).real()));
-
+    //if norm isn't 1.0, we need to rescale X
+    //std::vector<double> scalevecX(C.Matrices.front().getInwardMatrixIndex().size(),1.0/sqrt(LeftTdecomp.Values.at(0).real()));
+    std::vector<double> scalevecX(X.Index(0).size(),1.0/sqrt(LeftTdecomp.Values.at(0).real()));
+    
     ans.Matrices.emplace_back(reorder(contract(contract(XLYDecomp.ColumnMatrix,1,contract(MPX_matrix(basis,X.Index(0),scalevecX),0,X,0,contract10),0,contract00),0,C.Matrices.front(),0,contract11),0,reorder102,2));
     ans.Matrices.emplace_back(contract(C.Matrices.back(),0,contract(Xinv,0,XLYDecomp.ColumnMatrix,0,contract10),0,contract20));
     ans.Lambdas.emplace_back(XLYDecomp.Values);
@@ -289,15 +300,16 @@ namespace ajaj {
   }
 
   std::vector<std::complex<double> > Overlap(const UnitCell& bra, const UnitCell& ket, uMPXInt nev){
-    return MakeLTransferMatrix(bra,ket).LeftEigs(nev,LARGESTMAGNITUDE).Values;
+    return TransferMatrixComponents(bra,ket,0,State(ket.basis().getChargeRules())).LeftED(nev,LARGESTMAGNITUDE).Values;
+    //return MakeLTransferMatrix(bra,ket).LeftEigs(nev,LARGESTMAGNITUDE).Values;
   }
 
   std::vector<std::complex<double> > TransferMatrixEigs(const UnitCell& ket, uMPXInt nev,const State& TargetState){
     //make the required bits
-    std::vector<const MPS_matrix*> ket_ptrs;
+    /*std::vector<const MPS_matrix*> ket_ptrs;
     for (auto&& k: ket.Matrices){
       ket_ptrs.emplace_back(&k);
-    }
+    }*/
     return TransferMatrixComponents(ket,1,TargetState).LeftED(nev,LARGESTMAGNITUDE).Values;
     //return TransferMatrixComponents(ket_ptrs,1,TargetState).LeftED(nev,LARGESTMAGNITUDE).Values;
   }
@@ -367,16 +379,18 @@ namespace ajaj {
     if (Ortho.Matrices.size()!=2){std::cout << "Only two vertex basis accepted for now" <<std::endl; return 0.0;}
 
     MPX_matrix LAMBDA0(H1.basis(),Ortho.Matrices.at(0).Index(1),Ortho.Lambdas.at(0));
-
-    std::complex<double> LocalEnergy(contract_to_sparse(contract(Ortho.Matrices.at(1),1,contract(contract(Ortho.Matrices.at(0),1,contract(H1,0,Ortho.Matrices.at(0),0,contract20),0,contract0013),0,Ortho.Matrices.at(1),0,contract31),0,contract0310),0,contract(LAMBDA0,0,LAMBDA0,0,contract10),0,contract0130).trace());
-    LocalEnergy+=OneVertexMeasurement(H1,Ortho);
+    std::cout << "Calculating energy" <<std::endl;
+    std::complex<double> LocalEnergy=0.0;
+    if (!H1.empty()){
+      LocalEnergy+=contract_to_sparse(contract(Ortho.Matrices.at(1),1,contract(contract(Ortho.Matrices.at(0),1,contract(H1,0,Ortho.Matrices.at(0),0,contract20),0,contract0013),0,Ortho.Matrices.at(1),0,contract31),0,contract0310),0,contract(LAMBDA0,0,LAMBDA0,0,contract10),0,contract0130).trace(); //contribution from 1st site
+      LocalEnergy+=OneVertexMeasurement(H1,Ortho); //add contribution from 2nd site
+    }
+    std::cout << "On vertex energy =" << LocalEnergy <<std::endl;
     std::complex<double> Bond1Energy(TwoVertexMeasurement(RowX,ColX,Ortho.Matrices.at(0),Ortho.Matrices.at(1),LAMBDA0));
+    std::cout << "Bond 1 energy =" << Bond1Energy <<std::endl;
     //and now a more complicated thing...
     std::complex<double> Bond2Energy(contract_to_sparse(contract(Ortho.Matrices.at(1),1,contract(contract(Ortho.Matrices.at(0),1,contract(contract(Ortho.Matrices.at(0),0,contract(Ortho.Matrices.at(1),1,contract(contract(contract(Ortho.Matrices.at(0),1,Ortho.Matrices.at(0),0,contract0011),0,Ortho.Matrices.at(1),0,contract11),0,RowX,0,contract12),0,contract0210),0,contract11),0,ColX,0,contract0241),0,contract0311),0,Ortho.Matrices.at(1),0,contract11),0,contract0310),0,contract(LAMBDA0,0,LAMBDA0,0,contract10),0,contract0130).trace());
-
-    std::cout << LocalEnergy <<std::endl;
-    std::cout << Bond1Energy <<std::endl;
-    std::cout << Bond2Energy <<std::endl;
+    std::cout << "Bond 2 energy = " << Bond2Energy <<std::endl;
 
     return 0.5*(LocalEnergy+Bond1Energy+Bond2Energy);
 
@@ -385,7 +399,9 @@ namespace ajaj {
   TransferMatrixComponents::TransferMatrixComponents(const UnitCell& KetCell, bool HV, const State S) : TransferMatrixComponents(KetCell,KetCell,HV,S) {}
 
   TransferMatrixComponents::TransferMatrixComponents(const UnitCell& BraCell, const UnitCell& KetCell, bool HV, const State S) : CellSize_(BraCell.size()), Hermitian_answer_(HV),TargetState_(S),BraCell_(BraCell), KetCell_(KetCell) {
-
+#ifndef NDEBUG
+    std::cout << "Constructing TransferMatrixComponents" << std::endl;
+#endif
     if (BraCell.size()!=KetCell.size()){std::cout << "Bra and Ket fragments have different sizes! " << BraCell.size() << " " << KetCell.size() <<std::endl; exit(1);}
     else {
       for (std::pair<std::vector<MPS_matrix>::const_iterator,std::vector<MPS_matrix>::const_iterator> cits={BraCell.Matrices.begin(),KetCell.Matrices.begin()};cits.first!= BraCell.Matrices.end() && cits.second!= KetCell.Matrices.end(); ++cits.first, ++cits.second) {
@@ -419,6 +435,9 @@ namespace ajaj {
 	}
       }
     }
+#ifndef NDEBUG
+    std::cout << "End constructing TransferMatrixComponents" << std::endl;
+#endif
   }
 
   MPX_matrix TransferMatrixComponents::accumulate_() const {
@@ -443,7 +462,30 @@ namespace ajaj {
       std::cout << "Simple method" <<std::endl;
       //accumulate
       MPX_matrix TM(accumulate_());
-      return TM.LeftEigs(numevals,which,initial);
+
+      return TM.LeftEigs(TM.basis().Identity(),numevals,which,initial);
+   
+      //#ifndef NDEBUG
+      //std::cout << "TM is consistent? " << TM.isConsistent() << std::endl;
+
+      //MPX_matrix CheckTMSym=reorder(TM,1,reorder1032,2);
+      //std::cout << "Checking Transfer matrix symmetry" << std::endl;
+      //(TM.matrix()-CheckTMSym.matrix()).print();
+      //#endif
+
+      /*if (Hermitian_answer_){
+	//massage answer into Hermitian form
+	//collect old index dims
+	std::vector<MPXInt> olddims;
+	for (const auto& I : left_indices()){
+	  olddims.push_back(I.size());
+	}
+	olddims.push_back(numevals);
+	ans.EigenVectors.print();
+	//ans.EigenVectors+=reshape(ans.EigenVectors,2,2,olddims,reorder102,1);		
+	}*/
+      //return ans;
+
     }
     else {
       SparseED ans(length(),numevals);
@@ -505,7 +547,8 @@ namespace ajaj {
       std::cout << "Simple method" <<std::endl;
       //accumulate
       MPX_matrix TM(accumulate_());
-      return TM.RightEigs(numevals,which,initial);
+      return TM.RightEigs(TM.basis().Identity(),numevals,which,initial);
+      //std::cout << "TM is consistent? " << TM.isConsistent() << std::endl;
     }
     else {
       SparseED ans(length(),numevals);
@@ -611,4 +654,140 @@ namespace ajaj {
     //get entropy
   }
 
+  bool check_for_H_MPO_file(const std::string& name, uMPXInt sliceindex){
+    std::stringstream SliceHMPOnamestream;
+    SliceHMPOnamestream << name << "_" << sliceindex << "_H.MPO_matrix";
+    
+    //check file exists and can be opened
+    
+    std::ifstream fs;
+    
+    fs.open(SliceHMPOnamestream.str().c_str(),ios::in);
+    
+    if (fs.is_open()){
+      return 1;
+    }
+    
+    return 0;
+  }
+
+  std::complex<double> GeneralisedOverlap(const ConstFiniteMPS& Bra, const ConstFiniteMPS& Ket, const std::vector<meas_pair>& ops){
+    if (Bra.size()!=Ket.size()){
+      std::cout << "States defined for different length systems! Orthogonal but probably not intentional, aborting." <<std::endl<<std::endl;
+      exit(1);
+    }
+
+    std::vector<std::vector<const MPO_matrix*> > ordered_ops(Ket.size(),std::vector<const MPO_matrix*>());
+
+    for (auto& op_v : ops){
+      if (op_v.MPO_ptr()){
+	ordered_ops[op_v.position()-1].emplace_back(op_v.MPO_ptr());
+      }
+    }
+
+    for (auto& o :ordered_ops) { //reverse order as user will expect the rightmost arg to be applied first
+      std::reverse(o.begin(),o.end());
+    }
+
+    MPX_matrix accumulator(Ket.matrix(1).left_shape());
+    for (auto& op1 : ordered_ops.at(0)){
+      accumulator=std::move(contract(*op1,0,accumulator,0,contract20).RemoveDummyIndices({{1,2}}).ShiftNumRowIndices(2)); //puts it back into left shaped MPS_matrix form
+    }
+    accumulator=std::move(contract(Bra.matrix(1).left_shape(),1,accumulator,0,contract0011));
+    for (uMPXInt i=2;i<=Ket.size();++i){
+      accumulator=std::move(contract(accumulator,0,Ket.matrix(i).left_shape(),0,contract11));
+      if (ordered_ops.at(i-1).size()) {
+	bool first=1;
+	for (auto& opi : ordered_ops.at(i-1)){
+	  accumulator=std::move(contract(*opi,0,accumulator,0,first ? contract21 : contract20)).RemoveDummyIndices({{1,2}});
+	  first=0;
+	}
+	accumulator=std::move(contract(Bra.matrix(i).left_shape(),1,accumulator,0,contract0011));
+      }
+      else {
+	accumulator=std::move(contract(Bra.matrix(i).left_shape(),1,accumulator,0,contract0110));
+      }
+    }
+    return accumulator.Trace();
+  }
+
+    std::complex<double> GeneralisedOverlap(const ConstFiniteMPS& Ket, const std::vector<meas_pair>& ops){
+
+    std::vector<std::vector<const MPO_matrix*> > ordered_ops(Ket.size(),std::vector<const MPO_matrix*>());
+
+    for (auto& op_v : ops){
+      if (op_v.MPO_ptr()){
+	ordered_ops[op_v.position()-1].emplace_back(op_v.MPO_ptr());
+      }
+    }
+
+    for (auto& o :ordered_ops) { //reverse order as user will expect the rightmost arg to be applied first
+      std::reverse(o.begin(),o.end());
+    }
+
+    MPX_matrix accumulator(Ket.matrix(1).left_shape());
+    for (auto& op1 : ordered_ops.at(0)){
+      accumulator=std::move(contract(*op1,0,accumulator,0,contract20).RemoveDummyIndices({{1,2}}).ShiftNumRowIndices(2)); //puts it back into left shaped MPS_matrix form
+    }
+    accumulator=std::move(contract(Ket.matrix(1).left_shape(),1,accumulator,0,contract0011));
+    for (uMPXInt i=2;i<=Ket.size();++i){
+      accumulator=std::move(contract(accumulator,0,Ket.matrix(i).left_shape(),0,contract11));
+      if (ordered_ops.at(i-1).size()) {
+	bool first=1;
+	for (auto& opi : ordered_ops.at(i-1)){
+	  accumulator=std::move(contract(*opi,0,accumulator,0,first ? contract21 : contract20)).RemoveDummyIndices({{1,2}});
+	  first=0;
+	}
+	accumulator=std::move(contract(Ket.matrix(i).left_shape(),1,accumulator,0,contract0011));
+      }
+      else {
+	accumulator=std::move(contract(Ket.matrix(i).left_shape(),1,accumulator,0,contract0110));
+      }
+    }
+    return accumulator.Trace();
+  }
+
+  
+  std::complex<double> GeneralisedOverlap(const ConstFiniteMPS& Bra, const ConstFiniteMPS& Ket, const MPO_matrix& Op, uMPXInt v){
+    //zip through the states and contract
+    //if Op is defined, apply it at site v.
+
+    //check states have same length!
+
+    if (Bra.size()!=Ket.size()){
+      std::cout << "States defined for different length systems! Orthogonal but probably not intentional, aborting." <<std::endl<<std::endl;
+      exit(1);
+    }
+    
+    if (!Op.empty()){
+      if (v<1 || v>Ket.size()){
+	std::cout <<"Specified vertex for application of operator is out of bounds!"<<std::endl<<std::endl;
+	exit(1);
+      }
+    }
+
+    //treat first as special case
+    MPX_matrix accumulator(Ket.matrix(1).left_shape());
+    if (v==1 && !Op.empty()){
+      accumulator=std::move(contract(Op,0,accumulator,0,contract20).RemoveDummyIndices({{1,2}}).ShiftNumRowIndices(2)); //puts it back into left shaped MPS_matrix form
+    }
+    accumulator=std::move(contract(Bra.matrix(1).left_shape(),1,accumulator,0,contract0011));
+    for (uMPXInt i=2;i<=Ket.size();++i){
+      accumulator=std::move(contract(accumulator,0,Ket.matrix(i).left_shape(),0,contract11));
+      if (i==v){
+	accumulator=std::move(contract(Op,0,accumulator,0,contract21)).RemoveDummyIndices({{1,2}});
+	accumulator=std::move(contract(Bra.matrix(i).left_shape(),1,accumulator,0,contract0011));
+      }
+      else {
+	accumulator=std::move(contract(Bra.matrix(i).left_shape(),1,accumulator,0,contract0110));
+      }
+    }
+
+    //finish off. Final index should be a dummy, so really this is a trace of a 1x1.
+    
+    return accumulator.Trace();
+    
+  }
+
+  
 }

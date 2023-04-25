@@ -56,12 +56,12 @@ int main(int argc, char** argv){
     std::vector<ajaj::MPO_matrix> H1ColXRowX;
     ajaj::Model myModel(ajaj::MakeModelFromFile(RuntimeArgs.model_filename()));//returns empty model if no filename was given
     
-    if (!RuntimeArgs.model_filename().empty()){
+    /*if (!RuntimeArgs.model_filename().empty()){
       myModel.basis().print();
       H1ColXRowX.emplace_back(myModel.H_MPO.ExtractMPOBlock(std::pair<ajaj::MPXInt,ajaj::MPXInt>(myModel.H_MPO.Index(1).size()-1,myModel.H_MPO.Index(1).size()-1),std::pair<ajaj::MPXInt,ajaj::MPXInt>(0,0)));
       H1ColXRowX.emplace_back(myModel.H_MPO.ExtractMPOBlock(std::pair<ajaj::MPXInt,ajaj::MPXInt>(1,myModel.H_MPO.Index(1).size()-2),std::pair<ajaj::MPXInt,ajaj::MPXInt>(0,0)));
       H1ColXRowX.emplace_back(myModel.H_MPO.ExtractMPOBlock(std::pair<ajaj::MPXInt,ajaj::MPXInt>(myModel.H_MPO.Index(1).size()-1,myModel.H_MPO.Index(1).size()-1),std::pair<ajaj::MPXInt,ajaj::MPXInt>(1,myModel.H_MPO.Index(3).size()-2)));
-    }
+      }*/
 
     ajaj::Vertex& iMEAS_vertex=myModel.vertex;
     
@@ -158,9 +158,9 @@ int main(int argc, char** argv){
 	  ajaj::UnitCell AA(ajaj::load_UnitCell_binary(infile,iMEAS_vertex.ChargeRules,iMEAS_vertex.Spectrum));//populates basis
 	  ajaj::State TargetState(iMEAS_vertex.ChargeRules,RuntimeArgs.target());
 
-	  for (auto&& m : AA.Matrices){
-	    m.print_sparse_info();
-	  }
+	  // for (auto&& m : AA.Matrices){
+	  //   m.print_sparse_info();
+	  // }
 	  indexed_results.emplace_back(Index,ajaj::Data());
 	  if (time_it!=idx_times.end()){
 	    indexed_results.back().second.Real_measurements.emplace_back(time_it->second);
@@ -172,7 +172,9 @@ int main(int argc, char** argv){
 	    indexed_results.back().second.Real_measurements.emplace_back(MultiVertexEntropy(AA,RuntimeArgs.vert_entanglement()));
 	  }
 	  if (!RuntimeArgs.model_filename().empty()){
-	    indexed_results.back().second.Real_measurements.emplace_back(std::real(ajaj::iTwoVertexEnergy(H1ColXRowX[0],H1ColXRowX[1],H1ColXRowX[2],AA)));
+	    indexed_results.back().second.Real_measurements.emplace_back(std::real(ajaj::iTwoVertexEnergy(myModel.H_MPO,AA)));
+
+	    //indexed_results.back().second.Real_measurements.emplace_back(std::real(ajaj::iTwoVertexEnergy(H1ColXRowX[0],H1ColXRowX[1],H1ColXRowX[2],AA)));
 	  }
 	  if (RuntimeArgs.nev()){
 	    std::vector<std::complex<double> > Transfer_eigs(ajaj::TransferMatrixEigs(AA,RuntimeArgs.nev(),TargetState));

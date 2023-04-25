@@ -1,4 +1,4 @@
-int non_chir_bosons(double tpi_R, double Beta, double en_cutoff)
+int non_chir_bosons(double tpi_R, double Beta, double en_cutoff,bool restrict_n)
 {
   int j, k, m, n, nmax, mmax, nmin, mmin, flag, ind, mom, mom_vac[MaxN][MaxM];
   
@@ -7,18 +7,18 @@ int non_chir_bosons(double tpi_R, double Beta, double en_cutoff)
   
   /*delineate states of full bosons up to a given energy*/
   
-  nmax = (int) (sqrt(en_cutoff/tpi_R +1.0/12.0)/Beta)+1;
+  nmax = restrict_n ? 1 : (int) (sqrt(en_cutoff/tpi_R +1.0/12.0)/Beta)+1;
   nmin = -nmax+1;
-  //nmax = 1; nmin = 0;
+ // nmax = 1; nmin = 0;
   mmax = 1; 
   mmin = 0;
   
   if ((2*mmax + 1) > MaxM) {
-    printf("Warning: MMax is not large enough.\n");
+    printf("Warning: MaxM is not large enough.\n");
     exit(1);
   }
   if ((2*nmax + 1) > MaxN) {
-    printf("Warning: NMax is not large enough.\n");
+    printf("Warning: MaxN is not large enough.\n");
     exit(1);
   }
   //printf("nmax: %d mmax: %d\n",nmax,mmax);
@@ -28,7 +28,7 @@ int non_chir_bosons(double tpi_R, double Beta, double en_cutoff)
     exit(1);
   }
   
-  nstate = 0;
+  int nstate = 0;
   num_metaZ = 0;
   for(n=nmin;n<nmax;++n) {
     for(m=mmin;m<mmax;++m) {
@@ -41,7 +41,7 @@ int non_chir_bosons(double tpi_R, double Beta, double en_cutoff)
 
 	  if (en <= en_cutoff) {
 	    //printf("state: %ld %d %d %d %d %d %d %3.8f %d %3.8f %3.8f\n",nstate,n,m,k,j,cstate_lev[k],cstate_lev[j],en,mom,en_vac[-nmin+n][-mmin+m],tpi_R);
-	    state_en[nstate] = en+nstate*1.0e-12;
+	    state_en[nstate] = en;//+nstate*1.0e-12;
 
 	    state_Z[0][nstate] = n; /*center of mass momentum*/
 	    state_Z[1][nstate] = m; /*U(1) charge*/
@@ -67,13 +67,17 @@ int non_chir_bosons(double tpi_R, double Beta, double en_cutoff)
 
 	    state_parity[0][nstate] = 0;
 	    ++nstate;
+	    if (nstate>=MaxStates){
+	      printf("Too many non-chiral states! %d\n",nstate);
+	      exit(1);
+	    }
 	  }
 	}
       }
     }
   }
 
-  //printf("total number of non-chiral states: %ld\n",nstate);
+  printf("total number of non-chiral states: %d\n",nstate);
 
   int max_n, max_m, max_mom;
 
@@ -102,9 +106,7 @@ int non_chir_bosons(double tpi_R, double Beta, double en_cutoff)
   /*order states in terms of energy*/
 	
   shell_en(nstate);
-  for(k=0;k<nstate;++k) {
-    //printf("state index: %d en: %3.8f N: %ld M: %ld mom: %ld metaZ: %ld metaZind: %ld chiral_right: %ld chiral_left %ld no. of a's: %ld parity: %ld parity_sign: %ld\n",k,state_en[k],state_Z[0][k],state_Z[1][k],state_Z[2][k],state_metaZ[k],state_metaZ_ind[k],state_chiral[0][k],state_chiral[1][k],state_chiral[2][k],state_parity[0][k],state_parity[1][k]);
-  }
+
   return nstate;
 }
 	
