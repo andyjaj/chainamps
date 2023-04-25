@@ -1,7 +1,7 @@
 README
 =======
 
-*Version 1.2.1*
+*Version 1.2.2*
 
 ChainAMPS is a set of libraries and driver routines, designed to implement MPS algorithms for large systems of coupled chains (i.e. large local or *physical* dimension).
 However it also works perfectly well for canonical 1D MPS algorithms, though it is not optimised for this task.
@@ -16,18 +16,18 @@ and a driver to post process stored translationally invariant unit cells (UNITCE
 Several models are implemented, and in addition user defined models can be studied.
 Documented examples can be found in the examples subdirectory.
 
-A partial Makefile, 'Makefile_indep' is included for assistance building on systems without cmake.
+The intended build method is cmake, but a partial Makefile, 'Makefile_indep' is included for assistance building on systems without cmake.
 
 Usage info on the drivers can be found by running them without any command line arguments.
 
-Further documentation is provided via doc/html/index.html
+Som efurther, but work in progress, documentation is provided via doc/html/index.html
 
 Quick start / How do I get set up?
 -------------
 
 * Dependencies: Requires blas and lapack ("framework accelerate" is used on mac), arpack (some issues with certain versions), and SuiteSparse's cxsparse. All available through e.g. macports.
 * Optionally can use Intel's freely available Threaded Building Blocks (TBB) to perform threaded sparse multiplication, by specifying the "USETBB" environment variable (-DUSETBB is included by default in the makefiles).
-* A rudimentary CMakeLists.txt is included that works well on mac systems with macports..
+* A CMakeLists.txt is included that works well on mac systems with macports.
 * Try 'mkdir BUILD; cd BUILD; cmake ..' to set up the build environment
 * Then 'make'.
 * For usage info on a particular driver run 'X_DRV.bin' where X is replaced by the name of the driver, e.g. iTEBD.
