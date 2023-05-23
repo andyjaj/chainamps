@@ -78,7 +78,7 @@ namespace ajaj {
     //not the best guess, as we want something orthogonal to this...
     SparseMatrix Guess(reshape_to_vector(contract(CentralDecomposition.LeftMatrix,0,contract(MPX_matrix(CentralDecomposition.basis(),CentralDecomposition.RightMatrix.Index(0),CentralDecomposition.Values),0,CentralDecomposition.RightMatrix,0,contract10),0,contract20)));
 
-    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),&PBlocks_,size(),results,nullptr/*&Guess*/,converge),chi,truncation);
+    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),&PBlocks_,size(),results,&Guess,converge),chi,truncation);
     CentralDecomposition.SquareRescale(1.0);
     CentralDecomposition.store(getName(),left_size()+1,right_size()+1,left_size()==right_size());
 
@@ -123,12 +123,11 @@ namespace ajaj {
     std::cout << "Position: " << left_size() << " " << right_size() << std::endl;
     previous_lambda_=CentralDecomposition.Values;
     
-    /* //Prediction vector not working for excited sweeps
-      std::stringstream namestream;
+    std::stringstream namestream;
     namestream << StorageName << "_Right_" << right_size()+1 << ".MPS_matrix";
-    pred_=MakeRFinitePrediction(CentralDecomposition,load_MPS_matrix(namestream.str(),basis()));*/
+    pred_=MakeRFinitePrediction(CentralDecomposition,load_MPS_matrix(namestream.str(),basis()));
 
-    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),&PBlocks_,size(),results,nullptr/*&(pred_.Guess)*/,converge),chi,right_size()<=1 ? -0.0 : truncation);
+    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),&PBlocks_,size(),results,&(pred_.Guess),converge),chi,right_size()<=1 ? -0.0 : truncation);
     CentralDecomposition.SquareRescale(1.0);
     CentralDecomposition.store(getName(),left_size()+1,right_size()+1,left_size()==right_size());
 
@@ -175,13 +174,12 @@ namespace ajaj {
     previous_lambda_=CentralDecomposition.Values;
     //mismatch between storage and prediction names at midpoint, while in init phase,
     //reaching the mid point from the right requires block with HBlocksName, but we have an MPS_matrix with the new name that we must use!
-    /*Prediction vector not working for excited sweeps
     std::stringstream namestream;
     std::string PredictionName = ((left_size()==right_size()) && init_flag_) ? getName() : StorageName;
     namestream << PredictionName << "_Left_" << left_size()+1 << ".MPS_matrix";
-    pred_=MakeLFinitePrediction(CentralDecomposition,load_MPS_matrix(namestream.str(),basis()));*/
+    pred_=MakeLFinitePrediction(CentralDecomposition,load_MPS_matrix(namestream.str(),basis()));
 
-    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),&PBlocks_,size(),results,nullptr/*&(pred_.Guess)*/,converge),chi,left_size()<=1 ? -0.0 : truncation);
+    CentralDecomposition=TwoVertexSVD(TwoVertexWavefunction(getLeftBlock(),getH(),getRightBlock(),&PBlocks_,size(),results,&(pred_.Guess),converge),chi,left_size()<=1 ? -0.0 : truncation);
     CentralDecomposition.SquareRescale(1.0);
     CentralDecomposition.store(getName(),left_size()+1,right_size()+1,left_size()==right_size());
 
